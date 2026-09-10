@@ -1,0 +1,32 @@
+[
+    {
+        "id": "stiker-01",
+        "category": "stiker",
+        "title": "Cristiano Ronaldo",
+        "team": "Real Madrid, Al Nassr, Portugal",
+        "price": "Rp 10.000",
+        "spec": "Vinyl Waterproof • 7 cm",
+        "desc": "Bahan vinyl tebal tahan air, panas matahari, dan anti gores. Cocok untuk laptop, helm, dan tumbler.",
+        "img": "https://res.cloudinary.com/og1jrvy3/image/upload/v1789009283/706003121_17886065526557650_4959206525920169527_n.jpg"
+    },
+    {
+        "id": "keychain-01",
+        "category": "keychain",
+        "title": "Keychain Neymar",
+        "team": "Santos, Barcelona, PSG, Al Hilal, Brasil",
+        "price": "Rp 50.000",
+        "spec": "Akrilik 3mm • 2 Sisi HD",
+        "desc": "Akrilik bening 3mm dengan cetak tajam 2 sisi definisi tinggi, dilengkapi ring putar anti karat.",
+        "img": "https://res.cloudinary.com/og1jrvy3/image/upload/v1789010435/id-11134207-8224p-mhun2zrqdkp0af.webp"
+    },
+    {
+        "id": "poster-01",
+        "category": "poster",
+        "title": "Poster Lionel Messi 8 Ballon d'Or GOAT",
+        "team": "Barcelona, PSG, Inter Miami, Argentina",
+        "price": "Rp 200.000",
+        "spec": "Art Carton 260gr • 32x48 cm",
+        "desc": "Poster eksklusif kolektor tribute 8 trofi Ballon d'Or. Resolusi tinggi kualitas gallery.",
+        "img": "https://res.cloudinary.com/og1jrvy3/image/upload/v1789010178/545040561_17848000446557650_323288529526384965_n.jpg"
+    }
+]

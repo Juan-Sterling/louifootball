@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LOUIFOOTBALL | Official Catalog</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        /* Background motif sunburst hijau rumput lapangan */
+        .loui-pitch-bg {
+            background-color: #27671c;
+            background-image:
+                radial-gradient(circle at center, rgba(74, 154, 52, 0.45) 0%, rgba(18, 54, 13, 0.95) 100%),
+                repeating-conic-gradient(from 0deg,
+                    #397e26 0deg 7.5deg,
+                    #225717 7.5deg 15deg);
+            background-attachment: fixed;
+            background-size: cover;
+        }
+    </style>
+</head>
+
+<body
+    class="loui-pitch-bg min-h-screen text-gray-900 font-sans antialiased selection:bg-lime-400 selection:text-black flex flex-col justify-between">
+
+    <!-- NAVBAR -->
+    <header class="sticky top-0 z-40 bg-emerald-950/90 backdrop-blur-md border-b border-emerald-700/50 shadow-lg">
+        <div
+            class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 sm:py-0 sm:h-18 flex flex-col sm:flex-row items-center justify-between gap-2.5 sm:gap-4">
+
+            <!-- Logo LOUIFOOTBALL & Tombol Kontak Mobile -->
+            <div class="w-full sm:w-auto flex items-center justify-between">
+                <a href="#" class="flex items-center gap-2.5 group">
+                    <img src="https://res.cloudinary.com/og1jrvy3/image/upload/v1789010759/756654575_17897804865557650_2370756875670529296_n.jpg" alt="LOUIFOOTBALL Logo"
+                        class="w-10 h-10 sm:w-11 sm:h-11 rounded-xl object-cover border-2 border-white/80 shadow-md group-hover:scale-105 transition"
+                        onerror="this.src='https://placehold.co/100x100/225717/ffffff?text=Loui'">
+                    <div class="flex flex-col">
+                        <span class="font-black text-lg sm:text-xl tracking-wider text-white leading-tight">LOUI<span
+                                class="text-lime-400">FOOTBALL</span></span>
+                        <span class="text-[9px] uppercase tracking-widest text-emerald-300 font-semibold">Merchandise
+                            Catalog</span>
+                    </div>
+                </a>
+
+                <!-- Tombol Kontak Mobile -->
+                <button onclick="openContactModal()"
+                    class="sm:hidden flex items-center gap-1.5 bg-emerald-800/80 hover:bg-emerald-700 text-lime-300 border border-emerald-600/60 text-xs font-bold px-3 py-1.5 rounded-full transition shadow">
+                    <i class="ph-bold ph-address-book text-base"></i>
+                    <span>Kontak Toko</span>
+                </button>
+            </div>
+
+            <!-- Search Bar Real-time (Mendukung Nama Barang, Pemain, & Nama Tim) -->
+            <div class="w-full sm:w-80 md:w-96 relative">
+                <i
+                    class="ph ph-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-emerald-300 text-base"></i>
+                <input id="searchInput" type="text" oninput="handleSearch()"
+                    placeholder="Cari pemain, tim (cth: Madrid, Barca), produk..."
+                    class="w-full bg-emerald-900/80 border border-emerald-600/70 rounded-full pl-9 pr-4 py-2 text-xs sm:text-sm text-white placeholder-emerald-300/70 focus:outline-none focus:ring-2 focus:ring-lime-400">
+            </div>
+
+            <!-- Tombol Kontak Desktop -->
+            <div class="hidden sm:block">
+                <button onclick="openContactModal()"
+                    class="flex items-center gap-2 bg-emerald-900 hover:bg-emerald-800 text-lime-300 border border-emerald-600/60 text-xs sm:text-sm font-bold px-4 py-2 rounded-full transition shadow">
+                    <i class="ph-bold ph-chat-circle-dots text-base"></i>
+                    <span>Hubungi Kami</span>
+                </button>
+            </div>
+
+        </div>
+    </header>
+
+    <!-- HERO SECTION -->
+    <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
+        <div
+            class="relative rounded-2xl sm:rounded-3xl bg-emerald-950/75 backdrop-blur-sm border border-emerald-500/40 text-white p-5 sm:p-7 overflow-hidden shadow-2xl">
+            <div class="relative z-10 max-w-xl">
+                <span
+                    class="bg-lime-400 text-emerald-950 text-[10px] sm:text-[11px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-md inline-block mb-1.5">Official
+                    Drop</span>
+                <h1 class="text-xl sm:text-3xl font-black leading-tight text-white">Stiker, Keychain & Poster Eksklusif
+                </h1>
+                <p class="text-emerald-100/90 text-xs sm:text-sm mt-1">Cari merchandise berdasarkan pemain bintang atau
+                    klub/timnas favoritmu.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- KATALOG UTAMA -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex-1 w-full">
+
+        <!-- Kategori Tabs -->
+        <div class="flex items-center gap-2 overflow-x-auto pb-3 mb-4 no-scrollbar">
+            <button onclick="filterCategory('all', this)"
+                class="cat-btn px-4 py-1.5 rounded-full bg-lime-400 text-emerald-950 text-xs font-black whitespace-nowrap shadow">Semua</button>
+            <button onclick="filterCategory('stiker', this)"
+                class="cat-btn px-4 py-1.5 rounded-full bg-emerald-950/80 border border-emerald-600/40 text-emerald-100 text-xs font-bold whitespace-nowrap hover:bg-emerald-900">Stiker</button>
+            <button onclick="filterCategory('keychain', this)"
+                class="cat-btn px-4 py-1.5 rounded-full bg-emerald-950/80 border border-emerald-600/40 text-emerald-100 text-xs font-bold whitespace-nowrap hover:bg-emerald-900">Keychain</button>
+            <button onclick="filterCategory('poster', this)"
+                class="cat-btn px-4 py-1.5 rounded-full bg-emerald-950/80 border border-emerald-600/40 text-emerald-100 text-xs font-bold whitespace-nowrap hover:bg-emerald-900">Poster</button>
+        </div>
+
+        <!-- Product Grid Dinamis -->
+        <div id="productGrid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3.5 sm:gap-4">
+            <!-- Di-render oleh JS dari products.json -->
+        </div>
+
+        <!-- State Ketika Kosong -->
+        <div id="noResult" class="hidden text-center py-12 text-white">
+            <i class="ph ph-magnifying-glass text-4xl text-lime-300 mb-2"></i>
+            <p class="text-base font-bold">Produk tidak ditemukan</p>
+            <p class="text-xs text-emerald-200/80">Coba cari nama pemain, nama tim/klub lain, atau pilih kategori Semua.
+            </p>
+        </div>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="bg-emerald-950/95 border-t border-emerald-700/50 mt-10 py-8 text-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-4">
+            <div class="flex items-center justify-center gap-2">
+                <span class="font-black text-lg tracking-wider">LOUI<span class="text-lime-400">FOOTBALL</span></span>
+            </div>
+            <p class="text-xs text-emerald-200/80 max-w-md mx-auto">Toko merchandise sepak bola karya suporter untuk
+                pecinta bola di seluruh Indonesia.</p>
+
+            <div class="flex flex-wrap justify-center items-center gap-2.5 pt-2">
+                <a href="https://wa.me/6281234567890" target="_blank"
+                    class="flex items-center gap-1.5 bg-emerald-900 hover:bg-emerald-800 text-white text-xs font-bold px-3.5 py-2 rounded-xl border border-emerald-600/50 transition">
+                    <i class="ph-bold ph-whatsapp-logo text-green-400 text-base"></i> WhatsApp
+                </a>
+                <a href="https://instagram.com/louifootball" target="_blank"
+                    class="flex items-center gap-1.5 bg-emerald-900 hover:bg-emerald-800 text-white text-xs font-bold px-3.5 py-2 rounded-xl border border-emerald-600/50 transition">
+                    <i class="ph-bold ph-instagram-logo text-pink-400 text-base"></i> Instagram
+                </a>
+                <a href="https://shopee.co.id" target="_blank"
+                    class="flex items-center gap-1.5 bg-emerald-900 hover:bg-emerald-800 text-white text-xs font-bold px-3.5 py-2 rounded-xl border border-emerald-600/50 transition">
+                    <i class="ph-bold ph-shopping-bag-open text-orange-400 text-base"></i> Shopee
+                </a>
+                <a href="https://tokopedia.com" target="_blank"
+                    class="flex items-center gap-1.5 bg-emerald-900 hover:bg-emerald-800 text-white text-xs font-bold px-3.5 py-2 rounded-xl border border-emerald-600/50 transition">
+                    <i class="ph-bold ph-storefront text-lime-400 text-base"></i> Tokopedia
+                </a>
+            </div>
+
+            <div class="pt-4 border-t border-emerald-800/60 text-[11px] text-emerald-300/60">
+                &copy; 2026 LOUIFOOTBALL. All rights reserved.
+            </div>
+        </div>
+    </footer>
+
+    <!-- MODAL DETAIL PRODUK -->
+    <div id="productModal"
+        class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 hidden items-center justify-center p-3 sm:p-4 overflow-y-auto">
+        <div
+            class="bg-white rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl relative border-4 border-emerald-800 my-auto flex flex-col max-h-[92vh]">
+
+            <!-- Tombol Close Modal -->
+            <button onclick="closeModal()"
+                class="absolute top-3 right-3 bg-black/60 hover:bg-black text-white p-2 rounded-full z-20 shadow-md backdrop-blur-sm transition">
+                <i class="ph ph-x font-black text-lg"></i>
+            </button>
+
+            <!-- Area Showcase Gambar Penuh (object-contain) -->
+            <div
+                class="relative w-full bg-zinc-950 flex items-center justify-center p-4 min-h-[260px] max-h-[380px] sm:max-h-[420px] overflow-hidden border-b border-gray-200">
+                <img id="modalImg" src="" alt="Produk Penuh"
+                    class="w-full h-full max-h-[360px] sm:max-h-[400px] object-contain drop-shadow-md rounded-lg">
+
+                <!-- Link Ukuran Asli Cloudinary -->
+                <a id="modalImgLink" href="#" target="_blank"
+                    class="absolute bottom-3 right-3 bg-black/70 hover:bg-black text-white text-[11px] font-semibold px-3 py-1.5 rounded-full flex items-center gap-1.5 backdrop-blur-sm transition shadow">
+                    <i class="ph-bold ph-arrows-out-simple"></i>
+                    <span>Buka Resolusi Penuh</span>
+                </a>
+            </div>
+
+            <!-- Area Detail Informasi Produk -->
+            <div class="p-5 overflow-y-auto">
+                <div class="flex items-center justify-between gap-2">
+                    <span id="modalCategory"
+                        class="text-[10px] font-black uppercase text-emerald-800 tracking-wider bg-emerald-100 px-2.5 py-0.5 rounded-md">Kategori</span>
+                    <span id="modalSpec" class="text-[11px] text-gray-500 font-medium">Spesifikasi</span>
+                </div>
+
+                <h2 id="modalTitle" class="text-lg sm:text-xl font-black text-gray-950 mt-2 leading-tight">Nama Produk
+                </h2>
+
+                <!-- Info Tim / Klub -->
+                <div class="flex items-center gap-1.5 text-xs text-emerald-800 font-bold mt-1">
+                    <i class="ph-fill ph-shield-check"></i>
+                    <span id="modalTeam">Tim</span>
+                </div>
+
+                <p id="modalPrice" class="text-2xl font-black text-emerald-800 mt-2">Rp 0</p>
+
+                <p id="modalDesc"
+                    class="text-gray-600 text-xs sm:text-sm mt-3 leading-relaxed bg-gray-50 p-3 rounded-xl border border-gray-100">
+                    Deskripsi lengkap produk...
+                </p>
+
+                <!-- Opsi Pembelian -->
+                <div class="mt-5 space-y-2">
+                    <a id="modalWaBtn" href="#" target="_blank"
+                        class="w-full bg-emerald-800 hover:bg-emerald-900 text-lime-300 font-bold py-3 rounded-2xl flex items-center justify-center gap-2 text-sm shadow-md transition">
+                        <i class="ph-bold ph-whatsapp-logo text-lg text-green-400"></i>
+                        Order via WhatsApp
+                    </a>
+
+                    <div class="grid grid-cols-2 gap-2 pt-1">
+                        <a href="https://shopee.co.id" target="_blank"
+                            class="bg-orange-50 hover:bg-orange-100 border border-orange-200 text-orange-700 font-bold py-2.5 rounded-xl flex items-center justify-center gap-1.5 text-xs transition">
+                            <i class="ph-bold ph-shopping-bag-open text-base"></i> Shopee Store
+                        </a>
+                        <a href="https://tokopedia.com" target="_blank"
+                            class="bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 font-bold py-2.5 rounded-xl flex items-center justify-center gap-1.5 text-xs transition">
+                            <i class="ph-bold ph-storefront text-base text-emerald-600"></i> Tokopedia Store
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- MODAL CONTACT ME -->
+    <div id="contactModal"
+        class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+        <div
+            class="bg-emerald-950 border-2 border-emerald-600 rounded-3xl max-w-sm w-full p-6 text-white shadow-2xl relative">
+            <button onclick="closeContactModal()"
+                class="absolute top-4 right-4 bg-emerald-900 hover:bg-emerald-800 text-emerald-300 p-2 rounded-full shadow">
+                <i class="ph ph-x font-black"></i>
+            </button>
+
+            <div class="text-center mb-5">
+                <div
+                    class="w-12 h-12 bg-lime-400 text-emerald-950 rounded-2xl mx-auto flex items-center justify-center font-black text-xl mb-2 shadow">
+                    <i class="ph-bold ph-chat-circle-text"></i>
+                </div>
+                <h3 class="text-lg font-black text-white">Hubungi LOUIFOOTBALL</h3>
+                <p class="text-xs text-emerald-200/80 mt-1">Pilih saluran kontak atau marketplace resmi kami:</p>
+            </div>
+
+            <div class="space-y-2.5">
+                <a href="https://wa.me/6281234567890" target="_blank"
+                    class="flex items-center justify-between p-3 rounded-2xl bg-emerald-900/80 hover:bg-emerald-800 border border-emerald-700/60 transition group">
+                    <div class="flex items-center gap-3">
+                        <div
+                            class="w-9 h-9 rounded-xl bg-green-500/20 text-green-400 flex items-center justify-center text-xl">
+                            <i class="ph-bold ph-whatsapp-logo"></i>
+                        </div>
+                        <div>
+                            <p class="text-xs font-bold text-white">WhatsApp Admin</p>
+                            <p class="text-[10px] text-emerald-300">Fast response order & custom</p>
+                        </div>
+                    </div>
+                    <i class="ph-bold ph-caret-right text-gray-400 group-hover:text-white transition"></i>
+                </a>
+
+                <a href="https://instagram.com/louifootball" target="_blank"
+                    class="flex items-center justify-between p-3 rounded-2xl bg-emerald-900/80 hover:bg-emerald-800 border border-emerald-700/60 transition group">
+                    <div class="flex items-center gap-3">
+                        <div
+                            class="w-9 h-9 rounded-xl bg-pink-500/20 text-pink-400 flex items-center justify-center text-xl">
+                            <i class="ph-bold ph-instagram-logo"></i>
+                        </div>
+                        <div>
+                            <p class="text-xs font-bold text-white">Instagram</p>
+                            <p class="text-[10px] text-emerald-300">@louifootball (Katalog & Info)</p>
+                        </div>
+                    </div>
+                    <i class="ph-bold ph-caret-right text-gray-400 group-hover:text-white transition"></i>
+                </a>
+
+                <a href="https://shopee.co.id" target="_blank"
+                    class="flex items-center justify-between p-3 rounded-2xl bg-emerald-900/80 hover:bg-emerald-800 border border-emerald-700/60 transition group">
+                    <div class="flex items-center gap-3">
+                        <div
+                            class="w-9 h-9 rounded-xl bg-orange-500/20 text-orange-400 flex items-center justify-center text-xl">
+                            <i class="ph-bold ph-shopping-bag-open"></i>
+                        </div>
+                        <div>
+                            <p class="text-xs font-bold text-white">Shopee Store</p>
+                            <p class="text-[10px] text-emerald-300">Gratis ongkir & voucher</p>
+                        </div>
+                    </div>
+                    <i class="ph-bold ph-caret-right text-gray-400 group-hover:text-white transition"></i>
+                </a>
+
+                <a href="https://tokopedia.com" target="_blank"
+                    class="flex items-center justify-between p-3 rounded-2xl bg-emerald-900/80 hover:bg-emerald-800 border border-emerald-700/60 transition group">
+                    <div class="flex items-center gap-3">
+                        <div
+                            class="w-9 h-9 rounded-xl bg-emerald-500/20 text-lime-400 flex items-center justify-center text-xl">
+                            <i class="ph-bold ph-storefront"></i>
+                        </div>
+                        <div>
+                            <p class="text-xs font-bold text-white">Tokopedia Store</p>
+                            <p class="text-[10px] text-emerald-300">Cashback & cicilan resmi</p>
+                        </div>
+                    </div>
+                    <i class="ph-bold ph-caret-right text-gray-400 group-hover:text-white transition"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        const WA_NUMBER = "6281234567890"; // Nomor WhatsApp Toko
+
+        let allProducts = [];
+        let activeCategory = 'all';
+
+        const productGrid = document.getElementById('productGrid');
+        const noResult = document.getElementById('noResult');
+        const searchInput = document.getElementById('searchInput');
+
+        // Product Modal elements
+        const modal = document.getElementById('productModal');
+        const modalImg = document.getElementById('modalImg');
+        const modalImgLink = document.getElementById('modalImgLink');
+        const modalCategory = document.getElementById('modalCategory');
+        const modalSpec = document.getElementById('modalSpec');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalTeam = document.getElementById('modalTeam');
+        const modalPrice = document.getElementById('modalPrice');
+        const modalDesc = document.getElementById('modalDesc');
+        const modalWaBtn = document.getElementById('modalWaBtn');
+
+        // Contact Modal
+        const contactModal = document.getElementById('contactModal');
+
+        async function loadProducts() {
+            try {
+                const response = await fetch('products.json');
+                allProducts = await response.json();
+                renderProducts();
+            } catch (error) {
+                console.error("Gagal membaca products.json:", error);
+            }
+        }
+
+        function renderProducts() {
+            const query = searchInput.value.toLowerCase().trim();
+            productGrid.innerHTML = '';
+
+            const filtered = allProducts.filter(item => {
+                const matchCat = (activeCategory === 'all' || item.category === activeCategory);
+
+                // Pencarian mencakup: Judul/Pemain, Tim/Klub, dan Deskripsi
+                const titleMatch = item.title.toLowerCase().includes(query);
+                const teamMatch = item.team ? item.team.toLowerCase().includes(query) : false;
+                const descMatch = item.desc.toLowerCase().includes(query);
+
+                return matchCat && (titleMatch || teamMatch || descMatch);
+            });
+
+            if (filtered.length === 0) {
+                noResult.classList.remove('hidden');
+                return;
+            }
+            noResult.classList.add('hidden');
+
+            filtered.forEach(item => {
+                const badgeColor = item.category === 'stiker' ? 'bg-emerald-700 text-lime-300' :
+                    item.category === 'keychain' ? 'bg-amber-600 text-white' : 'bg-purple-700 text-white';
+
+                const card = document.createElement('div');
+                card.className = "bg-white rounded-2xl p-3 flex flex-col justify-between hover:shadow-2xl transition duration-150 border-2 border-transparent hover:border-lime-400";
+                card.innerHTML = `
+          <div>
+            <div class="relative aspect-square rounded-xl bg-emerald-50 overflow-hidden mb-2.5">
+              <span class="absolute top-2 left-2 ${badgeColor} text-[9px] sm:text-[10px] font-black px-2 py-0.5 rounded shadow capitalize">${item.category}</span>
+              <img src="${item.img}" alt="${item.title}" class="w-full h-full object-cover">
+            </div>
+            
+            <!-- Badge Tim Kecil -->
+            <p class="text-[10px] font-bold text-emerald-800 uppercase line-clamp-1">${item.team || ''}</p>
+            <h3 class="font-bold text-xs sm:text-sm text-gray-900 leading-snug line-clamp-2 mt-0.5">${item.title}</h3>
+            <p class="text-[11px] text-gray-500 mt-1">${item.spec}</p>
+          </div>
+          <div class="mt-3 pt-2 border-t border-gray-100">
+            <p class="text-emerald-950 font-black text-sm sm:text-base">${item.price}</p>
+            <button onclick="openModalById('${item.id}')" class="w-full mt-2 bg-emerald-800 hover:bg-emerald-900 text-lime-300 text-xs font-bold py-1.5 sm:py-2 rounded-xl transition">
+              Lihat Detail
+            </button>
+          </div>
+        `;
+                productGrid.appendChild(card);
+            });
+        }
+
+        function openModalById(id) {
+            const item = allProducts.find(p => p.id === id);
+            if (!item) return;
+
+            modalTitle.innerText = item.title;
+            modalPrice.innerText = item.price;
+            modalDesc.innerText = item.desc;
+            modalCategory.innerText = item.category;
+            modalSpec.innerText = item.spec;
+            modalTeam.innerText = item.team ? `Tim / Klub: ${item.team}` : 'Official Merchandise';
+
+            modalImg.src = item.img;
+            modalImgLink.href = item.img;
+
+            const msg = encodeURIComponent(`Halo LOUIFOOTBALL, saya ingin memesan:\n\n*${item.title}*\nTim: ${item.team || '-'}\nHarga: ${item.price}\n\nApakah stok masih ada?`);
+            modalWaBtn.href = `https://wa.me/${WA_NUMBER}?text=${msg}`;
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeModal() {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function openContactModal() {
+            contactModal.classList.remove('hidden');
+            contactModal.classList.add('flex');
+        }
+
+        function closeContactModal() {
+            contactModal.classList.add('hidden');
+            contactModal.classList.remove('flex');
+        }
+
+        function filterCategory(category, btnElement) {
+            activeCategory = category;
+            document.querySelectorAll('.cat-btn').forEach(btn => {
+                btn.className = 'cat-btn px-4 py-1.5 rounded-full bg-emerald-950/80 border border-emerald-600/40 text-emerald-100 text-xs font-bold whitespace-nowrap hover:bg-emerald-900';
+            });
+            btnElement.className = 'cat-btn px-4 py-1.5 rounded-full bg-lime-400 text-emerald-950 text-xs font-black whitespace-nowrap shadow';
+            renderProducts();
+        }
+
+        function handleSearch() {
+            renderProducts();
+        }
+
+        loadProducts();
+    </script>
+</body>
+
+</html>
