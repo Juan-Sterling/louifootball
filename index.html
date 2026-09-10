@@ -619,7 +619,7 @@
                 const badgeColor = item.category === 'stiker' ? 'bg-emerald-700 text-lime-300' :
                     item.category === 'keychain' ? 'bg-amber-600 text-white' : 'bg-purple-700 text-white';
 
-                const editionText = item.edition ? `Edisi #${item.edition}` : 'Special Edition';
+                const editionText = item.edition ? `Edisi #${item.edition}` : '';
 
                 const card = document.createElement('div');
                 card.className = "bg-white rounded-2xl p-3 flex flex-col justify-between hover:shadow-2xl transition duration-150 border-2 border-transparent hover:border-lime-400";
@@ -663,7 +663,7 @@
             modalDesc.innerText = item.desc || '-';
             modalCategory.innerText = item.category || '';
             modalSpec.innerText = item.spec || '';
-            modalEdition.innerText = item.edition ? `Edisi #${item.edition}` : 'Special Edition';
+            modalEdition.innerText = item.edition ? `Edisi #${item.edition}` : '';
 
             modalImg.src = item.img;
             modalImgLink.href = item.img;
