@@ -29,20 +29,55 @@ const modalWaBtn = document.getElementById('modalWaBtn');
 // Contact Modal
 const contactModal = document.getElementById('contactModal');
 
+// Tampilkan state loading (logo berputar + skeleton cards shimmer)
+function showLoadingState() {
+    productGrid.innerHTML = `
+        <div class="col-span-full py-10 flex flex-col items-center justify-center text-center">
+            <div class="relative w-16 h-16 mb-3 flex items-center justify-center">
+                <div class="absolute inset-0 rounded-full border-4 border-emerald-600/30 border-t-lime-400 animate-spin"></div>
+                <img src="https://res.cloudinary.com/og1jrvy3/image/upload/f_auto,q_auto,w_100/v1789010759/756654575_17897804865557650_2370756875670529296_n.jpg"
+                    alt="Loading LOUIFOOTBALL"
+                    class="w-10 h-10 rounded-xl object-cover shadow-md"
+                    onerror="this.src='https://placehold.co/100x100/225717/ffffff?text=Loui'">
+            </div>
+            <p class="text-sm font-bold text-white tracking-wide">Memuat Katalog Produk...</p>
+            <p class="text-xs text-emerald-200/80 mt-1">Mengambil koleksi terbaru dari database</p>
+        </div>
+
+        ${[1, 2, 3, 4].map(() => `
+            <div class="bg-white/95 rounded-2xl p-3 flex flex-col justify-between border-2 border-emerald-800/30 animate-pulse shadow">
+                <div>
+                    <div class="aspect-square rounded-xl bg-emerald-950/10 mb-2.5 flex items-center justify-center">
+                        <i class="ph-bold ph-soccer-ball animate-spin text-emerald-800/20 text-3xl"></i>
+                    </div>
+                    <div class="h-3 bg-emerald-950/10 rounded-full w-1/3 mb-2"></div>
+                    <div class="h-4 bg-emerald-950/15 rounded-full w-4/5 mb-1.5"></div>
+                    <div class="h-3 bg-emerald-950/10 rounded-full w-1/2 mb-3"></div>
+                </div>
+                <div class="mt-2 pt-2 border-t border-gray-100">
+                    <div class="h-4 bg-emerald-950/20 rounded-full w-2/5 mb-2"></div>
+                    <div class="h-8 bg-emerald-900/20 rounded-xl w-full"></div>
+                </div>
+            </div>
+        `).join('')}
+    `;
+}
+
 async function loadProducts() {
+    showLoadingState();
     try {
-        // Ambil data langsung dari tabel 'products' di Supabase
+        // Ambil data langsung dari tabel 'products' di Database
         const { data, error } = await supabaseClient
             .from('products')
             .select('*');
 
         if (error || !data || data.length === 0) {
-            throw error || new Error("Data dari Supabase kosong atau bermasalah");
+            throw error || new Error("Data dari Database kosong atau bermasalah");
         }
 
         allProducts = data;
     } catch (error) {
-        console.warn("Gagal mengambil data dari Supabase, beralih ke products.json:", error);
+        console.warn("Gagal mengambil data dari Database, beralih ke products.json:", error);
         try {
             const res = await fetch('products.json');
             allProducts = await res.json();
