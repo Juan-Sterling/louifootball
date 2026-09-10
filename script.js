@@ -151,7 +151,9 @@ function renderProducts() {
 
     filtered.forEach(item => {
         const badgeColor = item.category === 'stiker' ? 'bg-emerald-700 text-lime-300' :
-            item.category === 'keychain' ? 'bg-amber-600 text-white' : 'bg-purple-700 text-white';
+            item.category === 'mini stiker' ? 'bg-cyan-700 text-cyan-100' :
+                item.category === 'keychain' ? 'bg-amber-600 text-white' :
+                    'bg-purple-700 text-white';
 
         const editionText = item.edition ? `Edisi #${item.edition}` : '';
 
