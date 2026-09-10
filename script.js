@@ -138,7 +138,7 @@ function renderProducts() {
         const titleMatch = item.title.toLowerCase().includes(query);
         const editionMatch = item.edition ? (`edisi ${item.edition}`.includes(query) || `#${item.edition}`.includes(query) || item.edition.toString() === query) : false;
         const teamMatch = item.team ? item.team.toLowerCase().includes(query) : false;
-        const descMatch = item.desc.toLowerCase().includes(query);
+        const descMatch = (item.desc ?? '').toLowerCase().includes(query);
 
         return matchCat && matchStickerEd && (titleMatch || editionMatch || teamMatch || descMatch);
     });
