@@ -2,6 +2,7 @@
     {
         "id": "stiker-01",
         "category": "stiker",
+        "edition": "1",
         "title": "Cristiano Ronaldo",
         "team": "Real Madrid, Al Nassr, Portugal",
         "price": "Rp 10.000",
@@ -12,6 +13,7 @@
     {
         "id": "keychain-01",
         "category": "keychain",
+        "edition": "2",
         "title": "Keychain Neymar",
         "team": "Santos, Barcelona, PSG, Al Hilal, Brasil",
         "price": "Rp 50.000",
@@ -22,6 +24,7 @@
     {
         "id": "poster-01",
         "category": "poster",
+        "edition": "3",
         "title": "Poster Lionel Messi 8 Ballon d'Or GOAT",
         "team": "Barcelona, PSG, Inter Miami, Argentina",
         "price": "Rp 200.000",

@@ -32,10 +32,11 @@
         <div
             class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 sm:py-0 sm:h-18 flex flex-col sm:flex-row items-center justify-between gap-2.5 sm:gap-4">
 
-            <!-- Logo LOUIFOOTBALL & Tombol Kontak Mobile -->
+            <!-- Logo LOUIFOOTBALL (Klik untuk Reset Katalog & Kembali ke Atas) -->
             <div class="w-full sm:w-auto flex items-center justify-between">
-                <a href="#" class="flex items-center gap-2.5 group">
-                    <img src="https://res.cloudinary.com/og1jrvy3/image/upload/v1789010759/756654575_17897804865557650_2370756875670529296_n.jpg" alt="LOUIFOOTBALL Logo"
+                <a href="#" onclick="resetToHome(event)" class="flex items-center gap-2.5 group cursor-pointer">
+                    <img src="https://res.cloudinary.com/og1jrvy3/image/upload/f_auto,q_auto,w_100/v1789010759/756654575_17897804865557650_2370756875670529296_n.jpg"
+                        alt="LOUIFOOTBALL Logo"
                         class="w-10 h-10 sm:w-11 sm:h-11 rounded-xl object-cover border-2 border-white/80 shadow-md group-hover:scale-105 transition"
                         onerror="this.src='https://placehold.co/100x100/225717/ffffff?text=Loui'">
                     <div class="flex flex-col">
@@ -50,16 +51,16 @@
                 <button onclick="openContactModal()"
                     class="sm:hidden flex items-center gap-1.5 bg-emerald-800/80 hover:bg-emerald-700 text-lime-300 border border-emerald-600/60 text-xs font-bold px-3 py-1.5 rounded-full transition shadow">
                     <i class="ph-bold ph-address-book text-base"></i>
-                    <span>Hubungi Kami</span>
+                    <span>Kontak Toko</span>
                 </button>
             </div>
 
-            <!-- Search Bar Real-time (Mendukung Nama Barang, Pemain, & Nama Tim) -->
+            <!-- Search Bar Real-time (Cari Judul, Edisi, Tim, Kategori) -->
             <div class="w-full sm:w-80 md:w-96 relative">
                 <i
                     class="ph ph-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-emerald-300 text-base"></i>
                 <input id="searchInput" type="text" oninput="handleSearch()"
-                    placeholder="Cari pemain, tim (cth: Madrid, Barca), produk..."
+                    placeholder="Cari pemain, edisi (cth: #12), produk..."
                     class="w-full bg-emerald-900/80 border border-emerald-600/70 rounded-full pl-9 pr-4 py-2 text-xs sm:text-sm text-white placeholder-emerald-300/70 focus:outline-none focus:ring-2 focus:ring-lime-400">
             </div>
 
@@ -75,19 +76,61 @@
         </div>
     </header>
 
-    <!-- HERO SECTION -->
-    <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
+    <!-- HERO SECTION (PROMO PRODUK TERBARU - COMPACT & FULL IMAGE) -->
+    <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-3">
         <div
-            class="relative rounded-2xl sm:rounded-3xl bg-emerald-950/75 backdrop-blur-sm border border-emerald-500/40 text-white p-5 sm:p-7 overflow-hidden shadow-2xl">
-            <div class="relative z-10 max-w-xl">
-                <span
-                    class="bg-lime-400 text-emerald-950 text-[10px] sm:text-[11px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-md inline-block mb-1.5">Official
-                    Drop</span>
-                <h1 class="text-xl sm:text-3xl font-black leading-tight text-white">Stiker, Keychain & Poster Eksklusif
-                </h1>
-                <p class="text-emerald-100/90 text-xs sm:text-sm mt-1">Cari merchandise berdasarkan pemain bintang atau
-                    klub/timnas favoritmu.</p>
+            class="relative rounded-2xl sm:rounded-3xl bg-gradient-to-r from-emerald-950 via-emerald-900 to-green-950 border border-emerald-500/50 text-white p-3.5 sm:p-5 overflow-hidden shadow-lg">
+
+            <!-- Ambient Light -->
+            <div class="absolute -right-16 -top-16 w-48 h-48 rounded-full bg-lime-400/10 blur-2xl pointer-events-none">
             </div>
+
+            <div class="relative z-10 flex flex-col-reverse sm:flex-row items-center justify-between gap-4">
+
+                <!-- Bagian Teks -->
+                <div class="w-full sm:w-3/5 text-left">
+                    <div class="flex items-center gap-1.5 mb-1.5">
+                        <span
+                            class="bg-lime-400 text-emerald-950 text-[9px] sm:text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full shadow-sm">
+                            NEW RELEASE
+                        </span>
+                        <span
+                            class="bg-emerald-800/80 text-lime-300 border border-emerald-600/60 text-[9px] sm:text-[10px] font-bold px-2 py-0.5 rounded-full">
+                            Edisi Terbatas
+                        </span>
+                    </div>
+
+                    <h1 class="text-base sm:text-xl lg:text-2xl font-black leading-tight text-white">
+                        Stickers Edisi #12 Special World Cup 26
+                    </h1>
+
+                    <p class="text-[11px] sm:text-xs text-emerald-100/90 mt-1 leading-relaxed max-w-lg">
+                        Koleksi edisi Piala Dunia 2026 dari <strong class="text-lime-300">LOUIFOOTBALL</strong>. Vinyl
+                        tebal anti air & tahan gores!
+                    </p>
+
+                    <!-- Tombol CTA -->
+                    <div class="mt-3 flex items-center gap-2">
+                        <button onclick="triggerHeroFilter('#12')"
+                            class="bg-lime-400 hover:bg-lime-300 text-emerald-950 text-[11px] sm:text-xs font-black px-4 py-2 rounded-xl shadow transition flex items-center gap-1.5 hover:scale-[1.02]">
+                            <i class="ph-bold ph-arrow-down text-sm"></i>
+                            <span>Lihat di Katalog</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Bagian Gambar Banner (100% Utuh) -->
+                <div class="w-full sm:w-2/5 flex justify-center items-center">
+                    <div
+                        class="relative w-full max-w-[190px] sm:max-w-[210px] md:max-w-[230px] aspect-square bg-emerald-950/70 border border-emerald-500/40 rounded-2xl p-1.5 flex items-center justify-center shadow-md">
+                        <img src="https://res.cloudinary.com/og1jrvy3/image/upload/f_auto,q_auto,w_500/v1789012817/id-11134207-822wj-mpgrp31qsw7j64.webp"
+                            alt="Stickers Edisi #12 Special World Cup 26 - LOUI Football"
+                            class="w-full h-full object-contain rounded-xl drop-shadow">
+                    </div>
+                </div>
+
+            </div>
+
         </div>
     </section>
 
@@ -115,7 +158,7 @@
         <div id="noResult" class="hidden text-center py-12 text-white">
             <i class="ph ph-magnifying-glass text-4xl text-lime-300 mb-2"></i>
             <p class="text-base font-bold">Produk tidak ditemukan</p>
-            <p class="text-xs text-emerald-200/80">Coba cari nama pemain, nama tim/klub lain, atau pilih kategori Semua.
+            <p class="text-xs text-emerald-200/80">Coba cari nama pemain, nomor edisi, atau klik tab kategori di atas.
             </p>
         </div>
 
@@ -167,13 +210,12 @@
                 <i class="ph ph-x font-black text-lg"></i>
             </button>
 
-            <!-- Area Showcase Gambar Penuh (object-contain) -->
+            <!-- Showcase Gambar Penuh -->
             <div
                 class="relative w-full bg-zinc-950 flex items-center justify-center p-4 min-h-[260px] max-h-[380px] sm:max-h-[420px] overflow-hidden border-b border-gray-200">
                 <img id="modalImg" src="" alt="Produk Penuh"
                     class="w-full h-full max-h-[360px] sm:max-h-[400px] object-contain drop-shadow-md rounded-lg">
 
-                <!-- Link Ukuran Asli Cloudinary -->
                 <a id="modalImgLink" href="#" target="_blank"
                     class="absolute bottom-3 right-3 bg-black/70 hover:bg-black text-white text-[11px] font-semibold px-3 py-1.5 rounded-full flex items-center gap-1.5 backdrop-blur-sm transition shadow">
                     <i class="ph-bold ph-arrows-out-simple"></i>
@@ -184,20 +226,17 @@
             <!-- Area Detail Informasi Produk -->
             <div class="p-5 overflow-y-auto">
                 <div class="flex items-center justify-between gap-2">
-                    <span id="modalCategory"
-                        class="text-[10px] font-black uppercase text-emerald-800 tracking-wider bg-emerald-100 px-2.5 py-0.5 rounded-md">Kategori</span>
+                    <div class="flex items-center gap-2">
+                        <span id="modalCategory"
+                            class="text-[10px] font-black uppercase text-emerald-800 tracking-wider bg-emerald-100 px-2.5 py-0.5 rounded-md">Kategori</span>
+                        <span id="modalEdition"
+                            class="text-[10px] font-black uppercase text-amber-900 bg-amber-100 px-2.5 py-0.5 rounded-md border border-amber-200">Edisi</span>
+                    </div>
                     <span id="modalSpec" class="text-[11px] text-gray-500 font-medium">Spesifikasi</span>
                 </div>
 
-                <h2 id="modalTitle" class="text-lg sm:text-xl font-black text-gray-950 mt-2 leading-tight">Nama Produk
+                <h2 id="modalTitle" class="text-lg sm:text-xl font-black text-gray-950 mt-2.5 leading-tight">Nama Produk
                 </h2>
-
-                <!-- Info Tim / Klub -->
-                <div class="flex items-center gap-1.5 text-xs text-emerald-800 font-bold mt-1">
-                    <i class="ph-fill ph-shield-check"></i>
-                    <span id="modalTeam">Tim</span>
-                </div>
-
                 <p id="modalPrice" class="text-2xl font-black text-emerald-800 mt-2">Rp 0</p>
 
                 <p id="modalDesc"
@@ -328,9 +367,9 @@
         const modalImg = document.getElementById('modalImg');
         const modalImgLink = document.getElementById('modalImgLink');
         const modalCategory = document.getElementById('modalCategory');
+        const modalEdition = document.getElementById('modalEdition');
         const modalSpec = document.getElementById('modalSpec');
         const modalTitle = document.getElementById('modalTitle');
-        const modalTeam = document.getElementById('modalTeam');
         const modalPrice = document.getElementById('modalPrice');
         const modalDesc = document.getElementById('modalDesc');
         const modalWaBtn = document.getElementById('modalWaBtn');
@@ -342,6 +381,14 @@
             try {
                 const response = await fetch('products.json');
                 allProducts = await response.json();
+
+                // Urutkan produk otomatis: Edisi TERBARU ke TERLAMA (angka terbesar ke terkecil)
+                allProducts.sort((a, b) => {
+                    const edA = parseInt(a.edition) || 0;
+                    const edB = parseInt(b.edition) || 0;
+                    return edB - edA; // Descending
+                });
+
                 renderProducts();
             } catch (error) {
                 console.error("Gagal membaca products.json:", error);
@@ -355,12 +402,13 @@
             const filtered = allProducts.filter(item => {
                 const matchCat = (activeCategory === 'all' || item.category === activeCategory);
 
-                // Pencarian mencakup: Judul/Pemain, Tim/Klub, dan Deskripsi
+                // Pencarian mencakup: Judul/Pemain, Nomor Edisi, Tim/Klub, dan Deskripsi
                 const titleMatch = item.title.toLowerCase().includes(query);
+                const editionMatch = item.edition ? (`edisi ${item.edition}`.includes(query) || `#${item.edition}`.includes(query) || item.edition.toString() === query) : false;
                 const teamMatch = item.team ? item.team.toLowerCase().includes(query) : false;
                 const descMatch = item.desc.toLowerCase().includes(query);
 
-                return matchCat && (titleMatch || teamMatch || descMatch);
+                return matchCat && (titleMatch || editionMatch || teamMatch || descMatch);
             });
 
             if (filtered.length === 0) {
@@ -373,6 +421,8 @@
                 const badgeColor = item.category === 'stiker' ? 'bg-emerald-700 text-lime-300' :
                     item.category === 'keychain' ? 'bg-amber-600 text-white' : 'bg-purple-700 text-white';
 
+                const editionText = item.edition ? `Edisi #${item.edition}` : 'Special Edition';
+
                 const card = document.createElement('div');
                 card.className = "bg-white rounded-2xl p-3 flex flex-col justify-between hover:shadow-2xl transition duration-150 border-2 border-transparent hover:border-lime-400";
                 card.innerHTML = `
@@ -382,8 +432,7 @@
               <img src="${item.img}" alt="${item.title}" class="w-full h-full object-cover">
             </div>
             
-            <!-- Badge Tim Kecil -->
-            <p class="text-[10px] font-bold text-emerald-800 uppercase line-clamp-1">${item.team || ''}</p>
+            <p class="text-[10px] font-black text-amber-700 tracking-wider uppercase">${editionText}</p>
             <h3 class="font-bold text-xs sm:text-sm text-gray-900 leading-snug line-clamp-2 mt-0.5">${item.title}</h3>
             <p class="text-[11px] text-gray-500 mt-1">${item.spec}</p>
           </div>
@@ -407,12 +456,18 @@
             modalDesc.innerText = item.desc;
             modalCategory.innerText = item.category;
             modalSpec.innerText = item.spec;
-            modalTeam.innerText = item.team ? `Tim / Klub: ${item.team}` : 'Official Merchandise';
+            modalEdition.innerText = item.edition ? `Edisi #${item.edition}` : 'Special Edition';
 
             modalImg.src = item.img;
             modalImgLink.href = item.img;
 
-            const msg = encodeURIComponent(`Halo LOUIFOOTBALL, saya ingin memesan:\n\n*${item.title}*\nTim: ${item.team || '-'}\nHarga: ${item.price}\n\nApakah stok masih ada?`);
+            const editionText = item.edition ? `(Edisi #${item.edition})` : '';
+            const msg = encodeURIComponent(`Halo LOUIFOOTBALL, saya ingin memesan:
+
+*${item.title}* ${editionText}
+Harga: ${item.price}
+
+Apakah stok masih ada?`);
             modalWaBtn.href = `https://wa.me/${WA_NUMBER}?text=${msg}`;
 
             modal.classList.remove('hidden');
@@ -434,13 +489,44 @@
             contactModal.classList.remove('flex');
         }
 
+        // Fungsi klik dari Hero Section
+        function triggerHeroFilter(keyword) {
+            searchInput.value = keyword;
+            renderProducts();
+            document.getElementById('productGrid').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Filter Kategori (Otomatis Reset Kolom Pencarian)
         function filterCategory(category, btnElement) {
             activeCategory = category;
+            searchInput.value = '';
+
             document.querySelectorAll('.cat-btn').forEach(btn => {
                 btn.className = 'cat-btn px-4 py-1.5 rounded-full bg-emerald-950/80 border border-emerald-600/40 text-emerald-100 text-xs font-bold whitespace-nowrap hover:bg-emerald-900';
             });
             btnElement.className = 'cat-btn px-4 py-1.5 rounded-full bg-lime-400 text-emerald-950 text-xs font-black whitespace-nowrap shadow';
+
             renderProducts();
+        }
+
+        // Fungsi Reset Total saat Logo / Brand Diklik
+        function resetToHome(event) {
+            if (event) event.preventDefault();
+
+            searchInput.value = '';
+            activeCategory = 'all';
+
+            const catButtons = document.querySelectorAll('.cat-btn');
+            catButtons.forEach((btn, index) => {
+                if (index === 0) {
+                    btn.className = 'cat-btn px-4 py-1.5 rounded-full bg-lime-400 text-emerald-950 text-xs font-black whitespace-nowrap shadow';
+                } else {
+                    btn.className = 'cat-btn px-4 py-1.5 rounded-full bg-emerald-950/80 border border-emerald-600/40 text-emerald-100 text-xs font-bold whitespace-nowrap hover:bg-emerald-900';
+                }
+            });
+
+            renderProducts();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
         function handleSearch() {
