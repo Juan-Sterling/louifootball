@@ -111,7 +111,7 @@
 
                     <!-- Tombol CTA -->
                     <div class="mt-3 flex items-center gap-2">
-                        <button onclick="triggerHeroFilter('#12')"
+                        <button onclick="triggerHeroFilter('12')"
                             class="bg-lime-400 hover:bg-lime-300 text-emerald-950 text-[11px] sm:text-xs font-black px-4 py-2 rounded-xl shadow transition flex items-center gap-1.5 hover:scale-[1.02]">
                             <i class="ph-bold ph-arrow-down text-sm"></i>
                             <span>Lihat di Katalog</span>
@@ -137,16 +137,28 @@
     <!-- KATALOG UTAMA -->
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex-1 w-full">
 
-        <!-- Kategori Tabs -->
-        <div class="flex items-center gap-2 overflow-x-auto pb-3 mb-4 no-scrollbar">
-            <button onclick="filterCategory('all', this)"
+        <!-- Kategori Tabs Utama -->
+        <div class="flex items-center gap-2 overflow-x-auto pb-2 mb-2 no-scrollbar">
+            <button id="cat-all" onclick="filterCategory('all', this)"
                 class="cat-btn px-4 py-1.5 rounded-full bg-lime-400 text-emerald-950 text-xs font-black whitespace-nowrap shadow">Semua</button>
-            <button onclick="filterCategory('stiker', this)"
+            <button id="cat-stiker" onclick="filterCategory('stiker', this)"
                 class="cat-btn px-4 py-1.5 rounded-full bg-emerald-950/80 border border-emerald-600/40 text-emerald-100 text-xs font-bold whitespace-nowrap hover:bg-emerald-900">Stiker</button>
-            <button onclick="filterCategory('keychain', this)"
+            <button id="cat-keychain" onclick="filterCategory('keychain', this)"
                 class="cat-btn px-4 py-1.5 rounded-full bg-emerald-950/80 border border-emerald-600/40 text-emerald-100 text-xs font-bold whitespace-nowrap hover:bg-emerald-900">Keychain</button>
-            <button onclick="filterCategory('poster', this)"
+            <button id="cat-poster" onclick="filterCategory('poster', this)"
                 class="cat-btn px-4 py-1.5 rounded-full bg-emerald-950/80 border border-emerald-600/40 text-emerald-100 text-xs font-bold whitespace-nowrap hover:bg-emerald-900">Poster</button>
+        </div>
+
+        <!-- Sub-filter Edisi Khusus Kategori Stiker (Hanya Muncul saat Kategori Stiker Aktif) -->
+        <div id="editionFilterContainer"
+            class="hidden items-center gap-1.5 overflow-x-auto pb-3 mb-3 no-scrollbar border-t border-emerald-800/40 pt-2.5">
+            <span
+                class="text-[11px] font-black text-lime-300 uppercase tracking-wider whitespace-nowrap mr-1 flex items-center gap-1">
+                <i class="ph-bold ph-faders"></i> Edisi:
+            </span>
+            <div id="editionButtons" class="flex items-center gap-1.5">
+                <!-- Tombol sub-filter edisi di-generate otomatis via JavaScript -->
+            </div>
         </div>
 
         <!-- Product Grid Dinamis -->
@@ -158,7 +170,7 @@
         <div id="noResult" class="hidden text-center py-12 text-white">
             <i class="ph ph-magnifying-glass text-4xl text-lime-300 mb-2"></i>
             <p class="text-base font-bold">Produk tidak ditemukan</p>
-            <p class="text-xs text-emerald-200/80">Coba cari nama pemain, nomor edisi, atau klik tab kategori di atas.
+            <p class="text-xs text-emerald-200/80">Coba cari nama pemain, edisi lain, atau ganti pilihan filter di atas.
             </p>
         </div>
 
@@ -357,10 +369,13 @@
 
         let allProducts = [];
         let activeCategory = 'all';
+        let activeStickerEdition = 'all'; // State filter edisi stiker
 
         const productGrid = document.getElementById('productGrid');
         const noResult = document.getElementById('noResult');
         const searchInput = document.getElementById('searchInput');
+        const editionFilterContainer = document.getElementById('editionFilterContainer');
+        const editionButtons = document.getElementById('editionButtons');
 
         // Product Modal elements
         const modal = document.getElementById('productModal');
@@ -386,13 +401,37 @@
                 allProducts.sort((a, b) => {
                     const edA = parseInt(a.edition) || 0;
                     const edB = parseInt(b.edition) || 0;
-                    return edB - edA; // Descending
+                    return edB - edA;
                 });
 
+                buildStickerEditionButtons();
                 renderProducts();
             } catch (error) {
                 console.error("Gagal membaca products.json:", error);
             }
+        }
+
+        // Generate tombol filter edisi berdasarkan data stiker yang ada
+        function buildStickerEditionButtons() {
+            const stickerProducts = allProducts.filter(item => item.category === 'stiker' && item.edition);
+            const editions = [...new Set(stickerProducts.map(item => item.edition))];
+
+            // Urutkan edisi dari terbesar ke terkecil
+            editions.sort((a, b) => (parseInt(b) || 0) - (parseInt(a) || 0));
+
+            editionButtons.innerHTML = `
+                <button onclick="filterStickerEdition('all', this)" class="edition-btn px-3 py-1 rounded-lg bg-lime-400 text-emerald-950 text-xs font-black whitespace-nowrap shadow">
+                    Semua Edisi
+                </button>
+            `;
+
+            editions.forEach(ed => {
+                editionButtons.innerHTML += `
+                    <button onclick="filterStickerEdition('${ed}', this)" class="edition-btn px-3 py-1 rounded-lg bg-emerald-950/80 border border-emerald-600/40 text-emerald-200 text-xs font-bold whitespace-nowrap hover:bg-emerald-900">
+                        Edisi #${ed}
+                    </button>
+                `;
+            });
         }
 
         function renderProducts() {
@@ -400,15 +439,22 @@
             productGrid.innerHTML = '';
 
             const filtered = allProducts.filter(item => {
+                // Filter kategori utama
                 const matchCat = (activeCategory === 'all' || item.category === activeCategory);
 
-                // Pencarian mencakup: Judul/Pemain, Nomor Edisi, Tim/Klub, dan Deskripsi
+                // Sub-filter edisi khusus stiker
+                let matchStickerEd = true;
+                if (activeCategory === 'stiker' && activeStickerEdition !== 'all') {
+                    matchStickerEd = item.edition === activeStickerEdition;
+                }
+
+                // Pencarian teks
                 const titleMatch = item.title.toLowerCase().includes(query);
                 const editionMatch = item.edition ? (`edisi ${item.edition}`.includes(query) || `#${item.edition}`.includes(query) || item.edition.toString() === query) : false;
                 const teamMatch = item.team ? item.team.toLowerCase().includes(query) : false;
                 const descMatch = item.desc.toLowerCase().includes(query);
 
-                return matchCat && (titleMatch || editionMatch || teamMatch || descMatch);
+                return matchCat && matchStickerEd && (titleMatch || editionMatch || teamMatch || descMatch);
             });
 
             if (filtered.length === 0) {
@@ -426,23 +472,23 @@
                 const card = document.createElement('div');
                 card.className = "bg-white rounded-2xl p-3 flex flex-col justify-between hover:shadow-2xl transition duration-150 border-2 border-transparent hover:border-lime-400";
                 card.innerHTML = `
-          <div>
-            <div class="relative aspect-square rounded-xl bg-emerald-50 overflow-hidden mb-2.5">
-              <span class="absolute top-2 left-2 ${badgeColor} text-[9px] sm:text-[10px] font-black px-2 py-0.5 rounded shadow capitalize">${item.category}</span>
-              <img src="${item.img}" alt="${item.title}" class="w-full h-full object-cover">
-            </div>
-            
-            <p class="text-[10px] font-black text-amber-700 tracking-wider uppercase">${editionText}</p>
-            <h3 class="font-bold text-xs sm:text-sm text-gray-900 leading-snug line-clamp-2 mt-0.5">${item.title}</h3>
-            <p class="text-[11px] text-gray-500 mt-1">${item.spec}</p>
-          </div>
-          <div class="mt-3 pt-2 border-t border-gray-100">
-            <p class="text-emerald-950 font-black text-sm sm:text-base">${item.price}</p>
-            <button onclick="openModalById('${item.id}')" class="w-full mt-2 bg-emerald-800 hover:bg-emerald-900 text-lime-300 text-xs font-bold py-1.5 sm:py-2 rounded-xl transition">
-              Lihat Detail
-            </button>
-          </div>
-        `;
+                  <div>
+                    <div class="relative aspect-square rounded-xl bg-emerald-50 overflow-hidden mb-2.5">
+                      <span class="absolute top-2 left-2 ${badgeColor} text-[9px] sm:text-[10px] font-black px-2 py-0.5 rounded shadow capitalize">${item.category}</span>
+                      <img src="${item.img}" alt="${item.title}" class="w-full h-full object-cover">
+                    </div>
+                    
+                    <p class="text-[10px] font-black text-amber-700 tracking-wider uppercase">${editionText}</p>
+                    <h3 class="font-bold text-xs sm:text-sm text-gray-900 leading-snug line-clamp-2 mt-0.5">${item.title}</h3>
+                    <p class="text-[11px] text-gray-500 mt-1">${item.spec}</p>
+                  </div>
+                  <div class="mt-3 pt-2 border-t border-gray-100">
+                    <p class="text-emerald-950 font-black text-sm sm:text-base">${item.price}</p>
+                    <button onclick="openModalById('${item.id}')" class="w-full mt-2 bg-emerald-800 hover:bg-emerald-900 text-lime-300 text-xs font-bold py-1.5 sm:py-2 rounded-xl transition">
+                      Lihat Detail
+                    </button>
+                  </div>
+                `;
                 productGrid.appendChild(card);
             });
         }
@@ -464,10 +510,10 @@
             const editionText = item.edition ? `(Edisi #${item.edition})` : '';
             const msg = encodeURIComponent(`Halo LOUIFOOTBALL, saya ingin memesan:
 
-                *${item.title}* ${editionText}
-                Harga: ${item.price}
+*${item.title}* ${editionText}
+Harga: ${item.price}
 
-                Apakah stok masih ada?`);
+Apakah stok masih ada?`);
             modalWaBtn.href = `https://wa.me/${WA_NUMBER}?text=${msg}`;
 
             modal.classList.remove('hidden');
@@ -489,16 +535,10 @@
             contactModal.classList.remove('flex');
         }
 
-        // Fungsi klik dari Hero Section
-        function triggerHeroFilter(keyword) {
-            searchInput.value = keyword;
-            renderProducts();
-            document.getElementById('productGrid').scrollIntoView({ behavior: 'smooth' });
-        }
-
-        // Filter Kategori (Otomatis Reset Kolom Pencarian)
+        // Filter Kategori Utama
         function filterCategory(category, btnElement) {
             activeCategory = category;
+            activeStickerEdition = 'all';
             searchInput.value = '';
 
             document.querySelectorAll('.cat-btn').forEach(btn => {
@@ -506,15 +546,71 @@
             });
             btnElement.className = 'cat-btn px-4 py-1.5 rounded-full bg-lime-400 text-emerald-950 text-xs font-black whitespace-nowrap shadow';
 
+            // Tampilkan sub-filter hanya jika kategori "stiker" dipilih
+            if (activeCategory === 'stiker') {
+                editionFilterContainer.classList.remove('hidden');
+                editionFilterContainer.classList.add('flex');
+                resetEditionBtnStyles('all');
+            } else {
+                editionFilterContainer.classList.add('hidden');
+                editionFilterContainer.classList.remove('flex');
+            }
+
             renderProducts();
         }
 
-        // Fungsi Reset Total saat Logo / Brand Diklik
+        // Sub-filter edisi khusus stiker
+        function filterStickerEdition(edition, btnElement) {
+            activeStickerEdition = edition;
+            searchInput.value = '';
+
+            document.querySelectorAll('.edition-btn').forEach(btn => {
+                btn.className = 'edition-btn px-3 py-1 rounded-lg bg-emerald-950/80 border border-emerald-600/40 text-emerald-200 text-xs font-bold whitespace-nowrap hover:bg-emerald-900';
+            });
+            btnElement.className = 'edition-btn px-3 py-1 rounded-lg bg-lime-400 text-emerald-950 text-xs font-black whitespace-nowrap shadow';
+
+            renderProducts();
+        }
+
+        function resetEditionBtnStyles(targetEdition) {
+            document.querySelectorAll('.edition-btn').forEach(btn => {
+                btn.className = 'edition-btn px-3 py-1 rounded-lg bg-emerald-950/80 border border-emerald-600/40 text-emerald-200 text-xs font-bold whitespace-nowrap hover:bg-emerald-900';
+            });
+            const firstBtn = editionButtons.querySelector('button');
+            if (firstBtn && targetEdition === 'all') {
+                firstBtn.className = 'edition-btn px-3 py-1 rounded-lg bg-lime-400 text-emerald-950 text-xs font-black whitespace-nowrap shadow';
+            }
+        }
+
+        // Klik tombol promo dari Hero Section
+        function triggerHeroFilter(edition) {
+            const stikerBtn = document.getElementById('cat-stiker');
+            filterCategory('stiker', stikerBtn);
+
+            activeStickerEdition = edition;
+            document.querySelectorAll('.edition-btn').forEach(btn => {
+                if (btn.innerText.includes(edition)) {
+                    btn.className = 'edition-btn px-3 py-1 rounded-lg bg-lime-400 text-emerald-950 text-xs font-black whitespace-nowrap shadow';
+                } else {
+                    btn.className = 'edition-btn px-3 py-1 rounded-lg bg-emerald-950/80 border border-emerald-600/40 text-emerald-200 text-xs font-bold whitespace-nowrap hover:bg-emerald-900';
+                }
+            });
+
+            renderProducts();
+            document.getElementById('productGrid').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Reset Total saat Logo Diklik
         function resetToHome(event) {
             if (event) event.preventDefault();
 
             searchInput.value = '';
             activeCategory = 'all';
+            activeStickerEdition = 'all';
+
+            // Sembunyikan sub-filter edisi
+            editionFilterContainer.classList.add('hidden');
+            editionFilterContainer.classList.remove('flex');
 
             const catButtons = document.querySelectorAll('.cat-btn');
             catButtons.forEach((btn, index) => {
