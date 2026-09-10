@@ -464,10 +464,10 @@
             const editionText = item.edition ? `(Edisi #${item.edition})` : '';
             const msg = encodeURIComponent(`Halo LOUIFOOTBALL, saya ingin memesan:
 
-*${item.title}* ${editionText}
-Harga: ${item.price}
+                *${item.title}* ${editionText}
+                Harga: ${item.price}
 
-Apakah stok masih ada?`);
+                Apakah stok masih ada?`);
             modalWaBtn.href = `https://wa.me/${WA_NUMBER}?text=${msg}`;
 
             modal.classList.remove('hidden');

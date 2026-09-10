@@ -2,13 +2,35 @@
     {
         "id": "stiker-01",
         "category": "stiker",
-        "edition": "1",
+        "edition": "7",
         "title": "Cristiano Ronaldo",
-        "team": "Real Madrid, Al Nassr, Portugal",
+        "team": "Al Nassr, Portugal",
         "price": "Rp 10.000",
         "spec": "Vinyl Waterproof • 7 cm",
         "desc": "Bahan vinyl tebal tahan air, panas matahari, dan anti gores. Cocok untuk laptop, helm, dan tumbler.",
         "img": "https://res.cloudinary.com/og1jrvy3/image/upload/v1789009283/706003121_17886065526557650_4959206525920169527_n.jpg"
+    },
+    {
+        "id": "stiker-02",
+        "category": "stiker",
+        "edition": "12",
+        "title": "Kylian Mbappe",
+        "team": "Real Madrid, Prancis",
+        "price": "Rp 10.000",
+        "spec": "Vinyl Waterproof • 7 cm",
+        "desc": "Bahan vinyl tebal tahan air, panas matahari, dan anti gores. Cocok untuk laptop, helm, dan tumbler.",
+        "img": "https://res.cloudinary.com/og1jrvy3/image/upload/v1789014242/id-11134207-822wi-mpgs3i66hki775.webp"
+    },
+    {
+        "id": "stiker-03",
+        "category": "stiker",
+        "edition": "12",
+        "title": "Lamine Yamal",
+        "team": "Barcelona, Spanyol",
+        "price": "Rp 10.000",
+        "spec": "Vinyl Waterproof • 7 cm",
+        "desc": "Bahan vinyl tebal tahan air, panas matahari, dan anti gores. Cocok untuk laptop, helm, dan tumbler.",
+        "img": "https://res.cloudinary.com/og1jrvy3/image/upload/v1789014552/id-11134207-822wp-mpgs4citn5e466_resize_w900_nl.webp"
     },
     {
         "id": "keychain-01",
@@ -26,7 +48,7 @@
         "category": "poster",
         "edition": "3",
         "title": "Poster Lionel Messi 8 Ballon d'Or GOAT",
-        "team": "Barcelona, PSG, Inter Miami, Argentina",
+        "team": "Barcelona",
         "price": "Rp 200.000",
         "spec": "Art Carton 260gr • 32x48 cm",
         "desc": "Poster eksklusif kolektor tribute 8 trofi Ballon d'Or. Resolusi tinggi kualitas gallery.",
