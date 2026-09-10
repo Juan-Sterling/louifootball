@@ -22,6 +22,8 @@
             background-size: cover;
         }
     </style>
+    <!-- Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 
 <body
@@ -211,7 +213,7 @@
     </footer>
 
     <!-- MODAL DETAIL PRODUK -->
-    <div id="productModal"
+    <div id="productModal" onclick="if(event.target === this) closeModal()"
         class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 hidden items-center justify-center p-3 sm:p-4 overflow-y-auto">
         <div
             class="bg-white rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl relative border-4 border-emerald-800 my-auto flex flex-col max-h-[92vh]">
@@ -281,7 +283,7 @@
     </div>
 
     <!-- MODAL CONTACT ME -->
-    <div id="contactModal"
+    <div id="contactModal" onclick="if(event.target === this) closeContactModal()"
         class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
         <div
             class="bg-emerald-950 border-2 border-emerald-600 rounded-3xl max-w-sm w-full p-6 text-white shadow-2xl relative">
@@ -367,6 +369,10 @@
     <script>
         const WA_NUMBER = "62895621072782"; // Nomor WhatsApp Toko
 
+        const SUPABASE_URL = "https://dnnjcwhyyvcetswashku.supabase.co";
+        const SUPABASE_KEY = "sb_publishable__pCa3Ej5Z0G8Irhdw8sbcg_Se8C31Hy";
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
         let allProducts = [];
         let activeCategory = 'all';
         let activeStickerEdition = 'all'; // State filter edisi stiker
@@ -392,23 +398,56 @@
         // Contact Modal
         const contactModal = document.getElementById('contactModal');
 
+        // async function loadProducts() {
+        //     try {
+        //         const response = await fetch('products.json');
+        //         allProducts = await response.json();
+
+        //         // Urutkan produk otomatis: Edisi TERBARU ke TERLAMA (angka terbesar ke terkecil)
+        //         allProducts.sort((a, b) => {
+        //             const edA = parseInt(a.edition) || 0;
+        //             const edB = parseInt(b.edition) || 0;
+        //             return edB - edA;
+        //         });
+
+        //         buildStickerEditionButtons();
+        //         renderProducts();
+        //     } catch (error) {
+        //         console.error("Gagal membaca products.json:", error);
+        //     }
+        // }
+
         async function loadProducts() {
             try {
-                const response = await fetch('products.json');
-                allProducts = await response.json();
+                // Ambil data langsung dari tabel 'products' di Supabase
+                const { data, error } = await supabaseClient
+                    .from('products')
+                    .select('*');
 
-                // Urutkan produk otomatis: Edisi TERBARU ke TERLAMA (angka terbesar ke terkecil)
-                allProducts.sort((a, b) => {
-                    const edA = parseInt(a.edition) || 0;
-                    const edB = parseInt(b.edition) || 0;
-                    return edB - edA;
-                });
+                if (error || !data || data.length === 0) {
+                    throw error || new Error("Data dari Supabase kosong atau bermasalah");
+                }
 
-                buildStickerEditionButtons();
-                renderProducts();
+                allProducts = data;
             } catch (error) {
-                console.error("Gagal membaca products.json:", error);
+                console.warn("Gagal mengambil data dari Supabase, beralih ke products.json:", error);
+                try {
+                    const res = await fetch('products.json');
+                    allProducts = await res.json();
+                } catch (fallbackError) {
+                    console.error("Gagal membaca products.json:", fallbackError);
+                }
             }
+
+            // Urutkan edisi TERBARU ke TERLAMA otomatis
+            allProducts.sort((a, b) => {
+                const edA = parseInt(a.edition) || 0;
+                const edB = parseInt(b.edition) || 0;
+                return edB - edA;
+            });
+
+            buildStickerEditionButtons();
+            renderProducts();
         }
 
         // Generate tombol filter edisi berdasarkan data stiker yang ada
@@ -471,20 +510,21 @@
 
                 const card = document.createElement('div');
                 card.className = "bg-white rounded-2xl p-3 flex flex-col justify-between hover:shadow-2xl transition duration-150 border-2 border-transparent hover:border-lime-400";
+                const formattedPrice = formatRupiah(item.price);
                 card.innerHTML = `
                   <div>
-                    <div class="relative aspect-square rounded-xl bg-emerald-50 overflow-hidden mb-2.5">
-                      <span class="absolute top-2 left-2 ${badgeColor} text-[9px] sm:text-[10px] font-black px-2 py-0.5 rounded shadow capitalize">${item.category}</span>
-                      <img src="${item.img}" alt="${item.title}" class="w-full h-full object-cover">
+                    <div class="relative aspect-square rounded-xl bg-emerald-50 overflow-hidden mb-2.5 cursor-pointer group" onclick="openModalById('${item.id}')">
+                      <span class="absolute top-2 left-2 ${badgeColor} text-[9px] sm:text-[10px] font-black px-2 py-0.5 rounded shadow capitalize z-10">${item.category}</span>
+                      <img src="${item.img}" alt="${item.title}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
                     </div>
                     
                     <p class="text-[10px] font-black text-amber-700 tracking-wider uppercase">${editionText}</p>
-                    <h3 class="font-bold text-xs sm:text-sm text-gray-900 leading-snug line-clamp-2 mt-0.5">${item.title}</h3>
+                    <h3 class="font-bold text-xs sm:text-sm text-gray-900 leading-snug line-clamp-2 mt-0.5 cursor-pointer hover:text-emerald-700 transition" onclick="openModalById('${item.id}')">${item.title}</h3>
                     <p class="text-[11px] text-gray-500 mt-1">${item.spec}</p>
                   </div>
                   <div class="mt-3 pt-2 border-t border-gray-100">
-                    <p class="text-emerald-950 font-black text-sm sm:text-base">${item.price}</p>
-                    <button onclick="openModalById('${item.id}')" class="w-full mt-2 bg-emerald-800 hover:bg-emerald-900 text-lime-300 text-xs font-bold py-1.5 sm:py-2 rounded-xl transition">
+                    <p class="text-emerald-950 font-black text-sm sm:text-base">${formattedPrice}</p>
+                    <button onclick="openModalById('${item.id}')" class="w-full mt-2 bg-emerald-800 hover:bg-emerald-900 text-lime-300 text-xs font-bold py-1.5 sm:py-2 rounded-xl transition cursor-pointer">
                       Lihat Detail
                     </button>
                   </div>
@@ -493,15 +533,23 @@
             });
         }
 
+        function formatRupiah(val) {
+            if (!val) return 'Rp. 0';
+            // Ambil hanya karakter angka jika sewaktu-waktu ada string/simbol yang masuk
+            const number = typeof val === 'number' ? val : parseInt(val.toString().replace(/[^0-9]/g, ''), 10) || 0;
+            return `Rp. ${number.toLocaleString('id-ID')}`;
+        }
+
         function openModalById(id) {
-            const item = allProducts.find(p => p.id === id);
+            const item = allProducts.find(p => String(p.id) === String(id));
             if (!item) return;
+            const displayPrice = formatRupiah(item.price);
 
             modalTitle.innerText = item.title;
-            modalPrice.innerText = item.price;
-            modalDesc.innerText = item.desc;
-            modalCategory.innerText = item.category;
-            modalSpec.innerText = item.spec;
+            modalPrice.innerText = displayPrice;
+            modalDesc.innerText = item.desc || '-';
+            modalCategory.innerText = item.category || '';
+            modalSpec.innerText = item.spec || '';
             modalEdition.innerText = item.edition ? `Edisi #${item.edition}` : 'Special Edition';
 
             modalImg.src = item.img;
@@ -511,7 +559,7 @@
             const msg = encodeURIComponent(`Halo LOUIFOOTBALL, saya ingin memesan:
 
 *${item.title}* ${editionText}
-Harga: ${item.price}
+Harga: ${displayPrice}
 
 Apakah stok masih ada?`);
             modalWaBtn.href = `https://wa.me/${WA_NUMBER}?text=${msg}`;
@@ -628,6 +676,14 @@ Apakah stok masih ada?`);
         function handleSearch() {
             renderProducts();
         }
+
+        // Tutup modal dengan tombol Escape
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeModal();
+                closeContactModal();
+            }
+        });
 
         loadProducts();
     </script>
