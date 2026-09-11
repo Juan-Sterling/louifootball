@@ -279,6 +279,24 @@ function resetEditionBtnStyles(targetEdition) {
     }
 }
 
+// Helper smooth scroll ke katalog dengan offset sticky header
+function scrollToCatalog() {
+    const header = document.querySelector('header');
+    const headerOffset = header ? header.offsetHeight : 70;
+    const targetElement = document.querySelector('main') || document.getElementById('productGrid');
+
+    if (targetElement) {
+        const scrollY = window.scrollY || window.pageYOffset || 0;
+        const elementPosition = targetElement.getBoundingClientRect().top;
+        const offsetPosition = elementPosition + scrollY - headerOffset - 10;
+
+        window.scrollTo({
+            top: Math.max(0, offsetPosition),
+            behavior: 'smooth'
+        });
+    }
+}
+
 // Klik tombol promo dari Hero Section
 function triggerHeroFilter(edition) {
     const stikerBtn = document.getElementById('cat-stiker');
@@ -294,7 +312,7 @@ function triggerHeroFilter(edition) {
     });
 
     renderProducts();
-    document.getElementById('productGrid').scrollIntoView({ behavior: 'smooth' });
+    scrollToCatalog();
 }
 
 // Reset Total saat Logo Diklik
@@ -442,8 +460,7 @@ function handlePromotionAction(actionType, actionTarget) {
         let catBtn = document.getElementById(`cat-${targetCat.replace(/\s+/g, '-')}`);
         if (!catBtn && targetCat === 'all') catBtn = document.getElementById('cat-all');
         filterCategory(targetCat, catBtn || document.querySelector('.cat-btn'));
-        const grid = document.getElementById('productGrid');
-        if (grid) grid.scrollIntoView({ behavior: 'smooth' });
+        scrollToCatalog();
     } else if (type === 'url' || type === 'link') {
         if (target.startsWith('http://') || target.startsWith('https://') || target.startsWith('//')) {
             window.open(target, '_blank');
@@ -457,19 +474,55 @@ function handlePromotionAction(actionType, actionTarget) {
         if (!isNaN(target) && target !== '') {
             triggerHeroFilter(target);
         } else {
-            const grid = document.getElementById('productGrid');
-            if (grid) grid.scrollIntoView({ behavior: 'smooth' });
+            scrollToCatalog();
         }
     }
 }
 
-function triggerPromoActionByIndex(index, event) {
+// State pendeteksi gesture tap vs swipe khusus tombol promo di mobile & desktop
+let promoPointerStartX = 0;
+let promoPointerStartY = 0;
+let promoPointerMoved = false;
+let lastPromoActionTime = 0;
+
+function onPromoPointerDown(e) {
+    promoPointerStartX = e.clientX || (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
+    promoPointerStartY = e.clientY || (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
+    promoPointerMoved = false;
+}
+
+function onPromoPointerMove(e) {
+    const curX = e.clientX || (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
+    const curY = e.clientY || (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
+    if (Math.abs(curX - promoPointerStartX) > 8 || Math.abs(curY - promoPointerStartY) > 8) {
+        promoPointerMoved = true;
+    }
+}
+
+function onPromoPointerUp(index, e) {
+    // Jika hanya tap (bukan gerakan swipe), langsung eksekusi tanpa menunggu click sintetis mobile
+    if (!promoPointerMoved) {
+        executePromoAction(index, e);
+    }
+}
+
+function executePromoAction(index, event) {
+    const now = Date.now();
+    // Debounce 400ms agar jika pointerup dan click terpanggil bersamaan, hanya dieksekusi 1 kali
+    if (now - lastPromoActionTime < 400) return;
+    lastPromoActionTime = now;
+
     if (event) {
-        event.stopPropagation();
+        if (event.stopPropagation) event.stopPropagation();
     }
     const promo = allPromotions[index];
     if (!promo) return;
     handlePromotionAction(promo.action_type, promo.action_target);
+}
+
+// Fallback untuk backward compatibility
+function triggerPromoActionByIndex(index, event) {
+    executePromoAction(index, event);
 }
 
 // Render data promosi ke dalam DOM
@@ -513,7 +566,12 @@ function renderPromotions(promotions) {
                     ${promo.desc}
                 </p>
                 <div class="mt-3 flex items-center gap-2">
-                    <button type="button" onclick="triggerPromoActionByIndex(${index}, event)"
+                    <button type="button"
+                        onpointerdown="onPromoPointerDown(event)"
+                        onpointermove="onPromoPointerMove(event)"
+                        onpointerup="onPromoPointerUp(${index}, event)"
+                        onclick="executePromoAction(${index}, event)"
+                        style="touch-action: manipulation;"
                         class="${theme.btn} text-xs font-black px-4 py-2 rounded-xl shadow transition flex items-center gap-1.5 sm:hover:scale-[1.02] active:scale-95 cursor-pointer touch-manipulation select-auto">
                         <i class="ph-bold ph-arrow-down text-sm pointer-events-none"></i>
                         <span class="pointer-events-none">${promo.btn_text || 'Lihat Promo'}</span>
@@ -698,18 +756,26 @@ if (heroSliderContainer) {
     let touchEndY = 0;
 
     heroSliderContainer.addEventListener('touchstart', e => {
+        // Jangan interupsi atau tangkap sentuhan jika jari menyentuh tombol di dalam carousel
+        if (e.target && e.target.closest && e.target.closest('button')) {
+            return;
+        }
         touchStartX = e.changedTouches[0].clientX;
         touchStartY = e.changedTouches[0].clientY;
         stopAutoSlide();
     }, { passive: true });
 
     heroSliderContainer.addEventListener('touchend', e => {
+        if (e.target && e.target.closest && e.target.closest('button')) {
+            startAutoSlide();
+            return;
+        }
         touchEndX = e.changedTouches[0].clientX;
         touchEndY = e.changedTouches[0].clientY;
         const deltaX = touchStartX - touchEndX;
         const deltaY = touchStartY - touchEndY;
 
-        if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 40) {
+        if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 35) {
             if (deltaX > 0) {
                 nextHeroSlide();
             } else {
