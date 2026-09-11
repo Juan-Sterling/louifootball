@@ -397,35 +397,35 @@ function getPromotionTheme(color) {
         return {
             badgeMain: 'bg-amber-400 text-amber-950',
             badgeSub: 'bg-emerald-800/80 text-lime-300 border border-emerald-600/60',
-            btn: 'bg-amber-400 hover:bg-amber-300 text-amber-950'
+            btn: 'bg-amber-400 sm:hover:bg-amber-300 active:bg-amber-500 text-amber-950'
         };
     }
     if (c === 'purple' || c === 'violet' || c === 'indigo') {
         return {
             badgeMain: 'bg-purple-400 text-purple-950',
             badgeSub: 'bg-emerald-800/80 text-lime-300 border border-emerald-600/60',
-            btn: 'bg-purple-400 hover:bg-purple-300 text-purple-950'
+            btn: 'bg-purple-400 sm:hover:bg-purple-300 active:bg-purple-500 text-purple-950'
         };
     }
     if (c === 'cyan' || c === 'teal' || c === 'sky' || c === 'blue') {
         return {
             badgeMain: 'bg-cyan-400 text-cyan-950',
             badgeSub: 'bg-emerald-800/80 text-lime-300 border border-emerald-600/60',
-            btn: 'bg-cyan-400 hover:bg-cyan-300 text-cyan-950'
+            btn: 'bg-cyan-400 sm:hover:bg-cyan-300 active:bg-cyan-500 text-cyan-950'
         };
     }
     if (c === 'rose' || c === 'red') {
         return {
             badgeMain: 'bg-rose-500 text-white',
             badgeSub: 'bg-emerald-800/80 text-lime-300 border border-emerald-600/60',
-            btn: 'bg-rose-500 hover:bg-rose-400 text-white'
+            btn: 'bg-rose-500 sm:hover:bg-rose-400 active:bg-rose-600 text-white'
         };
     }
     // Default lime
     return {
         badgeMain: 'bg-lime-400 text-emerald-950',
         badgeSub: 'bg-emerald-800/80 text-lime-300 border border-emerald-600/60',
-        btn: 'bg-lime-400 hover:bg-lime-300 text-emerald-950'
+        btn: 'bg-lime-400 sm:hover:bg-lime-300 active:bg-lime-500 text-emerald-950'
     };
 }
 
@@ -510,10 +510,10 @@ function renderPromotions(promotions) {
                     ${promo.desc}
                 </p>
                 <div class="mt-3 flex items-center gap-2">
-                    <button onclick="triggerPromoActionByIndex(${index})"
-                        class="${theme.btn} text-xs font-black px-4 py-2 rounded-xl shadow transition flex items-center gap-1.5 hover:scale-[1.02] cursor-pointer">
-                        <i class="ph-bold ph-arrow-down text-sm"></i>
-                        <span>${promo.btn_text || 'Lihat Promo'}</span>
+                    <button type="button" onclick="triggerPromoActionByIndex(${index})"
+                        class="${theme.btn} text-xs font-black px-4 py-2 rounded-xl shadow transition flex items-center gap-1.5 sm:hover:scale-[1.02] active:scale-95 cursor-pointer touch-manipulation select-none">
+                        <i class="ph-bold ph-arrow-down text-sm pointer-events-none"></i>
+                        <span class="pointer-events-none">${promo.btn_text || 'Lihat Promo'}</span>
                     </button>
                 </div>
             </div>
