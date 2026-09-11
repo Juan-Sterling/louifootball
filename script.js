@@ -336,31 +336,255 @@ document.addEventListener('keydown', (e) => {
 
 loadProducts();
 
-// LOGIKA SLIDER / CAROUSEL (SEAMLESS INFINITE LOOP)
+// ==========================================
+// HERO SECTION CAROUSEL & PROMOTIONS (SUPABASE)
+// ==========================================
 const heroTrack = document.getElementById('heroTrack');
 const heroSliderContainer = document.getElementById('heroSliderContainer');
-const originalSlides = Array.from(heroTrack.children);
-const totalHeroSlides = originalSlides.length; // 3
-let currentHeroSlide = 1; // Mulai dari slide 1 asli (posisi indeks 1 karena ada clone di indeks 0)
+const heroPrevBtn = document.getElementById('heroPrevBtn');
+const heroNextBtn = document.getElementById('heroNextBtn');
+const heroDots = document.getElementById('heroDots');
+
+let allPromotions = [];
+let totalHeroSlides = 0;
+let currentHeroSlide = 1;
 let isTransitioning = false;
 let autoSlideInterval = null;
 let transitionSafetyTimeout = null;
 
-// Gandakan (clone) slide pertama ke akhir & slide terakhir ke awal untuk infinite loop mulus
-const firstClone = originalSlides[0].cloneNode(true);
-const lastClone = originalSlides[totalHeroSlides - 1].cloneNode(true);
-heroTrack.appendChild(firstClone);
-heroTrack.insertBefore(lastClone, originalSlides[0]);
+// Tampilkan state loading skeleton untuk hero carousel
+function showHeroLoadingState() {
+    if (!heroTrack) return;
+    heroTrack.style.transition = 'none';
+    heroTrack.style.transform = 'translateX(0%)';
 
-// Atur posisi awal di slide 1 tanpa animasi
-heroTrack.style.transition = 'none';
-heroTrack.style.transform = `translateX(-${currentHeroSlide * 100}%)`;
-void heroTrack.offsetHeight;
-heroTrack.style.transition = '';
+    // Sembunyikan tombol navigasi dan dots saat loading
+    if (heroPrevBtn) heroPrevBtn.classList.add('hidden');
+    if (heroNextBtn) heroNextBtn.classList.add('hidden');
+    if (heroDots) heroDots.classList.add('hidden');
+
+    heroTrack.innerHTML = `
+        <div id="heroLoadingSkeleton"
+            class="w-full min-w-full max-w-full flex-shrink-0 box-border p-4 pb-7 sm:py-6 sm:px-16 md:px-20 lg:px-24 flex flex-col-reverse sm:flex-row items-center justify-between gap-3 sm:gap-6 animate-pulse">
+            <div class="w-full sm:w-3/5 flex flex-col items-center sm:items-start text-center sm:text-left">
+                <div class="flex items-center gap-2 mb-2">
+                    <div class="h-4 w-20 bg-lime-400/40 rounded-full"></div>
+                    <div class="h-4 w-24 bg-emerald-800/60 rounded-full"></div>
+                </div>
+                <div class="h-6 sm:h-8 w-4/5 bg-emerald-800/50 rounded-xl mb-2"></div>
+                <div class="h-5 sm:h-6 w-3/5 bg-emerald-800/30 rounded-xl mb-3"></div>
+                <div class="h-3.5 w-11/12 bg-emerald-800/25 rounded-md mb-1.5 hidden sm:block"></div>
+                <div class="h-3.5 w-3/4 bg-emerald-800/25 rounded-md mb-4 hidden sm:block"></div>
+                <div class="h-8 sm:h-9 w-36 bg-lime-400/40 rounded-xl"></div>
+            </div>
+            <div class="w-full sm:w-2/5 flex justify-center items-center">
+                <div
+                    class="relative w-full max-w-[135px] sm:max-w-[180px] md:max-w-[210px] aspect-square bg-emerald-950/70 border border-emerald-500/30 rounded-2xl p-2 flex flex-col items-center justify-center shadow-md">
+                    <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-full border-2 border-emerald-500/30 border-t-lime-400 animate-spin flex items-center justify-center mb-2">
+                        <i class="ph-bold ph-soccer-ball text-lime-300 text-lg sm:text-xl"></i>
+                    </div>
+                    <span class="text-[10px] text-emerald-200/80 font-bold tracking-wider">Memuat Promo...</span>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// Tema warna lencana & tombol sesuai badge_color
+function getPromotionTheme(color) {
+    const c = (color || 'lime').toLowerCase().trim();
+    if (c === 'amber' || c === 'yellow' || c === 'orange') {
+        return {
+            badgeMain: 'bg-amber-400 text-amber-950',
+            badgeSub: 'bg-emerald-800/80 text-lime-300 border border-emerald-600/60',
+            btn: 'bg-amber-400 hover:bg-amber-300 text-amber-950'
+        };
+    }
+    if (c === 'purple' || c === 'violet' || c === 'indigo') {
+        return {
+            badgeMain: 'bg-purple-400 text-purple-950',
+            badgeSub: 'bg-emerald-800/80 text-lime-300 border border-emerald-600/60',
+            btn: 'bg-purple-400 hover:bg-purple-300 text-purple-950'
+        };
+    }
+    if (c === 'cyan' || c === 'teal' || c === 'sky' || c === 'blue') {
+        return {
+            badgeMain: 'bg-cyan-400 text-cyan-950',
+            badgeSub: 'bg-emerald-800/80 text-lime-300 border border-emerald-600/60',
+            btn: 'bg-cyan-400 hover:bg-cyan-300 text-cyan-950'
+        };
+    }
+    if (c === 'rose' || c === 'red') {
+        return {
+            badgeMain: 'bg-rose-500 text-white',
+            badgeSub: 'bg-emerald-800/80 text-lime-300 border border-emerald-600/60',
+            btn: 'bg-rose-500 hover:bg-rose-400 text-white'
+        };
+    }
+    // Default lime
+    return {
+        badgeMain: 'bg-lime-400 text-emerald-950',
+        badgeSub: 'bg-emerald-800/80 text-lime-300 border border-emerald-600/60',
+        btn: 'bg-lime-400 hover:bg-lime-300 text-emerald-950'
+    };
+}
+
+// Handler aksi tombol promo
+function handlePromotionAction(actionType, actionTarget) {
+    if (!actionType) return;
+    const type = (actionType || '').toLowerCase().trim();
+    const target = (actionTarget || '').trim();
+
+    if (type === 'edition' || type === 'filter_edition' || type === 'stiker_edition') {
+        triggerHeroFilter(target);
+    } else if (type === 'category' || type === 'filter_category') {
+        const targetCat = target.toLowerCase();
+        let catBtn = document.getElementById(`cat-${targetCat.replace(/\s+/g, '-')}`);
+        if (!catBtn && targetCat === 'all') catBtn = document.getElementById('cat-all');
+        filterCategory(targetCat, catBtn || document.querySelector('.cat-btn'));
+        const grid = document.getElementById('productGrid');
+        if (grid) grid.scrollIntoView({ behavior: 'smooth' });
+    } else if (type === 'url' || type === 'link') {
+        if (target.startsWith('http://') || target.startsWith('https://') || target.startsWith('//')) {
+            window.open(target, '_blank');
+        } else {
+            window.location.href = target;
+        }
+    } else if (type === 'whatsapp' || type === 'wa') {
+        const msg = encodeURIComponent(target || 'Halo LOUIFOOTBALL, saya tertarik dengan promo di website');
+        window.open(`https://wa.me/${WA_NUMBER}?text=${msg}`, '_blank');
+    } else {
+        if (!isNaN(target) && target !== '') {
+            triggerHeroFilter(target);
+        } else {
+            const grid = document.getElementById('productGrid');
+            if (grid) grid.scrollIntoView({ behavior: 'smooth' });
+        }
+    }
+}
+
+function triggerPromoActionByIndex(index) {
+    const promo = allPromotions[index];
+    if (!promo) return;
+    handlePromotionAction(promo.action_type, promo.action_target);
+}
+
+// Render data promosi ke dalam DOM
+function renderPromotions(promotions) {
+    if (!heroTrack) return;
+    heroTrack.innerHTML = '';
+
+    totalHeroSlides = promotions.length;
+
+    if (totalHeroSlides === 0) {
+        if (heroPrevBtn) heroPrevBtn.classList.add('hidden');
+        if (heroNextBtn) heroNextBtn.classList.add('hidden');
+        if (heroDots) heroDots.classList.add('hidden');
+        return;
+    }
+
+    // Render masing-masing slide promo
+    promotions.forEach((promo, index) => {
+        const theme = getPromotionTheme(promo.badge_color);
+        const slide = document.createElement('div');
+        slide.className = 'w-full min-w-full max-w-full flex-shrink-0 box-border p-4 pb-7 sm:py-6 sm:px-16 md:px-20 lg:px-24 flex flex-col-reverse sm:flex-row items-center justify-between gap-3 sm:gap-6';
+
+        slide.innerHTML = `
+            <div class="w-full sm:w-3/5 text-center sm:text-left flex flex-col items-center sm:items-start">
+                <div class="flex items-center gap-1.5 mb-1.5">
+                    ${promo.badge_main ? `
+                        <span class="${theme.badgeMain} text-[9px] sm:text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full shadow-sm">
+                            ${promo.badge_main}
+                        </span>
+                    ` : ''}
+                    ${promo.badge_sub ? `
+                        <span class="${theme.badgeSub} text-[9px] sm:text-[10px] font-bold px-2 py-0.5 rounded-full">
+                            ${promo.badge_sub}
+                        </span>
+                    ` : ''}
+                </div>
+                <h1 class="text-base sm:text-xl lg:text-2xl font-black leading-snug sm:leading-tight text-white">
+                    ${promo.title}
+                </h1>
+                <p class="text-[11px] sm:text-xs text-emerald-100/90 mt-1 leading-relaxed max-w-md">
+                    ${promo.desc}
+                </p>
+                <div class="mt-3 flex items-center gap-2">
+                    <button onclick="triggerPromoActionByIndex(${index})"
+                        class="${theme.btn} text-xs font-black px-4 py-2 rounded-xl shadow transition flex items-center gap-1.5 hover:scale-[1.02] cursor-pointer">
+                        <i class="ph-bold ph-arrow-down text-sm"></i>
+                        <span>${promo.btn_text || 'Lihat Promo'}</span>
+                    </button>
+                </div>
+            </div>
+            <div class="w-full sm:w-2/5 flex justify-center items-center">
+                <div class="relative w-full max-w-[135px] sm:max-w-[180px] md:max-w-[210px] aspect-square bg-emerald-950/70 border border-emerald-500/40 rounded-2xl p-2 flex items-center justify-center shadow-md">
+                    <img src="${promo.img}"
+                        alt="${promo.title} - LOUI Football"
+                        class="w-full h-full object-contain rounded-xl drop-shadow pointer-events-none"
+                        onerror="this.src='https://placehold.co/400x400/022c22/34d399?text=LOUI+PROMO'">
+                </div>
+            </div>
+        `;
+        heroTrack.appendChild(slide);
+    });
+
+    // Inisialisasi Carousel
+    setupHeroCarousel(totalHeroSlides);
+}
+
+// Inisialisasi logika Carousel (Clones & Controls)
+function setupHeroCarousel(totalSlides) {
+    stopAutoSlide();
+
+    if (totalSlides <= 1) {
+        if (heroPrevBtn) heroPrevBtn.classList.add('hidden');
+        if (heroNextBtn) heroNextBtn.classList.add('hidden');
+        if (heroDots) heroDots.classList.add('hidden');
+        heroTrack.style.transition = 'none';
+        heroTrack.style.transform = 'translateX(0%)';
+        return;
+    }
+
+    // Render Dots
+    if (heroDots) {
+        heroDots.innerHTML = '';
+        for (let i = 0; i < totalSlides; i++) {
+            const dot = document.createElement('button');
+            dot.onclick = () => goToHeroSlide(i);
+            dot.className = i === 0 ? "w-5 h-1.5 rounded-full bg-lime-400 transition-all" : "w-2 h-1.5 rounded-full bg-white/40 hover:bg-white/80 transition-all";
+            dot.setAttribute('aria-label', `Slide ${i + 1}`);
+            heroDots.appendChild(dot);
+        }
+        heroDots.classList.remove('hidden');
+    }
+
+    // Gandakan (clone) slide pertama ke akhir & slide terakhir ke awal untuk infinite loop mulus
+    const slides = Array.from(heroTrack.children);
+    const firstClone = slides[0].cloneNode(true);
+    const lastClone = slides[slides.length - 1].cloneNode(true);
+
+    heroTrack.appendChild(firstClone);
+    heroTrack.insertBefore(lastClone, slides[0]);
+
+    // Tampilkan tombol navigasi
+    if (heroPrevBtn) heroPrevBtn.classList.remove('hidden');
+    if (heroNextBtn) heroNextBtn.classList.remove('hidden');
+
+    currentHeroSlide = 1;
+    heroTrack.style.transition = 'none';
+    heroTrack.style.transform = `translateX(-${currentHeroSlide * 100}%)`;
+    void heroTrack.offsetHeight;
+    heroTrack.style.transition = '';
+
+    updateDots();
+    startAutoSlide();
+}
 
 function updateDots() {
+    if (!heroDots || totalHeroSlides <= 1) return;
     const activeDotIndex = (currentHeroSlide - 1 + totalHeroSlides) % totalHeroSlides;
-    const dots = document.querySelectorAll('#heroDots button');
+    const dots = heroDots.querySelectorAll('button');
     dots.forEach((dot, index) => {
         if (index === activeDotIndex) {
             dot.className = "w-5 h-1.5 rounded-full bg-lime-400 transition-all";
@@ -371,16 +595,16 @@ function updateDots() {
 }
 
 function handleTransitionEnd() {
-    if (!isTransitioning) return;
+    if (!isTransitioning || totalHeroSlides <= 1) return;
 
-    // Jika sampai di clone slide 1 (setelah slide 3), teleport secara tak terlihat ke slide 1 asli
+    // Jika sampai di clone slide 1 (setelah slide terakhir), teleport secara tak terlihat ke slide 1 asli
     if (currentHeroSlide === totalHeroSlides + 1) {
         heroTrack.style.transition = 'none';
         currentHeroSlide = 1;
         heroTrack.style.transform = `translateX(-${currentHeroSlide * 100}%)`;
         void heroTrack.offsetHeight;
     }
-    // Jika sampai di clone slide 3 (sebelum slide 1), teleport ke slide 3 asli
+    // Jika sampai di clone slide terakhir (sebelum slide 1), teleport ke slide terakhir asli
     else if (currentHeroSlide === 0) {
         heroTrack.style.transition = 'none';
         currentHeroSlide = totalHeroSlides;
@@ -395,20 +619,22 @@ function handleTransitionEnd() {
     }
 }
 
-heroTrack.addEventListener('transitionend', (e) => {
-    if (e.target === heroTrack && e.propertyName === 'transform') {
-        handleTransitionEnd();
-    }
-});
+if (heroTrack) {
+    heroTrack.addEventListener('transitionend', (e) => {
+        if (e.target === heroTrack && e.propertyName === 'transform') {
+            handleTransitionEnd();
+        }
+    });
+}
 
 function moveToSlide(targetIndex) {
+    if (totalHeroSlides <= 1) return;
     isTransitioning = true;
     currentHeroSlide = targetIndex;
     heroTrack.style.transition = 'transform 500ms cubic-bezier(0.25, 1, 0.5, 1)';
     heroTrack.style.transform = `translateX(-${currentHeroSlide * 100}%)`;
     updateDots();
 
-    // Timeout pengaman jika transitionend terlewatkan (misal saat tab diminimalkan)
     clearTimeout(transitionSafetyTimeout);
     transitionSafetyTimeout = setTimeout(() => {
         if (isTransitioning) {
@@ -418,21 +644,20 @@ function moveToSlide(targetIndex) {
 }
 
 function nextHeroSlide() {
-    if (isTransitioning) return;
+    if (isTransitioning || totalHeroSlides <= 1) return;
     moveToSlide(currentHeroSlide + 1);
 }
 
 function prevHeroSlide() {
-    if (isTransitioning) return;
+    if (isTransitioning || totalHeroSlides <= 1) return;
     moveToSlide(currentHeroSlide - 1);
 }
 
 function goToHeroSlide(targetIndex) {
-    if (isTransitioning) return;
+    if (isTransitioning || totalHeroSlides <= 1) return;
     const currentActive = (currentHeroSlide - 1 + totalHeroSlides) % totalHeroSlides;
     if (targetIndex === currentActive) return;
 
-    // Transisi mulus jika loncat antar ujung
     if (currentActive === totalHeroSlides - 1 && targetIndex === 0) {
         nextHeroSlide();
         return;
@@ -447,19 +672,23 @@ function goToHeroSlide(targetIndex) {
 
 function startAutoSlide() {
     stopAutoSlide();
-    autoSlideInterval = setInterval(nextHeroSlide, 5000);
+    if (totalHeroSlides > 1) {
+        autoSlideInterval = setInterval(nextHeroSlide, 5000);
+    }
 }
 
 function stopAutoSlide() {
-    if (autoSlideInterval) clearInterval(autoSlideInterval);
+    if (autoSlideInterval) {
+        clearInterval(autoSlideInterval);
+        autoSlideInterval = null;
+    }
 }
 
-// Auto-slide dan jeda saat mouse hover
+// Auto-slide dan gesture swipe mobile
 if (heroSliderContainer) {
     heroSliderContainer.addEventListener('mouseenter', stopAutoSlide);
     heroSliderContainer.addEventListener('mouseleave', startAutoSlide);
 
-    // Dukungan Touch Swipe untuk Layar HP yang Akurat & Lancar (Tidak Mengganggu Scroll Halaman)
     let touchStartX = 0;
     let touchStartY = 0;
     let touchEndX = 0;
@@ -477,7 +706,6 @@ if (heroSliderContainer) {
         const deltaX = touchStartX - touchEndX;
         const deltaY = touchStartY - touchEndY;
 
-        // Hanya picu slide jika gerakan horizontal lebih dominan daripada vertical scroll
         if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 40) {
             if (deltaX > 0) {
                 nextHeroSlide();
@@ -489,4 +717,73 @@ if (heroSliderContainer) {
     }, { passive: true });
 }
 
-startAutoSlide();
+// Ambil data promosi dari tabel 'promotions' di Supabase
+async function loadPromotions() {
+    showHeroLoadingState();
+    try {
+        const { data, error } = await supabaseClient
+            .from('promotions')
+            .select('*')
+            .eq('is_active', true)
+            .order('sort_order', { ascending: true })
+            .order('created_at', { ascending: false });
+
+        if (error || !data || data.length === 0) {
+            throw error || new Error("Data promosi kosong atau gagal dimuat dari Supabase");
+        }
+
+        allPromotions = data;
+    } catch (err) {
+        console.warn("Gagal memuat promosi dari Database, beralih ke promo default:", err);
+        allPromotions = [
+            {
+                id: 1,
+                badge_main: "NEW RELEASE",
+                badge_sub: "Edisi Terbatas",
+                badge_color: "lime",
+                title: "Stickers Edisi #12 Special World Cup 26",
+                desc: "Koleksi edisi Piala Dunia 2026 dari LOUIFOOTBALL. Vinyl tebal anti air & tahan gores!",
+                img: "https://res.cloudinary.com/og1jrvy3/image/upload/f_auto,q_auto,w_500/v1789012817/id-11134207-822wj-mpgrp31qsw7j64.webp",
+                action_type: "edition",
+                action_target: "12",
+                btn_text: "Lihat di Katalog",
+                sort_order: 1,
+                is_active: true
+            },
+            {
+                id: 2,
+                badge_main: "POPULAR",
+                badge_sub: "Akrilik HD",
+                badge_color: "amber",
+                title: "Gantungan Kunci Bintang Bola Dunia",
+                desc: "Bahan akrilik premium 3mm cetak 2 sisi tajam dengan ring gantungan anti-karat. Bikin tas & kuncimu makin keren!",
+                img: "https://res.cloudinary.com/og1jrvy3/image/upload/f_auto,q_auto,w_500/v1789010435/id-11134207-8224p-mhun2zrqdkp0af.webp",
+                action_type: "category",
+                action_target: "keychain",
+                btn_text: "Lihat Koleksi Keychain",
+                sort_order: 2,
+                is_active: true
+            },
+            {
+                id: 3,
+                badge_main: "COLLECTOR",
+                badge_sub: "Art Carton 260gr",
+                badge_color: "purple",
+                title: "Poster Estetik GOAT & Football Icons",
+                desc: "Dekorasi dinding kamar dengan momen ikonik pesepak bola dunia. Kualitas cetak studio gallery tahan pudar!",
+                img: "https://res.cloudinary.com/og1jrvy3/image/upload/f_auto,q_auto,w_500/v1789010178/545040561_17848000446557650_323288529526384965_n.jpg",
+                action_type: "category",
+                action_target: "poster",
+                btn_text: "Lihat Koleksi Poster",
+                sort_order: 3,
+                is_active: true
+            }
+        ];
+    }
+
+    renderPromotions(allPromotions);
+}
+
+// Inisialisasi awal pemuatan data promosi
+loadPromotions();
+
