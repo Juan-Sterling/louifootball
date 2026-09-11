@@ -4,6 +4,9 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
     <title>LOUIFOOTBALL | Official Catalog</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -97,7 +100,7 @@
     </header>
 
     <!-- HERO SECTION (INTERACTIVE SLIDER / CAROUSEL - RESPONSIVE MOBILE & DESKTOP) -->
-    <section class="w-full max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 mt-3 relative select-none overflow-hidden">
+    <section class="w-full max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 mt-3 relative overflow-hidden">
         <div class="w-full max-w-full relative rounded-2xl sm:rounded-3xl bg-gradient-to-r from-emerald-950 via-emerald-900 to-green-950 border border-emerald-500/50 text-white overflow-hidden shadow-lg min-w-0"
             id="heroSliderContainer" style="touch-action: pan-y;">
 
@@ -136,16 +139,16 @@
 
             </div>
 
-            <!-- Tombol Panah Kiri / Kanan (Hanya Tampil di Layar Tablet/Desktop setelah data dimuat) -->
+            <!-- Tombol Panah Kiri / Kanan (Hanya Tampil di Layar Tablet/Desktop sm:flex) -->
             <!-- Tombol Kiri -->
             <button id="heroPrevBtn" onclick="prevHeroSlide()" aria-label="Slide Sebelumnya"
-                class="hidden absolute left-3 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-xl bg-emerald-950/80 hover:bg-lime-400 text-lime-300 hover:text-emerald-950 items-center justify-center backdrop-blur-md transition-all duration-200 border border-emerald-500/30 shadow-md hover:scale-105 active:scale-95">
+                class="hidden sm:flex absolute left-3 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-xl bg-emerald-950/80 hover:bg-lime-400 text-lime-300 hover:text-emerald-950 items-center justify-center backdrop-blur-md transition-all duration-200 border border-emerald-500/30 shadow-md hover:scale-105 active:scale-95">
                 <i class="ph-bold ph-caret-left text-lg"></i>
             </button>
 
             <!-- Tombol Kanan -->
             <button id="heroNextBtn" onclick="nextHeroSlide()" aria-label="Slide Berikutnya"
-                class="hidden absolute right-3 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-xl bg-emerald-950/80 hover:bg-lime-400 text-lime-300 hover:text-emerald-950 items-center justify-center backdrop-blur-md transition-all duration-200 border border-emerald-500/30 shadow-md hover:scale-105 active:scale-95">
+                class="hidden sm:flex absolute right-3 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-xl bg-emerald-950/80 hover:bg-lime-400 text-lime-300 hover:text-emerald-950 items-center justify-center backdrop-blur-md transition-all duration-200 border border-emerald-500/30 shadow-md hover:scale-105 active:scale-95">
                 <i class="ph-bold ph-caret-right text-lg"></i>
             </button>
 
@@ -464,7 +467,7 @@
     </div>
 
     <!-- JAVASCRIPT LOGIC (EXTERNAL FILE) -->
-    <script src="script.js"></script>
+    <script src="script.js?v=2.2"></script>
 </body>
 
 </html>

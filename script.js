@@ -359,8 +359,8 @@ function showHeroLoadingState() {
     heroTrack.style.transform = 'translateX(0%)';
 
     // Sembunyikan tombol navigasi dan dots saat loading
-    if (heroPrevBtn) heroPrevBtn.classList.add('hidden');
-    if (heroNextBtn) heroNextBtn.classList.add('hidden');
+    if (heroPrevBtn) heroPrevBtn.style.display = 'none';
+    if (heroNextBtn) heroNextBtn.style.display = 'none';
     if (heroDots) heroDots.classList.add('hidden');
 
     heroTrack.innerHTML = `
@@ -463,7 +463,10 @@ function handlePromotionAction(actionType, actionTarget) {
     }
 }
 
-function triggerPromoActionByIndex(index) {
+function triggerPromoActionByIndex(index, event) {
+    if (event) {
+        event.stopPropagation();
+    }
     const promo = allPromotions[index];
     if (!promo) return;
     handlePromotionAction(promo.action_type, promo.action_target);
@@ -477,8 +480,8 @@ function renderPromotions(promotions) {
     totalHeroSlides = promotions.length;
 
     if (totalHeroSlides === 0) {
-        if (heroPrevBtn) heroPrevBtn.classList.add('hidden');
-        if (heroNextBtn) heroNextBtn.classList.add('hidden');
+        if (heroPrevBtn) heroPrevBtn.style.display = 'none';
+        if (heroNextBtn) heroNextBtn.style.display = 'none';
         if (heroDots) heroDots.classList.add('hidden');
         return;
     }
@@ -510,8 +513,8 @@ function renderPromotions(promotions) {
                     ${promo.desc}
                 </p>
                 <div class="mt-3 flex items-center gap-2">
-                    <button type="button" onclick="triggerPromoActionByIndex(${index})"
-                        class="${theme.btn} text-xs font-black px-4 py-2 rounded-xl shadow transition flex items-center gap-1.5 sm:hover:scale-[1.02] active:scale-95 cursor-pointer touch-manipulation select-none">
+                    <button type="button" onclick="triggerPromoActionByIndex(${index}, event)"
+                        class="${theme.btn} text-xs font-black px-4 py-2 rounded-xl shadow transition flex items-center gap-1.5 sm:hover:scale-[1.02] active:scale-95 cursor-pointer touch-manipulation select-auto">
                         <i class="ph-bold ph-arrow-down text-sm pointer-events-none"></i>
                         <span class="pointer-events-none">${promo.btn_text || 'Lihat Promo'}</span>
                     </button>
@@ -538,8 +541,8 @@ function setupHeroCarousel(totalSlides) {
     stopAutoSlide();
 
     if (totalSlides <= 1) {
-        if (heroPrevBtn) heroPrevBtn.classList.add('hidden');
-        if (heroNextBtn) heroNextBtn.classList.add('hidden');
+        if (heroPrevBtn) heroPrevBtn.style.display = 'none';
+        if (heroNextBtn) heroNextBtn.style.display = 'none';
         if (heroDots) heroDots.classList.add('hidden');
         heroTrack.style.transition = 'none';
         heroTrack.style.transform = 'translateX(0%)';
@@ -567,9 +570,9 @@ function setupHeroCarousel(totalSlides) {
     heroTrack.appendChild(firstClone);
     heroTrack.insertBefore(lastClone, slides[0]);
 
-    // Tampilkan tombol navigasi
-    if (heroPrevBtn) heroPrevBtn.classList.remove('hidden');
-    if (heroNextBtn) heroNextBtn.classList.remove('hidden');
+    // Kembalikan ke kelas responsive Tailwind: 'hidden sm:flex' (tersembunyi di mobile, tampil di desktop)
+    if (heroPrevBtn) heroPrevBtn.style.display = '';
+    if (heroNextBtn) heroNextBtn.style.display = '';
 
     currentHeroSlide = 1;
     heroTrack.style.transition = 'none';
@@ -631,7 +634,7 @@ function moveToSlide(targetIndex) {
     if (totalHeroSlides <= 1) return;
     isTransitioning = true;
     currentHeroSlide = targetIndex;
-    heroTrack.style.transition = 'transform 500ms cubic-bezier(0.25, 1, 0.5, 1)';
+    heroTrack.style.transition = 'transform 300ms cubic-bezier(0.2, 0.8, 0.2, 1)';
     heroTrack.style.transform = `translateX(-${currentHeroSlide * 100}%)`;
     updateDots();
 
@@ -640,7 +643,7 @@ function moveToSlide(targetIndex) {
         if (isTransitioning) {
             handleTransitionEnd();
         }
-    }, 550);
+    }, 320);
 }
 
 function nextHeroSlide() {
