@@ -263,7 +263,9 @@ function openModalById(id) {
     modalEdition.innerText = item.edition ? `Edisi #${item.edition}` : '';
 
     modalImg.src = item.img;
-    modalImgLink.href = item.img;
+    if (modalImgLink && modalImgLink.tagName === 'A') {
+        modalImgLink.href = item.img;
+    }
 
     const editionText = item.edition ? `(Edisi #${item.edition})` : '';
     const msg = encodeURIComponent(`Halo LOUIFOOTBALL, saya ingin memesan:
@@ -291,6 +293,188 @@ function openContactModal() {
 function closeContactModal() {
     contactModal.classList.add('hidden');
     contactModal.classList.remove('flex');
+}
+
+// ==========================================
+// IMAGE ZOOM LIGHTBOX MODAL
+// ==========================================
+const imageZoomModal = document.getElementById('imageZoomModal');
+const zoomImg = document.getElementById('zoomImg');
+const zoomViewport = document.getElementById('zoomViewport');
+const zoomLevelIndicator = document.getElementById('zoomLevelIndicator');
+const zoomProductTitle = document.getElementById('zoomProductTitle');
+
+let currentZoomScale = 1;
+const MIN_ZOOM = 0.6;
+const MAX_ZOOM = 4.0;
+const ZOOM_STEP = 0.25;
+
+let zoomPanX = 0;
+let zoomPanY = 0;
+let isZoomDragging = false;
+let zoomDragStartX = 0;
+let zoomDragStartY = 0;
+let zoomInitialPanX = 0;
+let zoomInitialPanY = 0;
+
+let initialPinchDistance = null;
+let initialPinchScale = 1;
+
+function applyZoomTransform(animate = false) {
+    if (!zoomImg) return;
+    zoomImg.style.transition = animate ? 'transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1)' : 'none';
+    zoomImg.style.transform = `translate(${zoomPanX}px, ${zoomPanY}px) scale(${currentZoomScale})`;
+    if (zoomLevelIndicator) {
+        zoomLevelIndicator.innerText = `${Math.round(currentZoomScale * 100)}%`;
+    }
+}
+
+function openImageZoomModal(customImgSrc, customTitle) {
+    const src = customImgSrc || (modalImg ? modalImg.src : '');
+    const title = customTitle || (modalTitle ? modalTitle.innerText : 'Detail Gambar');
+
+    if (!src) return;
+
+    if (zoomImg) zoomImg.src = src;
+    if (zoomProductTitle) zoomProductTitle.innerText = title;
+
+    currentZoomScale = 1;
+    zoomPanX = 0;
+    zoomPanY = 0;
+    applyZoomTransform(false);
+
+    if (imageZoomModal) {
+        imageZoomModal.classList.remove('hidden');
+        imageZoomModal.classList.add('flex');
+    }
+}
+
+function closeImageZoomModal() {
+    if (!imageZoomModal) return;
+    imageZoomModal.classList.add('hidden');
+    imageZoomModal.classList.remove('flex');
+    currentZoomScale = 1;
+    zoomPanX = 0;
+    zoomPanY = 0;
+    applyZoomTransform(false);
+}
+
+function setZoomScale(newScale) {
+    const clampedScale = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, Math.round(newScale * 100) / 100));
+    if (clampedScale === currentZoomScale) return;
+
+    if (clampedScale <= 1) {
+        zoomPanX = 0;
+        zoomPanY = 0;
+    }
+    currentZoomScale = clampedScale;
+    applyZoomTransform(true);
+}
+
+function zoomInImage() {
+    setZoomScale(currentZoomScale + ZOOM_STEP);
+}
+
+function zoomOutImage() {
+    setZoomScale(currentZoomScale - ZOOM_STEP);
+}
+
+function resetImageZoom() {
+    currentZoomScale = 1;
+    zoomPanX = 0;
+    zoomPanY = 0;
+    applyZoomTransform(true);
+}
+
+// Event listeners untuk Zoom Viewport (Drag, Wheel, Touch Pinch)
+if (zoomViewport) {
+    zoomViewport.addEventListener('mousedown', (e) => {
+        if (e.button !== 0) return;
+        isZoomDragging = true;
+        zoomDragStartX = e.clientX;
+        zoomDragStartY = e.clientY;
+        zoomInitialPanX = zoomPanX;
+        zoomInitialPanY = zoomPanY;
+        zoomViewport.style.cursor = 'grabbing';
+    });
+
+    window.addEventListener('mousemove', (e) => {
+        if (!isZoomDragging) return;
+        const deltaX = e.clientX - zoomDragStartX;
+        const deltaY = e.clientY - zoomDragStartY;
+        zoomPanX = zoomInitialPanX + deltaX;
+        zoomPanY = zoomInitialPanY + deltaY;
+        applyZoomTransform(false);
+    });
+
+    window.addEventListener('mouseup', () => {
+        if (isZoomDragging) {
+            isZoomDragging = false;
+            if (zoomViewport) zoomViewport.style.cursor = 'grab';
+        }
+    });
+
+    zoomViewport.addEventListener('click', (e) => {
+        e.stopPropagation();
+    });
+
+    zoomViewport.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        const delta = e.deltaY < 0 ? ZOOM_STEP : -ZOOM_STEP;
+        setZoomScale(currentZoomScale + delta);
+    }, { passive: false });
+
+    zoomViewport.addEventListener('dblclick', (e) => {
+        e.preventDefault();
+        if (currentZoomScale > 1.2) {
+            resetImageZoom();
+        } else {
+            setZoomScale(2);
+        }
+    });
+
+    zoomViewport.addEventListener('touchstart', (e) => {
+        if (e.touches.length === 1) {
+            isZoomDragging = true;
+            zoomDragStartX = e.touches[0].clientX;
+            zoomDragStartY = e.touches[0].clientY;
+            zoomInitialPanX = zoomPanX;
+            zoomInitialPanY = zoomPanY;
+        } else if (e.touches.length === 2) {
+            isZoomDragging = false;
+            initialPinchDistance = Math.hypot(
+                e.touches[0].clientX - e.touches[1].clientX,
+                e.touches[0].clientY - e.touches[1].clientY
+            );
+            initialPinchScale = currentZoomScale;
+        }
+    }, { passive: true });
+
+    zoomViewport.addEventListener('touchmove', (e) => {
+        if (e.touches.length === 1 && isZoomDragging) {
+            const deltaX = e.touches[0].clientX - zoomDragStartX;
+            const deltaY = e.touches[0].clientY - zoomDragStartY;
+            zoomPanX = zoomInitialPanX + deltaX;
+            zoomPanY = zoomInitialPanY + deltaY;
+            applyZoomTransform(false);
+        } else if (e.touches.length === 2 && initialPinchDistance) {
+            const currentDistance = Math.hypot(
+                e.touches[0].clientX - e.touches[1].clientX,
+                e.touches[0].clientY - e.touches[1].clientY
+            );
+            const scaleFactor = currentDistance / initialPinchDistance;
+            setZoomScale(initialPinchScale * scaleFactor);
+        }
+    }, { passive: true });
+
+    zoomViewport.addEventListener('touchend', (e) => {
+        if (e.touches.length < 2) {
+            initialPinchDistance = null;
+        }
+        if (e.touches.length === 0) {
+            isZoomDragging = false;
+        }
+    }, { passive: true });
 }
 
 // Filter Kategori Utama
@@ -412,11 +596,23 @@ function handleSearch() {
     renderProducts();
 }
 
-// Tutup modal dengan tombol Escape
+// Tutup modal dengan tombol Escape atau shortcut zoom keyboard
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
+        if (imageZoomModal && !imageZoomModal.classList.contains('hidden')) {
+            closeImageZoomModal();
+            return;
+        }
         closeModal();
         closeContactModal();
+    } else if (imageZoomModal && !imageZoomModal.classList.contains('hidden')) {
+        if (e.key === '+' || e.key === '=') {
+            zoomInImage();
+        } else if (e.key === '-' || e.key === '_') {
+            zoomOutImage();
+        } else if (e.key === '0') {
+            resetImageZoom();
+        }
     }
 });
 

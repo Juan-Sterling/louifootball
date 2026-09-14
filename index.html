@@ -336,14 +336,15 @@
             <!-- Showcase Gambar Penuh -->
             <div
                 class="relative w-full bg-zinc-950 flex items-center justify-center p-4 min-h-[260px] max-h-[380px] sm:max-h-[420px] overflow-hidden border-b border-gray-200">
-                <img id="modalImg" src="" alt="Produk Penuh"
-                    class="w-full h-full max-h-[360px] sm:max-h-[400px] object-contain drop-shadow-md rounded-lg">
+                <img id="modalImg" src="" alt="Produk Penuh" onclick="openImageZoomModal()"
+                    class="w-full h-full max-h-[360px] sm:max-h-[400px] object-contain drop-shadow-md rounded-lg cursor-zoom-in hover:scale-[1.01] transition duration-200"
+                    title="Klik untuk memperbesar gambar">
 
-                <a id="modalImgLink" href="#" target="_blank"
-                    class="absolute bottom-3 right-3 bg-black/70 hover:bg-black text-white text-[11px] font-semibold px-3 py-1.5 rounded-full flex items-center gap-1.5 backdrop-blur-sm transition shadow">
-                    <i class="ph-bold ph-arrows-out-simple"></i>
+                <button id="modalImgLink" onclick="openImageZoomModal()" type="button"
+                    class="absolute bottom-3 right-3 bg-black/75 hover:bg-lime-400 hover:text-emerald-950 text-white text-[11px] font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5 backdrop-blur-sm transition shadow cursor-pointer active:scale-95">
+                    <i class="ph-bold ph-magnifying-glass-plus text-sm"></i>
                     <span>Buka Resolusi Penuh</span>
-                </a>
+                </button>
             </div>
 
             <!-- Area Detail Informasi Produk -->
@@ -388,6 +389,52 @@
                 </div>
             </div>
 
+        </div>
+    </div>
+
+    <!-- MODAL IMAGE ZOOM LIGHTBOX -->
+    <div id="imageZoomModal"
+        class="fixed inset-0 bg-black/95 backdrop-blur-md z-[70] hidden flex-col items-center justify-between p-3 sm:p-5 select-none transition-opacity duration-200">
+        
+        <!-- Header Toolbar Modal Zoom -->
+        <div class="w-full max-w-5xl flex items-center justify-between z-30 px-2 py-1">
+            <div class="flex items-center gap-2 overflow-hidden mr-2">
+                <span id="zoomProductTitle" class="text-xs sm:text-sm font-bold text-white/90 truncate">Detail Gambar</span>
+            </div>
+
+            <!-- Tombol Kontrol Zoom -->
+            <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                <!-- Zoom Out -->
+                <button onclick="zoomOutImage()" type="button" aria-label="Perkecil" title="Zoom Out (-)"
+                    class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-white/10 hover:bg-lime-400 hover:text-emerald-950 text-white flex items-center justify-center transition shadow cursor-pointer active:scale-95">
+                    <i class="ph-bold ph-minus text-sm sm:text-base"></i>
+                </button>
+
+                <!-- Zoom Level Indicator (Klik untuk reset ke 100%) -->
+                <button onclick="resetImageZoom()" type="button" title="Reset Ukuran (100%)"
+                    class="h-8 sm:h-9 px-2.5 sm:px-3 rounded-xl bg-white/10 hover:bg-white/20 text-lime-300 font-mono text-xs sm:text-sm font-bold flex items-center justify-center transition cursor-pointer">
+                    <span id="zoomLevelIndicator">100%</span>
+                </button>
+
+                <!-- Zoom In -->
+                <button onclick="zoomInImage()" type="button" aria-label="Perbesar" title="Zoom In (+)"
+                    class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-white/10 hover:bg-lime-400 hover:text-emerald-950 text-white flex items-center justify-center transition shadow cursor-pointer active:scale-95">
+                    <i class="ph-bold ph-plus text-sm sm:text-base"></i>
+                </button>
+
+                <!-- Tutup Modal Zoom -->
+                <button onclick="closeImageZoomModal()" type="button" aria-label="Tutup" title="Tutup (Esc)"
+                    class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-white/20 hover:bg-rose-600 hover:text-white text-white flex items-center justify-center transition ml-1.5 shadow cursor-pointer active:scale-95">
+                    <i class="ph-bold ph-x text-base sm:text-lg"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Area Kanvas Gambar (Bisa Di-drag / Di-pan & Scroll Wheel Zoom) -->
+        <div id="zoomViewport" onclick="event.stopPropagation()"
+            class="relative w-full flex-1 flex items-center justify-center overflow-hidden my-2 cursor-grab active:cursor-grabbing">
+            <img id="zoomImg" src="" alt="Zoom Preview"
+                class="max-w-[92vw] max-h-[85vh] object-contain drop-shadow-2xl select-none transition-transform duration-100 ease-out will-change-transform pointer-events-none">
         </div>
     </div>
 
@@ -475,7 +522,7 @@
     </div>
 
     <!-- JAVASCRIPT LOGIC (EXTERNAL FILE) -->
-    <script src="script.js?v=2.5"></script>
+    <script src="script.js?v=2.7"></script>
 </body>
 
 </html>
