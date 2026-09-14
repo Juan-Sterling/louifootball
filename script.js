@@ -5,6 +5,7 @@ const SUPABASE_KEY = "sb_publishable__pCa3Ej5Z0G8Irhdw8sbcg_Se8C31Hy";
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let allProducts = [];
+let allCategories = [];
 let activeCategory = 'all';
 let activeStickerEdition = 'all'; // State filter edisi stiker
 
@@ -63,24 +64,84 @@ function showLoadingState() {
     `;
 }
 
+// Muat daftar kategori dari tabel 'categories' Supabase
+async function loadCategories() {
+    try {
+        const { data, error } = await supabaseClient
+            .from('categories')
+            .select('*')
+            .order('id', { ascending: true });
+
+        if (!error && data && data.length > 0) {
+            allCategories = data;
+            renderCategoryTabs(allCategories);
+        }
+    } catch (err) {
+        console.warn("Gagal memuat kategori dari Database:", err);
+    }
+}
+
+// Render tombol tabs kategori secara dinamis dari tabel categories
+function renderCategoryTabs(categories) {
+    const categoryTabsContainer = document.getElementById('categoryTabs');
+    if (!categoryTabsContainer || !categories || categories.length === 0) return;
+
+    let html = `
+        <button id="cat-all" onclick="filterCategory('all', this)"
+            class="cat-btn px-4 py-1.5 rounded-full ${activeCategory === 'all' ? 'bg-lime-400 text-emerald-950 font-black' : 'bg-emerald-950/80 border border-emerald-600/40 text-emerald-100 font-bold hover:bg-emerald-900'} text-xs whitespace-nowrap shadow">
+            Semua
+        </button>
+    `;
+
+    categories.forEach(cat => {
+        const slug = (cat.category || '').toLowerCase().trim();
+        const btnId = `cat-${slug.replace(/\s+/g, '-')}`;
+        const isActive = activeCategory === slug;
+        const label = slug.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+
+        html += `
+            <button id="${btnId}" onclick="filterCategory('${slug}', this)"
+                class="cat-btn px-4 py-1.5 rounded-full ${isActive ? 'bg-lime-400 text-emerald-950 font-black' : 'bg-emerald-950/80 border border-emerald-600/40 text-emerald-100 font-bold hover:bg-emerald-900'} text-xs whitespace-nowrap shadow">
+                ${label}
+            </button>
+        `;
+    });
+
+    categoryTabsContainer.innerHTML = html;
+}
+
 async function loadProducts() {
     showLoadingState();
     try {
-        // Ambil data langsung dari tabel 'products' di Database
+        // Ambil data langsung dari tabel 'products' bersama relasi 'categories' di Database
         const { data, error } = await supabaseClient
             .from('products')
-            .select('*');
+            .select('*, categories(*)');
 
         if (error || !data || data.length === 0) {
             throw error || new Error("Data dari Database kosong atau bermasalah");
         }
 
-        allProducts = data;
+        allProducts = data.map(item => {
+            const catObj = item.categories || allCategories.find(c => c.id === item.category_id) || {};
+            return {
+                ...item,
+                category: (catObj.category || item.category || 'lainnya').toLowerCase().trim(),
+                spec: catObj.spec || item.spec || 'Koleksi Resmi',
+                desc: catObj.desc || item.desc || 'Merchandise resmi sepak bola berkualitas dari LOUIFOOTBALL.'
+            };
+        });
     } catch (error) {
         console.warn("Gagal mengambil data dari Database, beralih ke products.json:", error);
         try {
             const res = await fetch('products.json');
-            allProducts = await res.json();
+            const fallbackData = await res.json();
+            allProducts = fallbackData.map(item => ({
+                ...item,
+                category: (item.category || '').toLowerCase().trim(),
+                spec: item.spec || 'Koleksi Resmi',
+                desc: item.desc || ''
+            }));
         } catch (fallbackError) {
             console.error("Gagal membaca products.json:", fallbackError);
         }
@@ -99,8 +160,8 @@ async function loadProducts() {
 
 // Generate tombol filter edisi berdasarkan data stiker yang ada
 function buildStickerEditionButtons() {
-    const stickerProducts = allProducts.filter(item => item.category === 'stiker' && item.edition);
-    const editions = [...new Set(stickerProducts.map(item => item.edition))];
+    const stickerProducts = allProducts.filter(item => item.category === 'stiker' && item.edition && String(item.edition).trim() !== '');
+    const editions = [...new Set(stickerProducts.map(item => String(item.edition).trim()))];
 
     // Urutkan edisi dari terbesar ke terkecil
     editions.sort((a, b) => (parseInt(b) || 0) - (parseInt(a) || 0));
@@ -241,7 +302,14 @@ function filterCategory(category, btnElement) {
     document.querySelectorAll('.cat-btn').forEach(btn => {
         btn.className = 'cat-btn px-4 py-1.5 rounded-full bg-emerald-950/80 border border-emerald-600/40 text-emerald-100 text-xs font-bold whitespace-nowrap hover:bg-emerald-900';
     });
-    btnElement.className = 'cat-btn px-4 py-1.5 rounded-full bg-lime-400 text-emerald-950 text-xs font-black whitespace-nowrap shadow';
+    if (btnElement) {
+        btnElement.className = 'cat-btn px-4 py-1.5 rounded-full bg-lime-400 text-emerald-950 text-xs font-black whitespace-nowrap shadow';
+    } else {
+        const targetBtn = document.getElementById(`cat-${category.replace(/\s+/g, '-')}`) || document.getElementById('cat-all');
+        if (targetBtn) {
+            targetBtn.className = 'cat-btn px-4 py-1.5 rounded-full bg-lime-400 text-emerald-950 text-xs font-black whitespace-nowrap shadow';
+        }
+    }
 
     // Tampilkan sub-filter hanya jika kategori "stiker" dipilih
     if (activeCategory === 'stiker') {
@@ -352,6 +420,7 @@ document.addEventListener('keydown', (e) => {
     }
 });
 
+loadCategories();
 loadProducts();
 
 // ==========================================
