@@ -722,6 +722,31 @@ function handleSearch() {
     renderProducts();
 }
 
+function handleSearchSubmit(event) {
+    if (event) event.preventDefault();
+    if (searchInput) {
+        searchInput.blur(); // Menutup virtual keyboard mobile saat submit/Enter
+    }
+    renderProducts();
+    scrollToCatalog();
+}
+
+if (searchInput) {
+    searchInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            searchInput.blur(); // Menutup virtual keyboard mobile saat tekan tombol Enter
+            renderProducts();
+            scrollToCatalog();
+        }
+    });
+
+    // Menangani ketika tombol silang (clear/cancel) bawaan type="search" diklik
+    searchInput.addEventListener('search', () => {
+        renderProducts();
+    });
+}
+
 // Tutup modal dengan tombol Escape atau shortcut zoom keyboard
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
