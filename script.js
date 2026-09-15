@@ -64,6 +64,29 @@ function showLoadingState() {
     `;
 }
 
+// Helper styling warna badge kategori dinamis
+function getCategoryBadgeStyle(category) {
+    const cat = (category || '').toLowerCase().trim();
+    switch (cat) {
+        case 'stiker':
+            return 'bg-emerald-700 text-lime-300';
+        case 'mini stiker':
+            return 'bg-cyan-700 text-cyan-100';
+        case 'keychain':
+            return 'bg-amber-600 text-white';
+        case 'poster':
+            return 'bg-purple-700 text-white';
+        case 'jersey':
+            return 'bg-rose-700 text-white';
+        case 'apparel':
+            return 'bg-blue-700 text-white';
+        case 'aksesoris':
+            return 'bg-teal-700 text-white';
+        default:
+            return 'bg-emerald-800 text-white';
+    }
+}
+
 // Muat daftar kategori dari tabel 'categories' Supabase
 async function loadCategories() {
     try {
@@ -75,9 +98,22 @@ async function loadCategories() {
         if (!error && data && data.length > 0) {
             allCategories = data;
             renderCategoryTabs(allCategories);
+            return allCategories;
+        } else if (error) {
+            throw error;
         }
     } catch (err) {
-        console.warn("Gagal memuat kategori dari Database:", err);
+        console.warn("Gagal memuat kategori dari Database, menggunakan data cadangan:", err);
+        if (allCategories.length === 0) {
+            allCategories = [
+                { id: 1, category: "stiker", spec: "Vinyl Waterproof • 7 cm", desc: "Bahan vinyl tebal tahan air, panas matahari, dan anti gores. Cocok untuk laptop, helm, dan tumbler." },
+                { id: 2, category: "mini stiker", spec: "Vinyl Waterproof • 4 cm", desc: "Bahan vinyl mini tebal anti air, pas untuk casing handphone, binder, dan jurnal." },
+                { id: 3, category: "keychain", spec: "Akrilik 3mm • 2 Sisi HD", desc: "Akrilik bening 3mm dengan cetak tajam 2 sisi definisi tinggi, dilengkapi ring putar anti karat." },
+                { id: 4, category: "poster", spec: "Art Carton 260gr • 32x48 cm", desc: "Poster eksklusif kualitas cetak studio gallery tahan pudar untuk dekorasi dinding kamar." }
+            ];
+            renderCategoryTabs(allCategories);
+        }
+        return allCategories;
     }
 }
 
@@ -88,20 +124,23 @@ function renderCategoryTabs(categories) {
 
     let html = `
         <button id="cat-all" onclick="filterCategory('all', this)"
-            class="cat-btn px-4 py-1.5 rounded-full ${activeCategory === 'all' ? 'bg-lime-400 text-emerald-950 font-black' : 'bg-emerald-950/80 border border-emerald-600/40 text-emerald-100 font-bold hover:bg-emerald-900'} text-xs whitespace-nowrap shadow">
+            class="cat-btn px-4 py-1.5 rounded-full ${activeCategory === 'all' ? 'bg-lime-400 text-emerald-950 font-black' : 'bg-emerald-950/80 border border-emerald-600/40 text-emerald-100 font-bold hover:bg-emerald-900'} text-xs whitespace-nowrap shadow cursor-pointer transition">
             Semua
         </button>
     `;
 
     categories.forEach(cat => {
-        const slug = (cat.category || '').toLowerCase().trim();
+        const rawCategory = cat.category || '';
+        const slug = rawCategory.toLowerCase().trim();
+        if (!slug) return;
+
         const btnId = `cat-${slug.replace(/\s+/g, '-')}`;
         const isActive = activeCategory === slug;
         const label = slug.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 
         html += `
             <button id="${btnId}" onclick="filterCategory('${slug}', this)"
-                class="cat-btn px-4 py-1.5 rounded-full ${isActive ? 'bg-lime-400 text-emerald-950 font-black' : 'bg-emerald-950/80 border border-emerald-600/40 text-emerald-100 font-bold hover:bg-emerald-900'} text-xs whitespace-nowrap shadow">
+                class="cat-btn px-4 py-1.5 rounded-full ${isActive ? 'bg-lime-400 text-emerald-950 font-black' : 'bg-emerald-950/80 border border-emerald-600/40 text-emerald-100 font-bold hover:bg-emerald-900'} text-xs whitespace-nowrap shadow cursor-pointer transition">
                 ${label}
             </button>
         `;
@@ -301,10 +340,7 @@ function renderProducts() {
     noResult.classList.add('hidden');
 
     filtered.forEach(item => {
-        const badgeColor = item.category === 'stiker' ? 'bg-emerald-700 text-lime-300' :
-            item.category === 'mini stiker' ? 'bg-cyan-700 text-cyan-100' :
-                item.category === 'keychain' ? 'bg-amber-600 text-white' :
-                    'bg-purple-700 text-white';
+        const badgeColor = getCategoryBadgeStyle(item.category);
 
         const editionText = item.edition ? `Edisi #${item.edition}` : '';
 
@@ -706,8 +742,25 @@ document.addEventListener('keydown', (e) => {
     }
 });
 
-loadCategories();
-loadProducts();
+// Inisialisasi Katalog Produk & Kategori secara berurutan
+async function initCatalogData() {
+    await loadCategories();
+    await loadProducts();
+}
+initCatalogData();
+
+// Realtime Listener jika ada penambahan / pembaruan kategori langsung dari Supabase Table Editor
+try {
+    supabaseClient
+        .channel('realtime_categories_channel')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'categories' }, async () => {
+            await loadCategories();
+            renderProducts();
+        })
+        .subscribe();
+} catch (e) {
+    console.debug("Supabase realtime categories subscription not active:", e);
+}
 
 // ==========================================
 // HERO SECTION CAROUSEL & PROMOTIONS (SUPABASE)

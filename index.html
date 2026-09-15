@@ -175,19 +175,19 @@
     <!-- KATALOG UTAMA -->
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex-1 w-full">
 
-        <!-- Kategori Tabs Utama -->
+        <!-- Kategori Tabs Utama (Dirender Dinamis dari Database Supabase - Tabel 'categories') -->
         <div id="categoryTabs" class="flex items-center gap-2 overflow-x-auto pb-2 mb-2 no-scrollbar">
             <button id="cat-all" onclick="filterCategory('all', this)"
-                class="cat-btn px-4 py-1.5 rounded-full bg-lime-400 text-emerald-950 text-xs font-black whitespace-nowrap shadow">Semua</button>
-            <button id="cat-stiker" onclick="filterCategory('stiker', this)"
-                class="cat-btn px-4 py-1.5 rounded-full bg-emerald-950/80 border border-emerald-600/40 text-emerald-100 text-xs font-bold whitespace-nowrap hover:bg-emerald-900">Stiker</button>
-            <button id="cat-mini-stiker" onclick="filterCategory('mini stiker', this)"
-                class="cat-btn px-4 py-1.5 rounded-full bg-emerald-950/80 border border-emerald-600/40 text-emerald-100 text-xs font-bold whitespace-nowrap hover:bg-emerald-900">Mini
-                Stiker</button>
-            <button id="cat-keychain" onclick="filterCategory('keychain', this)"
-                class="cat-btn px-4 py-1.5 rounded-full bg-emerald-950/80 border border-emerald-600/40 text-emerald-100 text-xs font-bold whitespace-nowrap hover:bg-emerald-900">Keychain</button>
-            <button id="cat-poster" onclick="filterCategory('poster', this)"
-                class="cat-btn px-4 py-1.5 rounded-full bg-emerald-950/80 border border-emerald-600/40 text-emerald-100 text-xs font-bold whitespace-nowrap hover:bg-emerald-900">Poster</button>
+                class="cat-btn px-4 py-1.5 rounded-full bg-lime-400 text-emerald-950 text-xs font-black whitespace-nowrap shadow cursor-pointer">
+                Semua
+            </button>
+            <!-- Skeleton pills saat kategori sedang dimuat dari Supabase -->
+            <div id="categoryTabsSkeleton" class="flex items-center gap-2">
+                <div class="h-7 w-16 bg-emerald-900/60 rounded-full animate-pulse"></div>
+                <div class="h-7 w-20 bg-emerald-900/60 rounded-full animate-pulse"></div>
+                <div class="h-7 w-20 bg-emerald-900/60 rounded-full animate-pulse"></div>
+                <div class="h-7 w-16 bg-emerald-900/60 rounded-full animate-pulse"></div>
+            </div>
         </div>
 
         <!-- Sub-filter Edisi Khusus Kategori Stiker -->
@@ -528,7 +528,7 @@
     </div>
 
     <!-- JAVASCRIPT LOGIC (EXTERNAL FILE) -->
-    <script src="script.js?v=2.7"></script>
+    <script src="script.js?v=2.8"></script>
 </body>
 
 </html>
