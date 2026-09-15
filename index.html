@@ -59,7 +59,8 @@
     class="loui-pitch-bg min-h-screen text-gray-900 font-sans antialiased selection:bg-lime-400 selection:text-black flex flex-col justify-between">
 
     <!-- NAVBAR -->
-    <header class="sticky-header sticky top-0 z-50 bg-emerald-950/95 backdrop-blur-md border-b border-emerald-700/50 shadow-lg">
+    <header
+        class="sticky-header sticky top-0 z-50 bg-emerald-950/95 backdrop-blur-md border-b border-emerald-700/50 shadow-lg">
         <div
             class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 sm:py-0 sm:h-18 flex flex-col sm:flex-row items-center justify-between gap-2.5 sm:gap-4">
 
@@ -137,10 +138,12 @@
                     <div class="w-full sm:w-2/5 flex justify-center items-center">
                         <div
                             class="relative w-full max-w-[135px] sm:max-w-[180px] md:max-w-[210px] aspect-square bg-emerald-950/70 border border-emerald-500/30 rounded-2xl p-2 flex flex-col items-center justify-center shadow-md">
-                            <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-full border-2 border-emerald-500/30 border-t-lime-400 animate-spin flex items-center justify-center mb-2">
+                            <div
+                                class="w-10 h-10 sm:w-12 sm:h-12 rounded-full border-2 border-emerald-500/30 border-t-lime-400 animate-spin flex items-center justify-center mb-2">
                                 <i class="ph-bold ph-soccer-ball text-lime-300 text-lg sm:text-xl"></i>
                             </div>
-                            <span class="text-[10px] text-emerald-200/80 font-bold tracking-wider">Memuat Promo...</span>
+                            <span class="text-[10px] text-emerald-200/80 font-bold tracking-wider">Memuat
+                                Promo...</span>
                         </div>
                     </div>
                 </div>
@@ -161,7 +164,8 @@
             </button>
 
             <!-- Titik Navigasi (Indicators) -->
-            <div id="heroDots" class="hidden absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1.5 z-20">
+            <div id="heroDots"
+                class="hidden absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1.5 z-20">
                 <!-- Dots digenerate otomatis via JavaScript -->
             </div>
 
@@ -186,15 +190,16 @@
                 class="cat-btn px-4 py-1.5 rounded-full bg-emerald-950/80 border border-emerald-600/40 text-emerald-100 text-xs font-bold whitespace-nowrap hover:bg-emerald-900">Poster</button>
         </div>
 
-        <!-- Sub-filter Edisi Khusus Kategori Stiker (Hanya Muncul saat Kategori Stiker Aktif) -->
+        <!-- Sub-filter Edisi Khusus Kategori Stiker -->
         <div id="editionFilterContainer"
-            class="hidden items-center gap-1.5 overflow-x-auto pb-3 mb-3 no-scrollbar border-t border-emerald-800/40 pt-2.5">
+            class="hidden items-center gap-2 pb-3 mb-3 border-t border-emerald-800/40 pt-2.5">
             <span
-                class="text-[11px] font-black text-lime-300 uppercase tracking-wider whitespace-nowrap mr-1 flex items-center gap-1">
+                class="text-[11px] font-black text-lime-300 uppercase tracking-wider whitespace-nowrap flex items-center gap-1">
                 <i class="ph-bold ph-faders"></i> Edisi:
             </span>
-            <div id="editionButtons" class="flex items-center gap-1.5">
-                <!-- Tombol sub-filter edisi di-generate otomatis via JavaScript -->
+
+            <div id="editionButtons" class="flex items-center gap-2 w-full sm:w-auto flex-1">
+                <!-- Render dinamis oleh JavaScript -->
             </div>
         </div>
 
@@ -395,11 +400,12 @@
     <!-- MODAL IMAGE ZOOM LIGHTBOX -->
     <div id="imageZoomModal"
         class="fixed inset-0 bg-black/95 backdrop-blur-md z-[70] hidden flex-col items-center justify-between p-3 sm:p-5 select-none transition-opacity duration-200">
-        
+
         <!-- Header Toolbar Modal Zoom -->
         <div class="w-full max-w-5xl flex items-center justify-between z-30 px-2 py-1">
             <div class="flex items-center gap-2 overflow-hidden mr-2">
-                <span id="zoomProductTitle" class="text-xs sm:text-sm font-bold text-white/90 truncate">Detail Gambar</span>
+                <span id="zoomProductTitle" class="text-xs sm:text-sm font-bold text-white/90 truncate">Detail
+                    Gambar</span>
             </div>
 
             <!-- Tombol Kontrol Zoom -->

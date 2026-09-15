@@ -160,25 +160,115 @@ async function loadProducts() {
 
 // Generate tombol filter edisi berdasarkan data stiker yang ada
 function buildStickerEditionButtons() {
-    const stickerProducts = allProducts.filter(item => item.category === 'stiker' && item.edition && String(item.edition).trim() !== '');
-    const editions = [...new Set(stickerProducts.map(item => String(item.edition).trim()))];
+    const stickerProducts = allProducts.filter(item => {
+        const cat = item.category || item.categories?.category || '';
+        return (cat === 'stiker' || item.category_id === 1) && item.edition && String(item.edition).trim() !== '';
+    });
 
-    // Urutkan edisi dari terbesar ke terkecil
-    editions.sort((a, b) => (parseInt(b) || 0) - (parseInt(a) || 0));
+    const rawEditions = [...new Set(stickerProducts.map(item => String(item.edition).trim()))];
+    const specialEditions = [];
+    const numberedEditions = [];
 
-    editionButtons.innerHTML = `
-        <button onclick="filterStickerEdition('all', this)" class="edition-btn px-3 py-1 rounded-lg bg-lime-400 text-emerald-950 text-xs font-black whitespace-nowrap shadow">
-            Semua Edisi
+    rawEditions.forEach(ed => {
+        if (isNaN(ed)) {
+            specialEditions.push(ed);
+        } else {
+            numberedEditions.push(parseInt(ed, 10));
+        }
+    });
+
+    numberedEditions.sort((a, b) => b - a); // Edisi 30, 29, ..., 1
+
+    let html = `
+        <button id="btn-ed-all" onclick="selectEditionTab('all', this)"
+            class="edition-btn px-3 py-1.5 rounded-xl bg-lime-400 text-emerald-950 text-xs font-black whitespace-nowrap shadow flex-shrink-0">
+            Semua
         </button>
     `;
 
-    editions.forEach(ed => {
-        editionButtons.innerHTML += `
-            <button onclick="filterStickerEdition('${ed}', this)" class="edition-btn px-3 py-1 rounded-lg bg-emerald-950/80 border border-emerald-600/40 text-emerald-200 text-xs font-bold whitespace-nowrap hover:bg-emerald-900">
-                Edisi #${ed}
+    // Tombol Edisi Spesial
+    specialEditions.forEach(sp => {
+        html += `
+            <button onclick="selectEditionTab('${sp}', this)"
+                class="edition-btn flex items-center gap-1 px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500/20 to-yellow-500/20 border border-amber-400 text-amber-300 hover:bg-amber-400 hover:text-amber-950 text-xs font-black whitespace-nowrap transition flex-shrink-0 shadow-sm">
+                <i class="ph-fill ph-star text-xs text-amber-400"></i>
+                <span>${sp}</span>
             </button>
         `;
     });
+
+    // Dropdown Khusus Edisi Bernomor
+    if (numberedEditions.length > 0) {
+        html += `
+            <div class="relative flex-1 sm:max-w-[220px]">
+                <select id="numberedEditionDropdown" onchange="selectEditionDropdown(this.value)"
+                    class="w-full bg-emerald-950/90 border border-emerald-600/50 text-emerald-200 text-xs font-bold py-1.5 pl-3 pr-8 rounded-xl focus:outline-none focus:ring-1 focus:ring-lime-400 appearance-none cursor-pointer">
+                    <option value="" disabled selected>Pilih Edisi</option>
+                    ${numberedEditions.map(ed => `<option value="${ed}" class="bg-emerald-950 text-white">Edisi #${ed}</option>`).join('')}
+                </select>
+                <i class="ph-bold ph-caret-down absolute right-2.5 top-1/2 -translate-y-1/2 text-emerald-400 pointer-events-none text-xs"></i>
+            </div>
+        `;
+    }
+
+    editionButtons.innerHTML = html;
+}
+
+// Handler saat tombol (Semua / Spesial) diklik
+function selectEditionTab(edition, btnElement) {
+    activeStickerEdition = edition;
+    searchInput.value = '';
+
+    // Reset tombol biasa
+    document.querySelectorAll('.edition-btn').forEach(btn => {
+        btn.className = 'edition-btn px-3 py-1.5 rounded-xl bg-emerald-950/80 border border-emerald-600/40 text-emerald-200 text-xs font-bold whitespace-nowrap hover:bg-emerald-900 flex-shrink-0';
+    });
+    btnElement.className = 'edition-btn px-3 py-1.5 rounded-xl bg-lime-400 text-emerald-950 text-xs font-black whitespace-nowrap shadow flex-shrink-0';
+
+    // Reset dropdown kembali ke placeholder
+    const selectEl = document.getElementById('numberedEditionDropdown');
+    if (selectEl) {
+        selectEl.selectedIndex = 0;
+        selectEl.className = 'w-full bg-emerald-950/90 border border-emerald-600/50 text-emerald-200 text-xs font-bold py-1.5 pl-3 pr-8 rounded-xl focus:outline-none appearance-none cursor-pointer';
+    }
+
+    renderProducts();
+}
+
+// Handler saat dropdown edisi dipilih
+function selectEditionDropdown(val) {
+    if (!val) return;
+    activeStickerEdition = val;
+    searchInput.value = '';
+
+    // Reset tombol Semua / Spesial
+    document.querySelectorAll('.edition-btn').forEach(btn => {
+        btn.className = 'edition-btn px-3 py-1.5 rounded-xl bg-emerald-950/80 border border-emerald-600/40 text-emerald-200 text-xs font-bold whitespace-nowrap hover:bg-emerald-900 flex-shrink-0';
+    });
+
+    // Beri aksen aktif pada dropdown
+    const selectEl = document.getElementById('numberedEditionDropdown');
+    if (selectEl) {
+        selectEl.className = 'w-full bg-lime-400 border border-lime-400 text-emerald-950 text-xs font-black py-1.5 pl-3 pr-8 rounded-xl focus:outline-none shadow appearance-none cursor-pointer';
+    }
+
+    renderProducts();
+}
+
+// Handler saat admin/user memilih dari dropdown
+function handleOlderEditionChange(selectEl) {
+    const val = selectEl.value;
+    if (!val) return;
+
+    // Reset warna tombol biasa
+    document.querySelectorAll('.edition-btn').forEach(btn => {
+        btn.className = 'edition-btn px-2.5 py-1 rounded-lg bg-emerald-950/80 border border-emerald-600/40 text-emerald-200 text-xs font-bold whitespace-nowrap hover:bg-emerald-900';
+    });
+
+    // Aktifkan gaya visual pada select dropdown
+    selectEl.className = 'edition-btn appearance-none bg-lime-400 text-emerald-950 text-xs font-black py-1 pl-2.5 pr-6 rounded-lg shadow focus:outline-none cursor-pointer';
+
+    filterStickerEdition(val, selectEl);
 }
 
 function renderProducts() {
