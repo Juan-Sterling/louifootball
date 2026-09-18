@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { CaretLeft, CaretRight, ArrowRight } from '@phosphor-icons/react';
+import { CaretLeft, CaretRight, ArrowDown, SoccerBall } from '@phosphor-icons/react';
 import { supabase } from '@/lib/supabase';
 import { WA_NUMBER } from '@/lib/utils';
 
@@ -149,6 +149,7 @@ export default function HeroCarousel({ onSelectCategory, onSelectEdition, onScro
 
     if (type === 'edition' || type === 'filter_edition' || type === 'stiker_edition') {
       if (onSelectEdition) onSelectEdition(target);
+      if (onScrollToCatalog) onScrollToCatalog();
     } else if (type === 'category' || type === 'filter_category') {
       if (onSelectCategory) onSelectCategory(target.toLowerCase());
       if (onScrollToCatalog) onScrollToCatalog();
@@ -187,10 +188,39 @@ export default function HeroCarousel({ onSelectCategory, onSelectEdition, onScro
     }
   };
 
+  // 1. Loading State dengan Animasi Bola Berputar & Skeleton Seperti Versi Sebelumnya
   if (isLoading) {
     return (
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 pb-2 w-full">
-        <div className="w-full bg-emerald-950/80 border border-emerald-600/40 rounded-3xl p-6 sm:p-10 animate-pulse h-56 sm:h-72"></div>
+      <section className="w-full max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 mt-3 relative select-none overflow-hidden">
+        <div className="w-full max-w-full relative rounded-2xl sm:rounded-3xl bg-gradient-to-r from-emerald-950 via-emerald-900 to-green-950 border border-emerald-500/50 text-white overflow-hidden shadow-lg min-w-0">
+          {/* Ambient Light Background */}
+          <div className="absolute -right-16 -top-16 w-48 h-48 rounded-full bg-lime-400/10 blur-2xl pointer-events-none" />
+
+          {/* Skeleton Shimmer Loading Content */}
+          <div className="w-full min-w-full max-w-full flex-shrink-0 box-border p-4 pb-8 sm:py-6 sm:px-16 md:px-20 lg:px-24 flex flex-col-reverse sm:flex-row items-center justify-between gap-3 sm:gap-6 animate-pulse">
+            <div className="w-full sm:w-3/5 flex flex-col items-center sm:items-start text-center sm:text-left">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="h-4 w-20 bg-lime-400/40 rounded-full" />
+                <div className="h-4 w-24 bg-emerald-800/60 rounded-full" />
+              </div>
+              <div className="h-6 sm:h-8 w-4/5 bg-emerald-800/50 rounded-xl mb-2" />
+              <div className="h-5 sm:h-6 w-3/5 bg-emerald-800/30 rounded-xl mb-3" />
+              <div className="h-3.5 w-11/12 bg-emerald-800/25 rounded-md mb-1.5 hidden sm:block" />
+              <div className="h-3.5 w-3/4 bg-emerald-800/25 rounded-md mb-4 hidden sm:block" />
+              <div className="h-8 sm:h-9 w-36 bg-lime-400/40 rounded-xl" />
+            </div>
+            <div className="w-full sm:w-2/5 flex justify-center items-center">
+              <div className="relative w-full max-w-[135px] sm:max-w-[180px] md:max-w-[210px] aspect-square bg-emerald-950/70 border border-emerald-500/30 rounded-2xl p-2 flex flex-col items-center justify-center shadow-md">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full border-2 border-emerald-500/30 border-t-lime-400 animate-spin flex items-center justify-center mb-2">
+                  <SoccerBall size={22} weight="bold" className="text-lime-300 text-lg sm:text-xl" />
+                </div>
+                <span className="text-[10px] text-emerald-200/80 font-bold tracking-wider">
+                  Memuat Promo...
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
       </section>
     );
   }
@@ -201,73 +231,86 @@ export default function HeroCarousel({ onSelectCategory, onSelectEdition, onScro
   const theme = getPromoTheme(currentPromo.badge_color);
 
   return (
-    <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 pb-2 w-full">
+    <section className="w-full max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 mt-3 relative select-none overflow-hidden">
+      {/* 2. Background Gradient & Ambient Light Lapangan Seperti Aslinya */}
       <div
-        className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-900/90 via-emerald-950/95 to-zinc-950 border border-emerald-500/30 shadow-2xl backdrop-blur-sm"
+        className="w-full max-w-full relative rounded-2xl sm:rounded-3xl bg-gradient-to-r from-emerald-950 via-emerald-900 to-green-950 border border-emerald-500/50 text-white overflow-hidden shadow-lg min-w-0"
         onMouseEnter={() => setIsPaused(true)}
         onMouseLeave={() => setIsPaused(false)}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
       >
-        <div className="relative w-full min-h-[260px] sm:min-h-[290px] flex items-center">
-          <div className="w-full p-5 sm:p-8 md:p-10 flex flex-col-reverse sm:flex-row items-center justify-between gap-5 sm:gap-8 transition-opacity duration-300">
-            
-            {/* Teks Promo */}
-            <div className="w-full sm:w-3/5 text-center sm:text-left flex flex-col items-center sm:items-start">
-              {/* Badges */}
-              <div className="flex items-center gap-2 mb-2 sm:mb-2.5">
-                <span className={`px-2.5 py-0.5 rounded-full text-[10px] sm:text-xs tracking-wider shadow ${theme.badgeMain}`}>
+        {/* Ambient Light Background */}
+        <div className="absolute -right-16 -top-16 w-48 h-48 rounded-full bg-lime-400/10 blur-2xl pointer-events-none" />
+        <div className="absolute -left-12 -bottom-12 w-44 h-44 rounded-full bg-emerald-500/10 blur-2xl pointer-events-none" />
+
+        {/* 3. Area Konten Slide dengan Padding Lebar (sm:px-16 md:px-20 lg:px-24) agar tidak mepet dengan tombol kiri/kanan */}
+        <div className="w-full min-w-full max-w-full flex-shrink-0 box-border p-4 pb-8 sm:py-6 sm:px-16 md:px-20 lg:px-24 flex flex-col-reverse sm:flex-row items-center justify-between gap-3 sm:gap-6 transition-opacity duration-300">
+          
+          {/* Teks Promo */}
+          <div className="w-full sm:w-3/5 text-center sm:text-left flex flex-col items-center sm:items-start">
+            {/* Badges */}
+            <div className="flex items-center gap-1.5 mb-1.5">
+              {currentPromo.badge_main && (
+                <span className={`${theme.badgeMain} text-[9px] sm:text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full shadow-sm`}>
                   {currentPromo.badge_main}
                 </span>
-                <span className={`px-2.5 py-0.5 rounded-full text-[10px] sm:text-xs font-bold tracking-wide backdrop-blur-sm ${theme.badgeSub}`}>
+              )}
+              {currentPromo.badge_sub && (
+                <span className={`${theme.badgeSub} text-[9px] sm:text-[10px] font-bold px-2 py-0.5 rounded-full`}>
                   {currentPromo.badge_sub}
                 </span>
-              </div>
+              )}
+            </div>
 
-              {/* Title */}
-              <h1 className="text-lg sm:text-2xl md:text-3xl font-black text-white leading-tight tracking-tight mb-2 sm:mb-3">
-                {currentPromo.title}
-              </h1>
+            {/* Judul Promo */}
+            <h1 className="text-base sm:text-xl lg:text-2xl font-black leading-snug sm:leading-tight text-white">
+              {currentPromo.title}
+            </h1>
 
-              {/* Desc */}
-              <p className="text-emerald-200/90 text-xs sm:text-sm leading-relaxed mb-4 max-w-xl">
-                {currentPromo.desc}
-              </p>
+            {/* Deskripsi Promo */}
+            <p className="text-[11px] sm:text-xs text-emerald-100/90 mt-1 leading-relaxed max-w-md">
+              {currentPromo.desc}
+            </p>
 
-              {/* CTA Button */}
+            {/* Tombol Aksi CTA */}
+            <div className="mt-3 flex items-center gap-2">
               <button
-                onClick={() => handleAction(currentPromo)}
                 type="button"
-                className={`px-5 py-2.5 rounded-xl font-black text-xs sm:text-sm flex items-center gap-2 shadow-lg hover:scale-105 active:scale-95 transition cursor-pointer ${theme.btn}`}
+                onClick={() => handleAction(currentPromo)}
+                className={`${theme.btn} text-xs font-black px-4 py-2 rounded-xl shadow transition flex items-center gap-1.5 sm:hover:scale-[1.02] active:scale-95 cursor-pointer`}
               >
-                <span>{currentPromo.btn_text || 'Lihat Koleksi'}</span>
-                <ArrowRight size={16} weight="bold" />
+                <ArrowDown size={15} weight="bold" />
+                <span>{currentPromo.btn_text || 'Lihat Promo'}</span>
               </button>
             </div>
-
-            {/* Gambar Promo */}
-            <div className="w-full sm:w-2/5 flex items-center justify-center">
-              <div className="relative w-36 h-36 sm:w-52 sm:h-52 md:w-56 md:h-56 rounded-2xl bg-emerald-950/60 border border-emerald-500/30 p-2.5 flex items-center justify-center shadow-xl">
-                <img
-                  src={currentPromo.img}
-                  alt={currentPromo.title}
-                  className="w-full h-full object-contain drop-shadow-md hover:scale-105 transition duration-300"
-                />
-              </div>
-            </div>
-
           </div>
+
+          {/* Gambar Promo dengan Wadah Kotak Sesuai Desain Asli */}
+          <div className="w-full sm:w-2/5 flex justify-center items-center">
+            <div className="relative w-full max-w-[135px] sm:max-w-[180px] md:max-w-[210px] aspect-square bg-emerald-950/70 border border-emerald-500/40 rounded-2xl p-2 flex items-center justify-center shadow-md">
+              <img
+                src={currentPromo.img}
+                alt={`${currentPromo.title} - LOUI Football`}
+                className="w-full h-full object-contain rounded-xl drop-shadow pointer-events-none"
+                onError={(e) => {
+                  e.currentTarget.src = 'https://placehold.co/400x400/022c22/34d399?text=LOUI+PROMO';
+                }}
+              />
+            </div>
+          </div>
+
         </div>
 
-        {/* Tombol Panah Kiri / Kanan (Hanya Desktop sm:flex) */}
+        {/* Tombol Panah Kiri / Kanan (Hanya Tampil di Layar Tablet/Desktop sm:flex) */}
         {promotions.length > 1 && (
           <>
             <button
               onClick={handlePrev}
               type="button"
               aria-label="Slide Sebelumnya"
-              className="hidden sm:flex absolute left-3 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-xl bg-emerald-950/80 hover:bg-lime-400 text-lime-300 hover:text-emerald-950 items-center justify-center backdrop-blur-md transition border border-emerald-500/30 shadow-md hover:scale-105 active:scale-95 cursor-pointer"
+              className="hidden sm:flex absolute left-3 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-xl bg-emerald-950/80 hover:bg-lime-400 text-lime-300 hover:text-emerald-950 items-center justify-center backdrop-blur-md transition-all duration-200 border border-emerald-500/30 shadow-md hover:scale-105 active:scale-95 cursor-pointer"
             >
               <CaretLeft size={20} weight="bold" />
             </button>
@@ -276,24 +319,24 @@ export default function HeroCarousel({ onSelectCategory, onSelectEdition, onScro
               onClick={handleNext}
               type="button"
               aria-label="Slide Berikutnya"
-              className="hidden sm:flex absolute right-3 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-xl bg-emerald-950/80 hover:bg-lime-400 text-lime-300 hover:text-emerald-950 items-center justify-center backdrop-blur-md transition border border-emerald-500/30 shadow-md hover:scale-105 active:scale-95 cursor-pointer"
+              className="hidden sm:flex absolute right-3 top-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-xl bg-emerald-950/80 hover:bg-lime-400 text-lime-300 hover:text-emerald-950 items-center justify-center backdrop-blur-md transition-all duration-200 border border-emerald-500/30 shadow-md hover:scale-105 active:scale-95 cursor-pointer"
             >
               <CaretRight size={20} weight="bold" />
             </button>
           </>
         )}
 
-        {/* Titik Navigasi (Indicators) */}
+        {/* Titik Navigasi (Indicators) di Bagian Bawah dengan Jarak Bersih */}
         {promotions.length > 1 && (
-          <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 flex items-center gap-1.5 z-20">
+          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1.5 z-20">
             {promotions.map((_, idx) => (
               <button
                 key={idx}
                 onClick={() => setCurrentIndex(idx)}
                 type="button"
                 aria-label={`Ke slide ${idx + 1}`}
-                className={`h-2 rounded-full transition-all duration-300 cursor-pointer ${
-                  currentIndex === idx ? 'w-6 bg-lime-400' : 'w-2 bg-emerald-700/60 hover:bg-emerald-500'
+                className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${
+                  currentIndex === idx ? 'w-5 bg-lime-400' : 'w-2 bg-white/40 hover:bg-white/80'
                 }`}
               />
             ))}
