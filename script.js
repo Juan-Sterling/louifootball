@@ -167,8 +167,11 @@ async function loadProducts() {
 
         allProducts = data.map(item => {
             const catObj = item.categories || allCategories.find(c => c.id === item.category_id) || {};
+            const playerName = item.player_name || item.title || 'Produk Loui';
             return {
                 ...item,
+                player_name: playerName,
+                title: playerName,
                 category: (catObj.category || item.category || 'lainnya').toLowerCase().trim(),
                 team: item.team ? String(item.team).trim() : '',
                 year: item.year ? String(item.year).trim() : '',
@@ -181,14 +184,19 @@ async function loadProducts() {
         try {
             const res = await fetch('products.json');
             const fallbackData = await res.json();
-            allProducts = fallbackData.map(item => ({
-                ...item,
-                category: (item.category || '').toLowerCase().trim(),
-                team: item.team ? String(item.team).trim() : '',
-                year: item.year ? String(item.year).trim() : '',
-                spec: item.spec || 'Koleksi Resmi',
-                desc: item.desc || ''
-            }));
+            allProducts = fallbackData.map(item => {
+                const playerName = item.player_name || item.title || 'Produk Loui';
+                return {
+                    ...item,
+                    player_name: playerName,
+                    title: playerName,
+                    category: (item.category || '').toLowerCase().trim(),
+                    team: item.team ? String(item.team).trim() : '',
+                    year: item.year ? String(item.year).trim() : '',
+                    spec: item.spec || 'Koleksi Resmi',
+                    desc: item.desc || ''
+                };
+            });
         } catch (fallbackError) {
             console.error("Gagal membaca products.json:", fallbackError);
         }
@@ -333,7 +341,7 @@ function renderProducts() {
         }
 
         // Pencarian teks
-        const titleMatch = item.title.toLowerCase().includes(query);
+        const titleMatch = (item.player_name || item.title || '').toLowerCase().includes(query);
         const editionMatch = item.edition ? (`edisi ${item.edition}`.includes(query) || `#${item.edition}`.includes(query) || item.edition.toString() === query) : false;
         const teamMatch = item.team ? item.team.toLowerCase().includes(query) : false;
         const yearMatch = item.year ? item.year.toLowerCase().includes(query) : false;
@@ -350,7 +358,7 @@ function renderProducts() {
 
     filtered.forEach(item => {
         const badgeColor = getCategoryBadgeStyle(item.category);
-
+        const productName = item.player_name || item.title || 'Produk Loui';
         const editionText = item.edition ? `Edisi #${item.edition}` : '';
 
         // Format Tim dan Tahun (menggantikan spesifikasi)
@@ -368,11 +376,11 @@ function renderProducts() {
           <div>
             <div class="relative aspect-square rounded-xl bg-emerald-50 overflow-hidden mb-2.5 cursor-pointer group" onclick="openModalById('${item.id}')">
               <span class="absolute top-2 left-2 ${badgeColor} text-[9px] sm:text-[10px] font-black px-2 py-0.5 rounded shadow capitalize z-10">${item.category}</span>
-              <img src="${item.img}" alt="${item.title}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
+              <img src="${item.img}" alt="${productName}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
             </div>
             
             <p class="text-[10px] font-black text-amber-700 tracking-wider uppercase">${editionText}</p>
-            <h3 class="font-bold text-xs sm:text-sm text-gray-900 leading-snug line-clamp-2 mt-0.5 cursor-pointer hover:text-emerald-700 transition" onclick="openModalById('${item.id}')">${item.title}</h3>
+            <h3 class="font-bold text-xs sm:text-sm text-gray-900 leading-snug line-clamp-2 mt-0.5 cursor-pointer hover:text-emerald-700 transition" onclick="openModalById('${item.id}')">${productName}</h3>
             ${teamYearDisplay ? `<p class="text-[11px] text-gray-500 mt-1 truncate font-medium" title="${teamYearDisplay}">${teamYearDisplay}</p>` : '<p class="text-[11px] text-transparent mt-1 select-none">-</p>'}
           </div>
           <div class="mt-3 pt-2 border-t border-gray-100">
@@ -397,8 +405,9 @@ function openModalById(id) {
     const item = allProducts.find(p => String(p.id) === String(id));
     if (!item) return;
     const displayPrice = formatRupiah(item.price);
+    const productName = item.player_name || item.title || 'Produk Loui';
 
-    modalTitle.innerText = item.title;
+    modalTitle.innerText = productName;
     modalPrice.innerText = displayPrice;
     modalDesc.innerText = item.desc || '-';
     modalCategory.innerText = item.category || '';
@@ -448,7 +457,7 @@ function openModalById(id) {
 
     const msg = encodeURIComponent(`Halo LOUIFOOTBALL, saya ingin memesan:
 
-*${item.title}* ${editionText}${teamYearWaText}
+*${productName}* ${editionText}${teamYearWaText}
 Harga: ${displayPrice}
 
 Apakah stok masih ada?`);
