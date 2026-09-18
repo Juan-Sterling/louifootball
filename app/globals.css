@@ -1,0 +1,41 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Background motif sunburst hijau rumput lapangan */
+.loui-pitch-bg {
+  background-color: #27671c;
+  background-image:
+    radial-gradient(circle at center, rgba(74, 154, 52, 0.45) 0%, rgba(18, 54, 13, 0.95) 100%),
+    repeating-conic-gradient(from 0deg,
+      #397e26 0deg 7.5deg,
+      #225717 7.5deg 15deg);
+  background-attachment: fixed;
+  background-size: cover;
+}
+
+/* Cegah overscroll horizontal tanpa mematikan fitur position: sticky */
+html,
+body {
+  overflow-x: clip;
+  width: 100%;
+  max-width: 100vw;
+}
+
+/* Pastikan header sticky selalu menempel di bagian paling atas */
+header.sticky-header {
+  position: -webkit-sticky;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+/* Hilangkan tampilan scrollbar untuk kategori pills */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
