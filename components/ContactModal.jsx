@@ -3,9 +3,10 @@
 import React, { useEffect } from 'react';
 import {
   X,
+  ChatCircleText,
   WhatsappLogo,
   InstagramLogo,
-  TiktokLogo,
+  ShoppingBagOpen,
   Storefront,
   CaretRight,
 } from '@phosphor-icons/react';
@@ -31,28 +32,33 @@ export default function ContactModal({ isOpen, onClose }) {
       }}
       className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fadeIn"
     >
-      <div className="bg-emerald-950/95 border border-emerald-500/40 rounded-3xl max-w-sm w-full p-5 sm:p-6 text-white shadow-2xl relative">
+      <div className="bg-emerald-950 border-2 border-emerald-600 rounded-3xl max-w-sm w-full p-6 text-white shadow-2xl relative">
         <button
           onClick={onClose}
           type="button"
           aria-label="Tutup"
-          className="absolute top-4 right-4 text-emerald-300 hover:text-white transition cursor-pointer"
+          className="absolute top-4 right-4 bg-emerald-900 hover:bg-emerald-800 text-emerald-300 p-2 rounded-full shadow cursor-pointer transition"
         >
-          <X size={20} weight="bold" />
+          <X size={18} weight="bold" />
         </button>
 
-        <h3 className="text-lg font-black text-white mb-1">Hubungi LOUIFOOTBALL</h3>
-        <p className="text-xs text-emerald-200/80 mb-5">
-          Tanyakan stok, custom stiker, atau pemesanan langsung lewat kontak kami:
-        </p>
+        <div className="text-center mb-5">
+          <div className="w-12 h-12 bg-lime-400 text-emerald-950 rounded-2xl mx-auto flex items-center justify-center font-black text-xl mb-2 shadow">
+            <ChatCircleText size={26} weight="bold" />
+          </div>
+          <h3 className="text-lg font-black text-white">Hubungi LOUIFOOTBALL</h3>
+          <p className="text-xs text-emerald-200/80 mt-1">
+            Pilih saluran kontak atau marketplace resmi kami:
+          </p>
+        </div>
 
         <div className="space-y-2.5">
-          {/* WhatsApp */}
+          {/* WhatsApp Admin */}
           <a
-            href={`https://wa.me/${WA_NUMBER}?text=Halo%20LOUIFOOTBALL,%20saya%20ingin%20bertanya%20tentang%20merchandise%20katalog`}
+            href={`https://wa.me/${WA_NUMBER}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center justify-between p-3 rounded-2xl bg-emerald-900/60 hover:bg-emerald-800/80 border border-emerald-600/40 transition group"
+            className="flex items-center justify-between p-3 rounded-2xl bg-emerald-900/80 hover:bg-emerald-800 border border-emerald-700/60 transition group cursor-pointer"
           >
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl bg-green-500/20 text-green-400 flex items-center justify-center text-xl">
@@ -60,7 +66,7 @@ export default function ContactModal({ isOpen, onClose }) {
               </div>
               <div>
                 <p className="text-xs font-bold text-white">WhatsApp Admin</p>
-                <p className="text-[10px] text-emerald-300">Fast Response</p>
+                <p className="text-[10px] text-emerald-300">Fast response order & custom</p>
               </div>
             </div>
             <CaretRight size={16} weight="bold" className="text-gray-400 group-hover:text-white transition" />
@@ -71,7 +77,7 @@ export default function ContactModal({ isOpen, onClose }) {
             href="https://instagram.com/louifootball"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center justify-between p-3 rounded-2xl bg-emerald-900/60 hover:bg-emerald-800/80 border border-emerald-600/40 transition group"
+            className="flex items-center justify-between p-3 rounded-2xl bg-emerald-900/80 hover:bg-emerald-800 border border-emerald-700/60 transition group cursor-pointer"
           >
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl bg-pink-500/20 text-pink-400 flex items-center justify-center text-xl">
@@ -79,37 +85,37 @@ export default function ContactModal({ isOpen, onClose }) {
               </div>
               <div>
                 <p className="text-xs font-bold text-white">Instagram</p>
-                <p className="text-[10px] text-emerald-300">@louifootball</p>
+                <p className="text-[10px] text-emerald-300">@louifootball (Katalog & Info)</p>
               </div>
             </div>
             <CaretRight size={16} weight="bold" className="text-gray-400 group-hover:text-white transition" />
           </a>
 
-          {/* TikTok */}
+          {/* Shopee Store */}
           <a
-            href="https://tiktok.com/@louifootball"
+            href="https://shopee.co.id"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center justify-between p-3 rounded-2xl bg-emerald-900/60 hover:bg-emerald-800/80 border border-emerald-600/40 transition group"
+            className="flex items-center justify-between p-3 rounded-2xl bg-emerald-900/80 hover:bg-emerald-800 border border-emerald-700/60 transition group cursor-pointer"
           >
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center text-xl">
-                <TiktokLogo size={22} weight="bold" />
+              <div className="w-9 h-9 rounded-xl bg-orange-500/20 text-orange-400 flex items-center justify-center text-xl">
+                <ShoppingBagOpen size={22} weight="bold" />
               </div>
               <div>
-                <p className="text-xs font-bold text-white">TikTok Official</p>
-                <p className="text-[10px] text-emerald-300">Video & Katalog Baru</p>
+                <p className="text-xs font-bold text-white">Shopee Store</p>
+                <p className="text-[10px] text-emerald-300">Gratis ongkir & voucher</p>
               </div>
             </div>
             <CaretRight size={16} weight="bold" className="text-gray-400 group-hover:text-white transition" />
           </a>
 
-          {/* Tokopedia */}
+          {/* Tokopedia Store */}
           <a
             href="https://tokopedia.com"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center justify-between p-3 rounded-2xl bg-emerald-900/60 hover:bg-emerald-800/80 border border-emerald-600/40 transition group"
+            className="flex items-center justify-between p-3 rounded-2xl bg-emerald-900/80 hover:bg-emerald-800 border border-emerald-700/60 transition group cursor-pointer"
           >
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl bg-emerald-500/20 text-lime-400 flex items-center justify-center text-xl">
