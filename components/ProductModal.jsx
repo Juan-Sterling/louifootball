@@ -25,9 +25,13 @@ export default function ProductModal({ product, isOpen, onClose, onOpenZoom }) {
 
   if (!isOpen || !product) return null;
 
-  const productName = product.player_name || product.title || 'Produk Loui';
+  const playerName = product.player_name ? String(product.player_name).trim() : '';
+  const productTitle = product.title ? String(product.title).trim() : '';
+  const productName = playerName || productTitle || 'Produk Loui';
   const displayPrice = formatRupiah(product.price);
   const editionText = product.edition ? `(Edisi #${product.edition})` : '';
+
+  const titleWaText = productTitle && productTitle !== playerName ? `\nJudul: ${productTitle}` : '';
 
   const teamYearParts = [];
   if (product.team && String(product.team).trim()) teamYearParts.push(`Tim/Klub: ${product.team.trim()}`);
@@ -36,7 +40,7 @@ export default function ProductModal({ product, isOpen, onClose, onOpenZoom }) {
 
   const msg = encodeURIComponent(`Halo LOUIFOOTBALL, saya ingin memesan:
 
-*${productName}* ${editionText}${teamYearWaText}
+*${productName}* ${editionText}${titleWaText}${teamYearWaText}
 Harga: ${displayPrice}
 
 Apakah stok masih ada?`);
@@ -104,6 +108,13 @@ Apakah stok masih ada?`);
           <h2 className="text-lg sm:text-xl font-black text-gray-950 mt-2.5 leading-tight">
             {productName}
           </h2>
+
+          {/* Kolom Title (Muncul jika ada dan tidak kosong) */}
+          {product.title && String(product.title).trim() && (
+            <p className="text-xs sm:text-sm font-semibold text-emerald-800/90 mt-1">
+              {String(product.title).trim()}
+            </p>
+          )}
 
           {/* Info Tim & Tahun Produk (Menggantikan Spec) */}
           <div className="flex flex-wrap items-center gap-2 mt-2">

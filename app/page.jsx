@@ -41,11 +41,13 @@ export default function Home() {
 
         const mapped = data.map((item) => {
           const catObj = item.categories || {};
-          const playerName = item.player_name || item.title || 'Produk Loui';
+          const playerName = item.player_name ? String(item.player_name).trim() : '';
+          const productTitle = item.title ? String(item.title).trim() : '';
+          const resolvedPlayerName = playerName || productTitle || 'Produk Loui';
           return {
             ...item,
-            player_name: playerName,
-            title: playerName,
+            player_name: resolvedPlayerName,
+            title: productTitle,
             category: (catObj.category || item.category || 'lainnya').toLowerCase().trim(),
             team: item.team ? String(item.team).trim() : '',
             year: item.year ? String(item.year).trim() : '',
