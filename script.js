@@ -22,6 +22,10 @@ const modalImgLink = document.getElementById('modalImgLink');
 const modalCategory = document.getElementById('modalCategory');
 const modalEdition = document.getElementById('modalEdition');
 const modalSpec = document.getElementById('modalSpec');
+const modalTeam = document.getElementById('modalTeam');
+const modalYear = document.getElementById('modalYear');
+const modalTeamBadge = document.getElementById('modalTeamBadge');
+const modalYearBadge = document.getElementById('modalYearBadge');
 const modalTitle = document.getElementById('modalTitle');
 const modalPrice = document.getElementById('modalPrice');
 const modalDesc = document.getElementById('modalDesc');
@@ -166,6 +170,8 @@ async function loadProducts() {
             return {
                 ...item,
                 category: (catObj.category || item.category || 'lainnya').toLowerCase().trim(),
+                team: item.team ? String(item.team).trim() : '',
+                year: item.year ? String(item.year).trim() : '',
                 spec: catObj.spec || item.spec || 'Koleksi Resmi',
                 desc: catObj.desc || item.desc || 'Merchandise resmi sepak bola berkualitas dari LOUIFOOTBALL.'
             };
@@ -178,6 +184,8 @@ async function loadProducts() {
             allProducts = fallbackData.map(item => ({
                 ...item,
                 category: (item.category || '').toLowerCase().trim(),
+                team: item.team ? String(item.team).trim() : '',
+                year: item.year ? String(item.year).trim() : '',
                 spec: item.spec || 'Koleksi Resmi',
                 desc: item.desc || ''
             }));
@@ -328,9 +336,10 @@ function renderProducts() {
         const titleMatch = item.title.toLowerCase().includes(query);
         const editionMatch = item.edition ? (`edisi ${item.edition}`.includes(query) || `#${item.edition}`.includes(query) || item.edition.toString() === query) : false;
         const teamMatch = item.team ? item.team.toLowerCase().includes(query) : false;
+        const yearMatch = item.year ? item.year.toLowerCase().includes(query) : false;
         const descMatch = (item.desc ?? '').toLowerCase().includes(query);
 
-        return matchCat && matchStickerEd && (titleMatch || editionMatch || teamMatch || descMatch);
+        return matchCat && matchStickerEd && (titleMatch || editionMatch || teamMatch || yearMatch || descMatch);
     });
 
     if (filtered.length === 0) {
@@ -344,6 +353,14 @@ function renderProducts() {
 
         const editionText = item.edition ? `Edisi #${item.edition}` : '';
 
+        // Format Tim dan Tahun (menggantikan spesifikasi)
+        const teamText = item.team ? String(item.team).trim() : '';
+        const yearText = item.year ? String(item.year).trim() : '';
+        const teamYearParts = [];
+        if (teamText) teamYearParts.push(teamText);
+        if (yearText) teamYearParts.push(yearText);
+        const teamYearDisplay = teamYearParts.join(' • ');
+
         const card = document.createElement('div');
         card.className = "bg-white rounded-2xl p-3 flex flex-col justify-between hover:shadow-2xl transition duration-150 border-2 border-transparent hover:border-lime-400";
         const formattedPrice = formatRupiah(item.price);
@@ -356,7 +373,7 @@ function renderProducts() {
             
             <p class="text-[10px] font-black text-amber-700 tracking-wider uppercase">${editionText}</p>
             <h3 class="font-bold text-xs sm:text-sm text-gray-900 leading-snug line-clamp-2 mt-0.5 cursor-pointer hover:text-emerald-700 transition" onclick="openModalById('${item.id}')">${item.title}</h3>
-            <p class="text-[11px] text-gray-500 mt-1">${item.spec}</p>
+            ${teamYearDisplay ? `<p class="text-[11px] text-gray-500 mt-1 truncate font-medium" title="${teamYearDisplay}">${teamYearDisplay}</p>` : '<p class="text-[11px] text-transparent mt-1 select-none">-</p>'}
           </div>
           <div class="mt-3 pt-2 border-t border-gray-100">
             <p class="text-emerald-950 font-black text-sm sm:text-base">${formattedPrice}</p>
@@ -385,8 +402,38 @@ function openModalById(id) {
     modalPrice.innerText = displayPrice;
     modalDesc.innerText = item.desc || '-';
     modalCategory.innerText = item.category || '';
-    modalSpec.innerText = item.spec || '';
+    if (modalSpec) modalSpec.innerText = item.spec || '';
     modalEdition.innerText = item.edition ? `Edisi #${item.edition}` : '';
+    if (modalEdition) {
+        if (item.edition) {
+            modalEdition.classList.remove('hidden');
+        } else {
+            modalEdition.classList.add('hidden');
+        }
+    }
+
+    // Tampilkan Team & Year (spec disembunyikan sesuai permintaan)
+    if (modalTeam && modalTeamBadge) {
+        if (item.team && String(item.team).trim()) {
+            modalTeam.innerText = item.team.trim();
+            modalTeamBadge.classList.remove('hidden');
+            modalTeamBadge.classList.add('inline-flex');
+        } else {
+            modalTeamBadge.classList.add('hidden');
+            modalTeamBadge.classList.remove('inline-flex');
+        }
+    }
+
+    if (modalYear && modalYearBadge) {
+        if (item.year && String(item.year).trim()) {
+            modalYear.innerText = item.year.trim();
+            modalYearBadge.classList.remove('hidden');
+            modalYearBadge.classList.add('inline-flex');
+        } else {
+            modalYearBadge.classList.add('hidden');
+            modalYearBadge.classList.remove('inline-flex');
+        }
+    }
 
     modalImg.src = item.img;
     if (modalImgLink && modalImgLink.tagName === 'A') {
@@ -394,9 +441,14 @@ function openModalById(id) {
     }
 
     const editionText = item.edition ? `(Edisi #${item.edition})` : '';
+    const teamYearParts = [];
+    if (item.team && String(item.team).trim()) teamYearParts.push(`Tim/Klub: ${item.team.trim()}`);
+    if (item.year && String(item.year).trim()) teamYearParts.push(`Musim: ${item.year.trim()}`);
+    const teamYearWaText = teamYearParts.length > 0 ? `\n${teamYearParts.join('\n')}` : '';
+
     const msg = encodeURIComponent(`Halo LOUIFOOTBALL, saya ingin memesan:
 
-*${item.title}* ${editionText}
+*${item.title}* ${editionText}${teamYearWaText}
 Harga: ${displayPrice}
 
 Apakah stok masih ada?`);

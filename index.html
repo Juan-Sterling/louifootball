@@ -361,12 +361,25 @@
                         <span id="modalEdition"
                             class="text-[10px] font-black uppercase text-amber-900 bg-amber-100 px-2.5 py-0.5 rounded-md border border-amber-200">Edisi</span>
                     </div>
-                    <span id="modalSpec" class="text-[11px] text-gray-500 font-medium">Spesifikasi</span>
                 </div>
 
-                <h2 id="modalTitle" class="text-lg sm:text-xl font-black text-gray-950 mt-2.5 leading-tight">Nama Produk
-                </h2>
-                <p id="modalPrice" class="text-2xl font-black text-emerald-800 mt-2">Rp 0</p>
+                <h2 id="modalTitle" class="text-lg sm:text-xl font-black text-gray-950 mt-2.5 leading-tight">Nama Produk</h2>
+
+                <!-- Info Tim & Tahun Produk (Menggantikan Spec) -->
+                <div id="modalTeamYearContainer" class="flex flex-wrap items-center gap-2 mt-2">
+                    <div id="modalTeamBadge"
+                        class="hidden items-center gap-1.5 text-xs text-emerald-950 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-lg font-bold shadow-sm">
+                        <i class="ph-bold ph-shield text-emerald-700 text-sm"></i>
+                        <span id="modalTeam">Tim</span>
+                    </div>
+                    <div id="modalYearBadge"
+                        class="hidden items-center gap-1.5 text-xs text-emerald-950 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-lg font-bold shadow-sm">
+                        <i class="ph-bold ph-calendar-blank text-emerald-700 text-sm"></i>
+                        <span id="modalYear">Tahun</span>
+                    </div>
+                </div>
+
+                <p id="modalPrice" class="text-2xl font-black text-emerald-800 mt-2.5">Rp 0</p>
 
                 <p id="modalDesc"
                     class="text-gray-600 text-xs sm:text-sm mt-3 leading-relaxed bg-gray-50 p-3 rounded-xl border border-gray-100">
@@ -528,7 +541,7 @@
     </div>
 
     <!-- JAVASCRIPT LOGIC (EXTERNAL FILE) -->
-    <script src="script.js?v=2.9"></script>
+    <script src="script.js?v=3.0"></script>
 </body>
 
 </html>
