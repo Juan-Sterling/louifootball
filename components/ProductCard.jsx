@@ -5,21 +5,32 @@ import { formatRupiah, getCategoryBadgeStyle } from '@/lib/utils';
 
 export default function ProductCard({ product, onOpenModal }) {
   const badgeColor = getCategoryBadgeStyle(product.category);
-  const productName = product.player_name || product.title || 'Produk Loui';
+  const playerName = product.player_name ? String(product.player_name).trim() : '';
+  const productTitle = product.title ? String(product.title).trim() : '';
+  const productName = playerName || productTitle || 'Produk Loui';
   const editionText = product.edition ? `Edisi #${product.edition}` : '';
 
-  // Format Tim dan Tahun
-  const teamText = product.team ? String(product.team).trim() : '';
-  const yearText = product.year ? String(product.year).trim() : '';
+  // Format Tim dan Tahun (Hanya tampil jika ada/valid)
+  const rawTeam = product.team ? String(product.team).trim() : '';
+  const isTeamValid = rawTeam && rawTeam.toLowerCase() !== 'null' && rawTeam.toLowerCase() !== 'undefined' && rawTeam !== '-';
+  const teamText = isTeamValid ? rawTeam : '';
+
+  const rawYear = product.year ? String(product.year).trim() : '';
+  const isYearValid = rawYear && rawYear.toLowerCase() !== 'null' && rawYear.toLowerCase() !== 'undefined' && rawYear !== '-';
+  const yearText = isYearValid ? rawYear : '';
+
   const teamYearParts = [];
   if (teamText) teamYearParts.push(teamText);
   if (yearText) teamYearParts.push(yearText);
   const teamYearDisplay = teamYearParts.join(' • ');
 
+  const isSoldOut = String(product.sold_out || '').trim().toUpperCase() === 'Y';
   const formattedPrice = formatRupiah(product.price);
 
   return (
-    <div className="bg-white rounded-2xl p-3 flex flex-col justify-between hover:shadow-2xl transition duration-150 border-2 border-transparent hover:border-lime-400">
+    <div className={`bg-white rounded-2xl p-3 flex flex-col justify-between hover:shadow-2xl transition duration-150 border-2 ${
+      isSoldOut ? 'border-zinc-200/80' : 'border-transparent hover:border-lime-400'
+    }`}>
       <div>
         {/* Gambar Produk */}
         <div
@@ -29,10 +40,22 @@ export default function ProductCard({ product, onOpenModal }) {
           <span className={`absolute top-2 left-2 ${badgeColor} text-[9px] sm:text-[10px] font-black px-2 py-0.5 rounded shadow capitalize z-10`}>
             {product.category}
           </span>
+
+          {/* Overlay agak gelap dan keterangan SOLD OUT jika sold_out === 'Y' */}
+          {isSoldOut && (
+            <div className="absolute inset-0 bg-black/60 z-20 flex flex-col items-center justify-center p-2 backdrop-blur-[1px]">
+              <span className="px-3 py-1 bg-red-600/90 text-white text-[11px] sm:text-xs font-black tracking-widest uppercase rounded-lg shadow-lg border border-red-400/50">
+                SOLD OUT
+              </span>
+            </div>
+          )}
+
           <img
             src={product.img}
             alt={productName}
-            className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+            className={`w-full h-full object-cover group-hover:scale-105 transition duration-300 ${
+              isSoldOut ? 'grayscale-[30%]' : ''
+            }`}
             onError={(e) => {
               e.currentTarget.src = 'https://placehold.co/400x400/225717/ffffff?text=Loui';
             }}

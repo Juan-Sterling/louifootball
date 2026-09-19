@@ -33,12 +33,29 @@ export default function ProductModal({ product, isOpen, onClose, onOpenZoom }) {
 
   const titleWaText = productTitle && productTitle !== playerName ? `\nJudul: ${productTitle}` : '';
 
+  const rawTeam = product.team ? String(product.team).trim() : '';
+  const isTeamValid = rawTeam && rawTeam.toLowerCase() !== 'null' && rawTeam.toLowerCase() !== 'undefined' && rawTeam !== '-';
+  const teamText = isTeamValid ? rawTeam : '';
+
+  const rawYear = product.year ? String(product.year).trim() : '';
+  const isYearValid = rawYear && rawYear.toLowerCase() !== 'null' && rawYear.toLowerCase() !== 'undefined' && rawYear !== '-';
+  const yearText = isYearValid ? rawYear : '';
+
   const teamYearParts = [];
-  if (product.team && String(product.team).trim()) teamYearParts.push(`Tim/Klub: ${product.team.trim()}`);
-  if (product.year && String(product.year).trim()) teamYearParts.push(`Musim: ${product.year.trim()}`);
+  if (teamText) teamYearParts.push(`Tim/Klub: ${teamText}`);
+  if (yearText) teamYearParts.push(`Musim: ${yearText}`);
   const teamYearWaText = teamYearParts.length > 0 ? `\n${teamYearParts.join('\n')}` : '';
 
-  const msg = encodeURIComponent(`Halo LOUIFOOTBALL, saya ingin memesan:
+  const isSoldOut = String(product.sold_out || '').trim().toUpperCase() === 'Y';
+
+  const msg = isSoldOut
+    ? encodeURIComponent(`Halo LOUIFOOTBALL, saya ingin bertanya tentang stok produk:
+
+*${productName}* ${editionText}${titleWaText}${teamYearWaText}
+Status: Sold Out
+
+Apakah produk ini akan restock kembali?`)
+    : encodeURIComponent(`Halo LOUIFOOTBALL, saya ingin memesan:
 
 *${productName}* ${editionText}${titleWaText}${teamYearWaText}
 Harga: ${displayPrice}
@@ -67,6 +84,13 @@ Apakah stok masih ada?`);
 
         {/* Showcase Gambar Penuh */}
         <div className="relative w-full bg-zinc-950 flex items-center justify-center p-4 min-h-[260px] max-h-[380px] sm:max-h-[420px] overflow-hidden border-b border-gray-200">
+          {/* Badge Sold Out pada Gambar */}
+          {isSoldOut && (
+            <div className="absolute top-3 left-3 z-30 bg-red-600/90 border border-red-400/60 text-white font-black text-xs px-3 py-1 rounded-full shadow-lg tracking-wider uppercase">
+              SOLD OUT
+            </div>
+          )}
+
           <img
             src={product.img}
             alt={productName}
@@ -109,31 +133,40 @@ Apakah stok masih ada?`);
             {productName}
           </h2>
 
-          {/* Kolom Title (Muncul jika ada dan tidak kosong) */}
-          {product.title && String(product.title).trim() && (
+          {/* Kolom Title (Hanya muncul jika ada dan berbeda dengan judul utama agar tidak duplikat) */}
+          {productTitle && productTitle.toLowerCase() !== productName.toLowerCase() && (
             <p className="text-xs sm:text-sm font-semibold text-emerald-800/90 mt-1">
-              {String(product.title).trim()}
+              {productTitle}
             </p>
           )}
 
-          {/* Info Tim & Tahun Produk (Menggantikan Spec) */}
-          <div className="flex flex-wrap items-center gap-2 mt-2">
-            {product.team && (
-              <div className="inline-flex items-center gap-1.5 text-xs text-emerald-950 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-lg font-bold shadow-sm">
-                <Shield size={14} weight="bold" className="text-emerald-700" />
-                <span>{product.team}</span>
-              </div>
-            )}
-            {product.year && (
-              <div className="inline-flex items-center gap-1.5 text-xs text-emerald-950 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-lg font-bold shadow-sm">
-                <CalendarBlank size={14} weight="bold" className="text-emerald-700" />
-                <span>{product.year}</span>
-              </div>
+          {/* Info Tim & Tahun Produk (Hanya tampil jika ada/valid) */}
+          {(teamText || yearText) && (
+            <div className="flex flex-wrap items-center gap-2 mt-2">
+              {teamText && (
+                <div className="inline-flex items-center gap-1.5 text-xs text-emerald-950 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-lg font-bold shadow-sm">
+                  <Shield size={14} weight="bold" className="text-emerald-700" />
+                  <span>{teamText}</span>
+                </div>
+              )}
+              {yearText && (
+                <div className="inline-flex items-center gap-1.5 text-xs text-emerald-950 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-lg font-bold shadow-sm">
+                  <CalendarBlank size={14} weight="bold" className="text-emerald-700" />
+                  <span>{yearText}</span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Harga & Status Stok */}
+          <div className="flex items-center gap-3 mt-2.5">
+            <p className="text-2xl font-black text-emerald-800">{displayPrice}</p>
+            {isSoldOut && (
+              <span className="px-2.5 py-0.5 bg-red-100 border border-red-300 text-red-700 text-xs font-black rounded-md uppercase tracking-wider">
+                Stok Habis
+              </span>
             )}
           </div>
-
-          {/* Harga */}
-          <p className="text-2xl font-black text-emerald-800 mt-2.5">{displayPrice}</p>
 
           {/* Deskripsi */}
           <p className="text-gray-600 text-xs sm:text-sm mt-3 leading-relaxed bg-gray-50 p-3 rounded-xl border border-gray-100">
@@ -146,32 +179,59 @@ Apakah stok masih ada?`);
               href={waLink}
               target="_blank"
               rel="noopener noreferrer"
-              className="w-full bg-emerald-800 hover:bg-emerald-900 text-lime-300 font-bold py-3 rounded-2xl flex items-center justify-center gap-2 text-sm shadow-md transition cursor-pointer"
+              className={`w-full font-bold py-3 rounded-2xl flex items-center justify-center gap-2 text-sm shadow-md transition cursor-pointer ${
+                isSoldOut
+                  ? 'bg-zinc-800 hover:bg-zinc-900 text-lime-300'
+                  : 'bg-emerald-800 hover:bg-emerald-900 text-lime-300'
+              }`}
             >
               <WhatsappLogo size={20} weight="bold" className="text-green-400" />
-              <span>Order via WhatsApp</span>
+              <span>{isSoldOut ? 'Tanya Restock via WhatsApp' : 'Order via WhatsApp'}</span>
             </a>
 
+            {/* Shopee & Tokopedia (Non-aktif jika Sold Out) */}
             <div className="grid grid-cols-2 gap-2 pt-1">
-              <a
-                href="https://shopee.co.id"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="bg-orange-50 hover:bg-orange-100 border border-orange-200 text-orange-700 font-bold py-2.5 rounded-xl flex items-center justify-center gap-1.5 text-xs transition"
-              >
-                <ShoppingBagOpen size={16} weight="bold" />
-                <span>Shopee Store</span>
-              </a>
+              {isSoldOut ? (
+                <div
+                  aria-disabled="true"
+                  title="Produk telah habis terjual (Sold Out)"
+                  className="bg-gray-100 border border-gray-200 text-gray-400 font-bold py-2.5 rounded-xl flex items-center justify-center gap-1.5 text-xs cursor-not-allowed opacity-60 select-none"
+                >
+                  <ShoppingBagOpen size={16} weight="bold" className="text-gray-400" />
+                  <span>Shopee (Habis)</span>
+                </div>
+              ) : (
+                <a
+                  href="https://shopee.co.id"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="bg-orange-50 hover:bg-orange-100 border border-orange-200 text-orange-700 font-bold py-2.5 rounded-xl flex items-center justify-center gap-1.5 text-xs transition cursor-pointer"
+                >
+                  <ShoppingBagOpen size={16} weight="bold" />
+                  <span>Shopee Store</span>
+                </a>
+              )}
 
-              <a
-                href="https://tokopedia.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 font-bold py-2.5 rounded-xl flex items-center justify-center gap-1.5 text-xs transition"
-              >
-                <Storefront size={16} weight="bold" />
-                <span>Tokopedia</span>
-              </a>
+              {isSoldOut ? (
+                <div
+                  aria-disabled="true"
+                  title="Produk telah habis terjual (Sold Out)"
+                  className="bg-gray-100 border border-gray-200 text-gray-400 font-bold py-2.5 rounded-xl flex items-center justify-center gap-1.5 text-xs cursor-not-allowed opacity-60 select-none"
+                >
+                  <Storefront size={16} weight="bold" className="text-gray-400" />
+                  <span>Tokopedia (Habis)</span>
+                </div>
+              ) : (
+                <a
+                  href="https://tokopedia.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 font-bold py-2.5 rounded-xl flex items-center justify-center gap-1.5 text-xs transition cursor-pointer"
+                >
+                  <Storefront size={16} weight="bold" />
+                  <span>Tokopedia</span>
+                </a>
+              )}
             </div>
           </div>
         </div>

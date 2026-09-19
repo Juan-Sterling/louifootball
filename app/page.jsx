@@ -44,13 +44,24 @@ export default function Home() {
           const playerName = item.player_name ? String(item.player_name).trim() : '';
           const productTitle = item.title ? String(item.title).trim() : '';
           const resolvedPlayerName = playerName || productTitle || 'Produk Loui';
+          const soldOutVal = item.sold_out ? String(item.sold_out).trim() : '';
+          const rawYear = item.year ? String(item.year).trim() : '';
+          const isYearValid = rawYear && rawYear.toLowerCase() !== 'null' && rawYear.toLowerCase() !== 'undefined' && rawYear !== '-';
+          const cleanYear = isYearValid ? rawYear : '';
+
+          const rawTeam = item.team ? String(item.team).trim() : '';
+          const isTeamValid = rawTeam && rawTeam.toLowerCase() !== 'null' && rawTeam.toLowerCase() !== 'undefined' && rawTeam !== '-';
+          const cleanTeam = isTeamValid ? rawTeam : '';
+
           return {
             ...item,
             player_name: resolvedPlayerName,
             title: productTitle,
+            sold_out: soldOutVal,
+            is_sold_out: soldOutVal.toUpperCase() === 'Y',
             category: (catObj.category || item.category || 'lainnya').toLowerCase().trim(),
-            team: item.team ? String(item.team).trim() : '',
-            year: item.year ? String(item.year).trim() : '',
+            team: cleanTeam,
+            year: cleanYear,
             spec: catObj.spec || item.spec || 'Koleksi Resmi',
             desc: catObj.desc || item.desc || 'Merchandise resmi sepak bola berkualitas dari LOUIFOOTBALL.',
           };
