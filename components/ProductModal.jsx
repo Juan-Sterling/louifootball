@@ -202,7 +202,7 @@ Apakah stok masih ada?`);
                 </div>
               ) : (
                 <a
-                  href="https://shopee.co.id"
+                  href="https://id.shp.ee/a5f6X4Wq"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="bg-orange-50 hover:bg-orange-100 border border-orange-200 text-orange-700 font-bold py-2.5 rounded-xl flex items-center justify-center gap-1.5 text-xs transition cursor-pointer"
@@ -223,7 +223,7 @@ Apakah stok masih ada?`);
                 </div>
               ) : (
                 <a
-                  href="https://tokopedia.com"
+                  href="https://tk.tokopedia.com/ZSqEjQvMt/"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 font-bold py-2.5 rounded-xl flex items-center justify-center gap-1.5 text-xs transition cursor-pointer"

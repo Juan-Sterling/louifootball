@@ -43,7 +43,7 @@ export default function Footer() {
             <span>Instagram</span>
           </a>
           <a
-            href="https://shopee.co.id"
+            href="https://id.shp.ee/a5f6X4Wq"
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-1.5 bg-emerald-900 hover:bg-emerald-800 text-white text-xs font-bold px-3.5 py-2 rounded-xl border border-emerald-600/50 transition cursor-pointer"
@@ -52,7 +52,7 @@ export default function Footer() {
             <span>Shopee</span>
           </a>
           <a
-            href="https://tokopedia.com"
+            href="https://tk.tokopedia.com/ZSqEjQvMt/"
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-1.5 bg-emerald-900 hover:bg-emerald-800 text-white text-xs font-bold px-3.5 py-2 rounded-xl border border-emerald-600/50 transition cursor-pointer"

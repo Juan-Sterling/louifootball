@@ -93,7 +93,7 @@ export default function ContactModal({ isOpen, onClose }) {
 
           {/* Shopee Store */}
           <a
-            href="https://shopee.co.id"
+            href="https://id.shp.ee/a5f6X4Wq"
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center justify-between p-3 rounded-2xl bg-emerald-900/80 hover:bg-emerald-800 border border-emerald-700/60 transition group cursor-pointer"
@@ -112,7 +112,7 @@ export default function ContactModal({ isOpen, onClose }) {
 
           {/* Tokopedia Store */}
           <a
-            href="https://tokopedia.com"
+            href="https://tk.tokopedia.com/ZSqEjQvMt/"
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center justify-between p-3 rounded-2xl bg-emerald-900/80 hover:bg-emerald-800 border border-emerald-700/60 transition group cursor-pointer"
