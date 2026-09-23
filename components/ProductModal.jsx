@@ -84,8 +84,8 @@ export default function ProductModal({ product, isOpen, onClose, onOpenZoom }) {
   const variantWaText = selectedVariant
     ? `\nUkuran: ${selectedVariant.size} (${formatRupiah(selectedVariant.price)})`
     : variants && variants.length > 0
-    ? `\nPilihan Ukuran: Tersedia ${variants.map((v) => v.size).join(', ')}`
-    : '';
+      ? `\nPilihan Ukuran: Tersedia ${variants.map((v) => v.size).join(', ')}`
+      : '';
 
   const titleWaText = productTitle && productTitle !== playerName ? `\nJudul: ${productTitle}` : '';
 
@@ -110,13 +110,13 @@ export default function ProductModal({ product, isOpen, onClose, onOpenZoom }) {
 *${productName}* ${editionText}${variantWaText}${titleWaText}${teamYearWaText}
 Status: Edisi Limited (Koleksi / Tidak Dijual)`)
     : isSoldOut
-    ? encodeURIComponent(`Halo LOUIFOOTBALL, saya ingin bertanya tentang stok produk:
+      ? encodeURIComponent(`Halo LOUIFOOTBALL, saya ingin bertanya tentang stok produk:
 
 *${productName}* ${editionText}${variantWaText}${titleWaText}${teamYearWaText}
 Status: Sold Out
 
 Apakah produk ini akan restock kembali?`)
-    : encodeURIComponent(`Halo LOUIFOOTBALL, saya ingin memesan:
+      : encodeURIComponent(`Halo LOUIFOOTBALL, saya ingin memesan:
 
 *${productName}* ${editionText}${variantWaText}${titleWaText}${teamYearWaText}
 Harga: ${displayPrice}
@@ -154,9 +154,8 @@ Apakah stok masih ada?`);
 
           {/* Badge Counter Gambar (cth: 1/2) jika ada img_add */}
           {hasAddImg && (
-            <div className={`absolute top-3 z-30 bg-black/65 backdrop-blur-md border border-white/20 text-white font-bold text-[11px] px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-md ${
-              isSoldOut ? 'left-28' : 'left-3'
-            }`}>
+            <div className={`absolute top-3 z-30 bg-black/65 backdrop-blur-md border border-white/20 text-white font-bold text-[11px] px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-md ${isSoldOut ? 'left-28' : 'left-3'
+              }`}>
               <span className="text-lime-300 font-black">{currentImgIndex + 1}</span>
               <span className="text-white/40">/</span>
               <span>{images.length}</span>
@@ -214,11 +213,10 @@ Apakah stok masih ada?`);
                   setActiveImg(product.img);
                 }}
                 title="1"
-                className={`w-9 h-9 rounded-lg overflow-hidden border-2 transition cursor-pointer shrink-0 bg-zinc-900 ${
-                  currentImg === product.img
+                className={`w-9 h-9 rounded-lg overflow-hidden border-2 transition cursor-pointer shrink-0 bg-zinc-900 ${currentImg === product.img
                     ? 'border-lime-400 scale-105 shadow-md ring-1 ring-lime-400/50'
                     : 'border-transparent opacity-60 hover:opacity-100'
-                }`}
+                  }`}
               >
                 <img src={product.img} alt="1" className="w-full h-full object-cover" />
               </button>
@@ -230,11 +228,10 @@ Apakah stok masih ada?`);
                   setActiveImg(product.img_add);
                 }}
                 title="2"
-                className={`w-9 h-9 rounded-lg overflow-hidden border-2 transition cursor-pointer shrink-0 bg-zinc-900 ${
-                  currentImg === product.img_add
+                className={`w-9 h-9 rounded-lg overflow-hidden border-2 transition cursor-pointer shrink-0 bg-zinc-900 ${currentImg === product.img_add
                     ? 'border-lime-400 scale-105 shadow-md ring-1 ring-lime-400/50'
                     : 'border-transparent opacity-60 hover:opacity-100'
-                }`}
+                  }`}
               >
                 <img src={product.img_add} alt="2" className="w-full h-full object-cover" />
               </button>
@@ -258,11 +255,10 @@ Apakah stok masih ada?`);
             <button
               type="button"
               onClick={() => setActiveImg(product.img)}
-              className={`flex items-center gap-2 px-4 py-1.5 rounded-xl text-xs font-black transition cursor-pointer border ${
-                currentImg === product.img
+              className={`flex items-center gap-2 px-4 py-1.5 rounded-xl text-xs font-black transition cursor-pointer border ${currentImg === product.img
                   ? 'bg-emerald-950 text-lime-300 border-emerald-950 shadow-sm ring-2 ring-lime-400'
                   : 'bg-white text-gray-700 hover:bg-emerald-50 border-gray-200'
-              }`}
+                }`}
             >
               <span className="w-5 h-5 rounded-md overflow-hidden bg-black/10 shrink-0 border border-black/10 flex items-center justify-center">
                 <img src={product.img} alt="1" className="w-full h-full object-cover" />
@@ -273,11 +269,10 @@ Apakah stok masih ada?`);
             <button
               type="button"
               onClick={() => setActiveImg(product.img_add)}
-              className={`flex items-center gap-2 px-4 py-1.5 rounded-xl text-xs font-black transition cursor-pointer border ${
-                currentImg === product.img_add
+              className={`flex items-center gap-2 px-4 py-1.5 rounded-xl text-xs font-black transition cursor-pointer border ${currentImg === product.img_add
                   ? 'bg-emerald-950 text-lime-300 border-emerald-950 shadow-sm ring-2 ring-lime-400'
                   : 'bg-white text-gray-700 hover:bg-emerald-50 border-gray-200'
-              }`}
+                }`}
             >
               <span className="w-5 h-5 rounded-md overflow-hidden bg-black/10 shrink-0 border border-black/10 flex items-center justify-center">
                 <img src={product.img_add} alt="2" className="w-full h-full object-cover" />
@@ -385,11 +380,10 @@ Apakah stok masih ada?`);
                       key={v.size}
                       type="button"
                       onClick={() => setSelectedVariant(isSelected ? null : v)}
-                      className={`py-2 px-2 rounded-xl border text-center transition cursor-pointer flex flex-col items-center justify-center relative ${
-                        isSelected
+                      className={`py-2 px-2 rounded-xl border text-center transition cursor-pointer flex flex-col items-center justify-center relative ${isSelected
                           ? 'bg-emerald-950 border-emerald-950 text-white shadow-md ring-2 ring-lime-400'
                           : 'bg-emerald-50/50 hover:bg-emerald-100/70 border-emerald-200 text-emerald-950 hover:border-emerald-400'
-                      }`}
+                        }`}
                     >
                       {isSelected && (
                         <span className="absolute top-1 right-1 text-lime-400">
@@ -410,7 +404,7 @@ Apakah stok masih ada?`);
           )}
 
           {/* Deskripsi */}
-          <p className="text-gray-600 text-xs sm:text-sm mt-3 leading-relaxed bg-gray-50 p-3 rounded-xl border border-gray-100">
+          <p className="text-gray-600 text-xs sm:text-sm mt-3 leading-relaxed bg-gray-50 p-3 rounded-xl border border-gray-100 whitespace-pre-line">
             {product.desc || 'Merchandise resmi sepak bola berkualitas dari LOUIFOOTBALL.'}
           </p>
 
@@ -433,23 +427,22 @@ Apakah stok masih ada?`);
               href={waLink}
               target="_blank"
               rel="noopener noreferrer"
-              className={`w-full font-bold py-3 rounded-2xl flex items-center justify-center gap-2 text-sm shadow-md transition cursor-pointer ${
-                isLimited
+              className={`w-full font-bold py-3 rounded-2xl flex items-center justify-center gap-2 text-sm shadow-md transition cursor-pointer ${isLimited
                   ? 'bg-zinc-800 hover:bg-zinc-900 text-amber-300'
                   : isSoldOut
-                  ? 'bg-zinc-800 hover:bg-zinc-900 text-lime-300'
-                  : 'bg-emerald-800 hover:bg-emerald-900 text-lime-300'
-              }`}
+                    ? 'bg-zinc-800 hover:bg-zinc-900 text-lime-300'
+                    : 'bg-emerald-800 hover:bg-emerald-900 text-lime-300'
+                }`}
             >
               <WhatsappLogo size={20} weight="bold" className="text-green-400" />
               <span>
                 {isLimited
                   ? 'Tanya Info via WhatsApp'
                   : isSoldOut
-                  ? 'Tanya Restock via WhatsApp'
-                  : selectedVariant
-                  ? `Order Ukuran ${selectedVariant.size} via WhatsApp`
-                  : 'Order via WhatsApp'}
+                    ? 'Tanya Restock via WhatsApp'
+                    : selectedVariant
+                      ? `Order Ukuran ${selectedVariant.size} via WhatsApp`
+                      : 'Order via WhatsApp'}
               </span>
             </a>
 
