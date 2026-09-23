@@ -202,8 +202,12 @@ async function loadProducts() {
         }
     }
 
-    // Urutkan edisi TERBARU ke TERLAMA otomatis
+    // Urutkan: edisi spesial di posisi paling atas, lalu edisi bernomor terbaru ke terlama otomatis
     allProducts.sort((a, b) => {
+        const isSpecialA = isNaN(a.edition) && Boolean(a.edition);
+        const isSpecialB = isNaN(b.edition) && Boolean(b.edition);
+        if (isSpecialA && !isSpecialB) return -1;
+        if (!isSpecialA && isSpecialB) return 1;
         const edA = parseInt(a.edition) || 0;
         const edB = parseInt(b.edition) || 0;
         return edB - edA;
@@ -337,12 +341,23 @@ function renderProducts() {
         // Sub-filter edisi khusus stiker
         let matchStickerEd = true;
         if (activeCategory === 'stiker' && activeStickerEdition !== 'all') {
-            matchStickerEd = item.edition === activeStickerEdition;
+            matchStickerEd = String(item.edition).trim().toLowerCase() === String(activeStickerEdition).trim().toLowerCase();
         }
 
         // Pencarian teks
         const titleMatch = (item.player_name || item.title || '').toLowerCase().includes(query);
-        const editionMatch = item.edition ? (`edisi ${item.edition}`.includes(query) || `#${item.edition}`.includes(query) || item.edition.toString() === query) : false;
+        const edRaw = item.edition ? String(item.edition).trim() : '';
+        const edLower = edRaw.toLowerCase();
+        const isSpecialEd = edLower === 'special' || edLower === 'spesial';
+        const editionMatch = edRaw
+            ? (
+                edLower === query ||
+                edLower.includes(query) ||
+                `edisi ${edLower}`.includes(query) ||
+                `#${edLower}`.includes(query) ||
+                (isSpecialEd && (query.includes('special') || query.includes('spesial')))
+              )
+            : false;
         const teamMatch = item.team ? item.team.toLowerCase().includes(query) : false;
         const yearMatch = item.year ? item.year.toLowerCase().includes(query) : false;
         const descMatch = (item.desc ?? '').toLowerCase().includes(query);
@@ -358,8 +373,12 @@ function renderProducts() {
 
     filtered.forEach(item => {
         const badgeColor = getCategoryBadgeStyle(item.category);
-        const productName = item.player_name || item.title || 'Produk Loui';
-        const editionText = item.edition ? `Edisi #${item.edition}` : '';
+        const isNumericEdition = item.edition && !isNaN(item.edition);
+        const editionText = item.edition
+            ? isNumericEdition
+                ? `Edisi #${item.edition}`
+                : `Edisi ${item.edition}`
+            : '';
 
         // Format Tim dan Tahun (menggantikan spesifikasi)
         const teamText = item.team ? String(item.team).trim() : '';
@@ -371,7 +390,7 @@ function renderProducts() {
 
         const card = document.createElement('div');
         card.className = "bg-white rounded-2xl p-3 flex flex-col justify-between hover:shadow-2xl transition duration-150 border-2 border-transparent hover:border-lime-400";
-        const formattedPrice = formatRupiah(item.price);
+        const formattedPrice = getPriceRangeDisplay(item.variants, item.price);
         card.innerHTML = `
           <div>
             <div class="relative aspect-square rounded-xl bg-emerald-50 overflow-hidden mb-2.5 cursor-pointer group" onclick="openModalById('${item.id}')">
@@ -394,11 +413,44 @@ function renderProducts() {
     });
 }
 
+function parseVariants(variants) {
+    if (!variants) return null;
+    let parsed = variants;
+    if (typeof variants === 'string') {
+        try {
+            parsed = JSON.parse(variants);
+        } catch {
+            return null;
+        }
+    }
+    if (!Array.isArray(parsed) || parsed.length === 0) return null;
+    const cleaned = parsed
+        .map(v => ({
+            size: String(v.size || v.name || '').trim(),
+            price: typeof v.price === 'number' ? v.price : parseInt(String(v.price).replace(/[^0-9]/g, ''), 10) || 0
+        }))
+        .filter(v => v.size && v.price > 0);
+    return cleaned.length > 0 ? cleaned : null;
+}
+
+function getPriceRangeDisplay(variants, fallbackPrice) {
+    const parsed = parseVariants(variants);
+    if (parsed && parsed.length > 0) {
+        const prices = parsed.map(v => v.price);
+        const minPrice = Math.min(...prices);
+        const maxPrice = Math.max(...prices);
+        if (minPrice === maxPrice) {
+            return formatRupiah(minPrice);
+        }
+        return `${formatRupiah(minPrice)} - ${formatRupiah(maxPrice)}`;
+    }
+    return formatRupiah(fallbackPrice);
+}
+
 function formatRupiah(val) {
-    if (!val) return 'Rp. 0';
-    // Ambil hanya karakter angka jika sewaktu-waktu ada string/simbol yang masuk
+    if (!val) return 'Rp 0';
     const number = typeof val === 'number' ? val : parseInt(val.toString().replace(/[^0-9]/g, ''), 10) || 0;
-    return `Rp. ${number.toLocaleString('id-ID')}`;
+    return `Rp ${number.toLocaleString('id-ID')}`;
 }
 
 function openModalById(id) {
@@ -411,8 +463,9 @@ function openModalById(id) {
     modalPrice.innerText = displayPrice;
     modalDesc.innerText = item.desc || '-';
     modalCategory.innerText = item.category || '';
-    if (modalSpec) modalSpec.innerText = item.spec || '';
-    modalEdition.innerText = item.edition ? `Edisi #${item.edition}` : '';
+    const isNumericEdition = item.edition && !isNaN(item.edition);
+    const editionTextDisplay = item.edition ? (isNumericEdition ? `Edisi #${item.edition}` : `Edisi ${item.edition}`) : '';
+    modalEdition.innerText = editionTextDisplay;
     if (modalEdition) {
         if (item.edition) {
             modalEdition.classList.remove('hidden');
@@ -449,7 +502,11 @@ function openModalById(id) {
         modalImgLink.href = item.img;
     }
 
-    const editionText = item.edition ? `(Edisi #${item.edition})` : '';
+    const editionText = item.edition
+        ? isNumericEdition
+            ? `(Edisi #${item.edition})`
+            : `(Edisi ${item.edition})`
+        : '';
     const teamYearParts = [];
     if (item.team && String(item.team).trim()) teamYearParts.push(`Tim/Klub: ${item.team.trim()}`);
     if (item.year && String(item.year).trim()) teamYearParts.push(`Musim: ${item.year.trim()}`);

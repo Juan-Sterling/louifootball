@@ -53,21 +53,24 @@ export default function StickerEditionFilter({
         </button>
 
         {/* Tombol Edisi Spesial */}
-        {specialEditions.map((sp) => (
-          <button
-            key={sp}
-            onClick={() => onSelectEdition(sp)}
-            type="button"
-            className={`edition-btn flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-black whitespace-nowrap transition flex-shrink-0 shadow-sm cursor-pointer ${
-              activeStickerEdition === sp
-                ? 'bg-amber-400 text-amber-950 border border-amber-400'
-                : 'bg-gradient-to-r from-amber-500/20 to-yellow-500/20 border border-amber-400 text-amber-300 hover:bg-amber-400 hover:text-amber-950'
-            }`}
-          >
-            <Star size={13} weight="fill" className={activeStickerEdition === sp ? 'text-amber-950' : 'text-amber-400'} />
-            <span>{sp}</span>
-          </button>
-        ))}
+        {specialEditions.map((sp) => {
+          const isActive = String(activeStickerEdition).trim().toLowerCase() === String(sp).trim().toLowerCase();
+          return (
+            <button
+              key={sp}
+              onClick={() => onSelectEdition(sp)}
+              type="button"
+              className={`edition-btn flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-black whitespace-nowrap transition flex-shrink-0 shadow-sm cursor-pointer ${
+                isActive
+                  ? 'bg-amber-400 text-amber-950 border border-amber-400'
+                  : 'bg-gradient-to-r from-amber-500/20 to-yellow-500/20 border border-amber-400 text-amber-300 hover:bg-amber-400 hover:text-amber-950'
+              }`}
+            >
+              <Star size={13} weight="fill" className={isActive ? 'text-amber-950' : 'text-amber-400'} />
+              <span>{sp}</span>
+            </button>
+          );
+        })}
 
         {/* Dropdown Edisi Bernomor */}
         {numberedEditions.length > 0 && (

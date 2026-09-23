@@ -59,9 +59,14 @@
         "title": "Poster Lionel Messi 8 Ballon d'Or GOAT",
         "team": "Barcelona",
         "year": null,
-        "price": "Rp 200.000",
+        "price": "Rp 250.000",
+        "variants": [
+            { "size": "A3", "price": 250000 },
+            { "size": "A2", "price": 325000 },
+            { "size": "A1", "price": 400000 }
+        ],
         "spec": "Art Carton 260gr • 32x48 cm",
         "desc": "Poster eksklusif kolektor tribute 8 trofi Ballon d'Or. Resolusi tinggi kualitas gallery.",
-        "img": "https://res.cloudinary.com/og1jrvy3/image/upload/v1789010178/545040561_17848000446557650_323288529526384965_n.jpg"
+        "img": "https://res.cloudinary.com/og1jrvy3/image/upload/f_auto,q_auto,w_500/v1789010178/545040561_17848000446557650_323288529526384965_n.jpg"
     }
 ]

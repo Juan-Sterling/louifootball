@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   X,
   MagnifyingGlassPlus,
@@ -9,10 +9,13 @@ import {
   WhatsappLogo,
   ShoppingBagOpen,
   Storefront,
+  CheckCircle,
 } from '@phosphor-icons/react';
-import { formatRupiah, WA_NUMBER } from '@/lib/utils';
+import { formatRupiah, parseVariants, WA_NUMBER } from '@/lib/utils';
 
 export default function ProductModal({ product, isOpen, onClose, onOpenZoom }) {
+  const [selectedVariant, setSelectedVariant] = useState(null);
+
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'Escape' && isOpen) {
@@ -23,13 +26,46 @@ export default function ProductModal({ product, isOpen, onClose, onOpenZoom }) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
 
+  // Reset pilihan ukuran saat modal dibuka atau produk berganti
+  useEffect(() => {
+    setSelectedVariant(null);
+  }, [product?.id, isOpen]);
+
   if (!isOpen || !product) return null;
 
   const playerName = product.player_name ? String(product.player_name).trim() : '';
   const productTitle = product.title ? String(product.title).trim() : '';
   const productName = playerName || productTitle || 'Produk Loui';
-  const displayPrice = formatRupiah(product.price);
-  const editionText = product.edition ? `(Edisi #${product.edition})` : '';
+  const variants = parseVariants(product.variants);
+
+  // Hitung display harga: jika ada varian terpilih, gunakan harga varian.
+  // Jika default (belum ada yang dipilih), tampilkan harga terendah - tertinggi.
+  let displayPrice = '';
+  if (selectedVariant) {
+    displayPrice = formatRupiah(selectedVariant.price);
+  } else if (variants && variants.length > 0) {
+    const prices = variants.map((v) => v.price);
+    const minPrice = Math.min(...prices);
+    const maxPrice = Math.max(...prices);
+    displayPrice = minPrice === maxPrice
+      ? formatRupiah(minPrice)
+      : `${formatRupiah(minPrice)} - ${formatRupiah(maxPrice)}`;
+  } else {
+    displayPrice = formatRupiah(product.price);
+  }
+
+  const isNumericEdition = product.edition && !isNaN(product.edition);
+  const editionText = product.edition
+    ? isNumericEdition
+      ? `(Edisi #${product.edition})`
+      : `(Edisi ${product.edition})`
+    : '';
+
+  const variantWaText = selectedVariant
+    ? `\nUkuran: ${selectedVariant.size} (${formatRupiah(selectedVariant.price)})`
+    : variants && variants.length > 0
+    ? `\nPilihan Ukuran: Tersedia ${variants.map((v) => v.size).join(', ')}`
+    : '';
 
   const titleWaText = productTitle && productTitle !== playerName ? `\nJudul: ${productTitle}` : '';
 
@@ -51,13 +87,13 @@ export default function ProductModal({ product, isOpen, onClose, onOpenZoom }) {
   const msg = isSoldOut
     ? encodeURIComponent(`Halo LOUIFOOTBALL, saya ingin bertanya tentang stok produk:
 
-*${productName}* ${editionText}${titleWaText}${teamYearWaText}
+*${productName}* ${editionText}${variantWaText}${titleWaText}${teamYearWaText}
 Status: Sold Out
 
 Apakah produk ini akan restock kembali?`)
     : encodeURIComponent(`Halo LOUIFOOTBALL, saya ingin memesan:
 
-*${productName}* ${editionText}${titleWaText}${teamYearWaText}
+*${productName}* ${editionText}${variantWaText}${titleWaText}${teamYearWaText}
 Harga: ${displayPrice}
 
 Apakah stok masih ada?`);
@@ -122,7 +158,7 @@ Apakah stok masih ada?`);
               </span>
               {product.edition && (
                 <span className="text-[10px] font-black uppercase text-amber-900 bg-amber-100 px-2.5 py-0.5 rounded-md border border-amber-200">
-                  Edisi #{product.edition}
+                  {isNumericEdition ? `Edisi #${product.edition}` : `Edisi ${product.edition}`}
                 </span>
               )}
             </div>
@@ -160,13 +196,72 @@ Apakah stok masih ada?`);
 
           {/* Harga & Status Stok */}
           <div className="flex items-center gap-3 mt-2.5">
-            <p className="text-2xl font-black text-emerald-800">{displayPrice}</p>
+            <p className="text-xl sm:text-2xl font-black text-emerald-800">{displayPrice}</p>
             {isSoldOut && (
               <span className="px-2.5 py-0.5 bg-red-100 border border-red-300 text-red-700 text-xs font-black rounded-md uppercase tracking-wider">
                 Stok Habis
               </span>
             )}
           </div>
+
+          {/* Selector Pilihan Ukuran / Varian (cth: Poster A3, A2, A1) */}
+          {variants && variants.length > 0 && (
+            <div className="mt-3.5 pt-3 border-t border-gray-100">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-black text-gray-800 uppercase tracking-wider flex items-center gap-1.5">
+                  <span>Pilihan Ukuran</span>
+                  {selectedVariant ? (
+                    <span className="text-emerald-700 font-bold normal-case text-xs">
+                      : Ukuran {selectedVariant.size} ({formatRupiah(selectedVariant.price)})
+                    </span>
+                  ) : (
+                    <span className="text-gray-400 font-normal normal-case text-[11px]">
+                      (Klik untuk pilih ukuran)
+                    </span>
+                  )}
+                </span>
+                {selectedVariant && (
+                  <button
+                    type="button"
+                    onClick={() => setSelectedVariant(null)}
+                    className="text-[11px] text-emerald-700 hover:text-emerald-900 font-semibold underline cursor-pointer"
+                  >
+                    Reset Harga
+                  </button>
+                )}
+              </div>
+
+              <div className="grid grid-cols-3 gap-2">
+                {variants.map((v) => {
+                  const isSelected = selectedVariant?.size === v.size;
+                  return (
+                    <button
+                      key={v.size}
+                      type="button"
+                      onClick={() => setSelectedVariant(isSelected ? null : v)}
+                      className={`py-2 px-2 rounded-xl border text-center transition cursor-pointer flex flex-col items-center justify-center relative ${
+                        isSelected
+                          ? 'bg-emerald-950 border-emerald-950 text-white shadow-md ring-2 ring-lime-400'
+                          : 'bg-emerald-50/50 hover:bg-emerald-100/70 border-emerald-200 text-emerald-950 hover:border-emerald-400'
+                      }`}
+                    >
+                      {isSelected && (
+                        <span className="absolute top-1 right-1 text-lime-400">
+                          <CheckCircle size={13} weight="fill" />
+                        </span>
+                      )}
+                      <span className={`text-xs sm:text-sm font-black ${isSelected ? 'text-lime-300' : 'text-emerald-950'}`}>
+                        Ukuran {v.size}
+                      </span>
+                      <span className={`text-[10px] sm:text-[11px] font-bold mt-0.5 ${isSelected ? 'text-emerald-200' : 'text-emerald-700'}`}>
+                        {formatRupiah(v.price)}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Deskripsi */}
           <p className="text-gray-600 text-xs sm:text-sm mt-3 leading-relaxed bg-gray-50 p-3 rounded-xl border border-gray-100">
@@ -186,7 +281,13 @@ Apakah stok masih ada?`);
               }`}
             >
               <WhatsappLogo size={20} weight="bold" className="text-green-400" />
-              <span>{isSoldOut ? 'Tanya Restock via WhatsApp' : 'Order via WhatsApp'}</span>
+              <span>
+                {isSoldOut
+                  ? 'Tanya Restock via WhatsApp'
+                  : selectedVariant
+                  ? `Order Ukuran ${selectedVariant.size} via WhatsApp`
+                  : 'Order via WhatsApp'}
+              </span>
             </a>
 
             {/* Shopee & Tokopedia (Non-aktif jika Sold Out) */}

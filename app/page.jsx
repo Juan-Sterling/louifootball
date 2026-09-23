@@ -67,8 +67,12 @@ export default function Home() {
           };
         });
 
-        // Urutkan edisi terbaru ke terlama
+        // Urutkan: edisi spesial di paling atas, lalu edisi bernomor terbaru ke terlama
         mapped.sort((a, b) => {
+          const isSpecialA = isNaN(a.edition) && Boolean(a.edition);
+          const isSpecialB = isNaN(b.edition) && Boolean(b.edition);
+          if (isSpecialA && !isSpecialB) return -1;
+          if (!isSpecialA && isSpecialB) return 1;
           const edA = parseInt(a.edition, 10) || 0;
           const edB = parseInt(b.edition, 10) || 0;
           return edB - edA;
@@ -146,14 +150,23 @@ export default function Home() {
       // Sub-filter edisi stiker
       let matchStickerEd = true;
       if (activeCategory === 'stiker' && activeStickerEdition !== 'all') {
-        matchStickerEd = String(item.edition) === String(activeStickerEdition);
+        matchStickerEd = String(item.edition).trim().toLowerCase() === String(activeStickerEdition).trim().toLowerCase();
       }
 
       // Pencarian teks
       const name = (item.player_name || item.title || '').toLowerCase();
       const titleMatch = name.includes(query);
-      const editionMatch = item.edition
-        ? `edisi ${item.edition}`.includes(query) || `#${item.edition}`.includes(query) || String(item.edition) === query
+      const edRaw = item.edition ? String(item.edition).trim() : '';
+      const edLower = edRaw.toLowerCase();
+      const isSpecialEd = edLower === 'special' || edLower === 'spesial';
+      const editionMatch = edRaw
+        ? (
+            edLower === query ||
+            edLower.includes(query) ||
+            `edisi ${edLower}`.includes(query) ||
+            `#${edLower}`.includes(query) ||
+            (isSpecialEd && (query.includes('special') || query.includes('spesial')))
+          )
         : false;
       const teamMatch = item.team ? item.team.toLowerCase().includes(query) : false;
       const yearMatch = item.year ? item.year.toLowerCase().includes(query) : false;

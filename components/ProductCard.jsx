@@ -1,14 +1,19 @@
 'use client';
 
 import React from 'react';
-import { formatRupiah, getCategoryBadgeStyle } from '@/lib/utils';
+import { formatRupiah, getCategoryBadgeStyle, getPriceRangeDisplay } from '@/lib/utils';
 
 export default function ProductCard({ product, onOpenModal }) {
   const badgeColor = getCategoryBadgeStyle(product.category);
   const playerName = product.player_name ? String(product.player_name).trim() : '';
   const productTitle = product.title ? String(product.title).trim() : '';
   const productName = playerName || productTitle || 'Produk Loui';
-  const editionText = product.edition ? `Edisi #${product.edition}` : '';
+  const isNumericEdition = product.edition && !isNaN(product.edition);
+  const editionText = product.edition
+    ? isNumericEdition
+      ? `Edisi #${product.edition}`
+      : `Edisi ${product.edition}`
+    : '';
 
   // Format Tim dan Tahun (Hanya tampil jika ada/valid)
   const rawTeam = product.team ? String(product.team).trim() : '';
@@ -25,7 +30,7 @@ export default function ProductCard({ product, onOpenModal }) {
   const teamYearDisplay = teamYearParts.join(' • ');
 
   const isSoldOut = String(product.sold_out || '').trim().toUpperCase() === 'Y';
-  const formattedPrice = formatRupiah(product.price);
+  const formattedPrice = getPriceRangeDisplay(product.variants, product.price);
 
   return (
     <div className={`bg-white rounded-2xl p-3 flex flex-col justify-between hover:shadow-2xl transition duration-150 border-2 ${
