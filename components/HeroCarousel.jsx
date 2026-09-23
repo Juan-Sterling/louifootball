@@ -146,12 +146,13 @@ export default function HeroCarousel({ onSelectCategory, onSelectEdition, onScro
   const handleAction = (promo) => {
     const type = (promo.action_type || '').toLowerCase().trim();
     const target = (promo.action_target || '').trim();
+    const cleanTarget = target.replace(/^#/, '').trim();
 
     if (type === 'edition' || type === 'filter_edition' || type === 'stiker_edition') {
-      if (onSelectEdition) onSelectEdition(target);
+      if (onSelectEdition) onSelectEdition(cleanTarget);
       if (onScrollToCatalog) onScrollToCatalog();
     } else if (type === 'category' || type === 'filter_category') {
-      if (onSelectCategory) onSelectCategory(target.toLowerCase());
+      if (onSelectCategory) onSelectCategory(cleanTarget.toLowerCase());
       if (onScrollToCatalog) onScrollToCatalog();
     } else if (type === 'whatsapp' || type === 'wa') {
       const msg = encodeURIComponent(target || 'Halo LOUIFOOTBALL, saya tertarik dengan promo di website');
@@ -163,6 +164,9 @@ export default function HeroCarousel({ onSelectCategory, onSelectEdition, onScro
         window.location.href = target;
       }
     } else {
+      if (!isNaN(cleanTarget) && cleanTarget !== '') {
+        if (onSelectEdition) onSelectEdition(cleanTarget);
+      }
       if (onScrollToCatalog) onScrollToCatalog();
     }
   };

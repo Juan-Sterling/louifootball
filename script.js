@@ -74,7 +74,11 @@ function getCategoryBadgeStyle(category) {
     const cat = (category || '').toLowerCase().trim();
     switch (cat) {
         case 'stiker':
+        case 'stickers':
             return 'bg-emerald-700 text-lime-300';
+        case 'mini sticker':
+        case 'mini stickers':
+        case 'mini stikers':
         case 'mini stiker':
             return 'bg-cyan-700 text-cyan-100';
         case 'keychain':

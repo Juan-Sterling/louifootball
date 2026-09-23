@@ -2,6 +2,7 @@
 
 import React, { useMemo } from 'react';
 import { Faders, Star, CaretDown } from '@phosphor-icons/react';
+import { normalizeCategory } from '@/lib/utils';
 
 export default function StickerEditionFilter({
   products,
@@ -10,8 +11,8 @@ export default function StickerEditionFilter({
 }) {
   const { specialEditions, numberedEditions } = useMemo(() => {
     const stickerProducts = products.filter((item) => {
-      const cat = (item.category || item.categories?.category || '').toLowerCase().trim();
-      return (cat === 'stiker' || item.category_id === 1) && item.edition && String(item.edition).trim() !== '';
+      const cat = normalizeCategory(item.category || item.categories?.category || '');
+      return (cat === 'stickers' || item.category_id === 1) && item.edition && String(item.edition).trim() !== '';
     });
 
     const rawEditions = [...new Set(stickerProducts.map((item) => String(item.edition).trim()))];
@@ -31,9 +32,10 @@ export default function StickerEditionFilter({
   }, [products]);
 
   const isNumberedActive = !isNaN(activeStickerEdition) && activeStickerEdition !== 'all' && activeStickerEdition !== '';
-  const isSpecialActive = specialEditions.some(
+  const matchedSpecial = specialEditions.find(
     (sp) => String(sp).trim().toLowerCase() === String(activeStickerEdition).trim().toLowerCase()
   );
+  const isSpecialActive = Boolean(matchedSpecial);
 
   return (
     <div className="flex items-center gap-2 pb-2.5 mb-3 border-t border-emerald-800/40 pt-2.5 overflow-x-auto category-scrollbar">
@@ -90,7 +92,7 @@ export default function StickerEditionFilter({
         {specialEditions.length > 0 && (
           <div className="relative flex-1 min-w-[130px] sm:max-w-[190px]">
             <select
-              value={isSpecialActive ? activeStickerEdition : ''}
+              value={isSpecialActive ? (matchedSpecial || activeStickerEdition) : ''}
               onChange={(e) => onSelectEdition(e.target.value)}
               className={`w-full text-xs font-bold py-1.5 pl-3 pr-8 rounded-xl focus:outline-none appearance-none cursor-pointer shadow transition ${
                 isSpecialActive

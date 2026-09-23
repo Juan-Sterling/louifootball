@@ -12,6 +12,7 @@ import ContactModal from '@/components/ContactModal';
 import Footer from '@/components/Footer';
 import { supabase } from '@/lib/supabase';
 import fallbackProducts from '@/products.json';
+import { normalizeCategory } from '@/lib/utils';
 
 export default function Home() {
   const [products, setProducts] = useState([]);
@@ -60,7 +61,7 @@ export default function Home() {
             title: productTitle,
             sold_out: soldOutVal,
             is_sold_out: soldOutVal.toUpperCase() === 'Y',
-            category: (catObj.category || item.category || 'lainnya').toLowerCase().trim(),
+            category: normalizeCategory(catObj.category || item.category || 'lainnya'),
             team: cleanTeam,
             year: cleanYear,
             spec: catObj.spec || item.spec || 'Koleksi Resmi',
@@ -88,7 +89,7 @@ export default function Home() {
             ...item,
             player_name: playerName,
             title: playerName,
-            category: (item.category || '').toLowerCase().trim(),
+            category: normalizeCategory(item.category || 'lainnya'),
             team: item.team ? String(item.team).trim() : '',
             year: item.year ? String(item.year).trim() : '',
             spec: item.spec || 'Koleksi Resmi',
@@ -116,19 +117,19 @@ export default function Home() {
 
   // Filter handlers
   const handleSelectCategory = useCallback((cat) => {
-    setActiveCategory(cat);
+    setActiveCategory(normalizeCategory(cat));
     setActiveStickerEdition('all');
     setSearchQuery('');
   }, []);
 
   const handleSelectEdition = useCallback((ed) => {
-    setActiveStickerEdition(ed);
+    setActiveStickerEdition(String(ed).trim());
     setSearchQuery('');
   }, []);
 
   const handleHeroSelectEdition = useCallback((ed) => {
-    setActiveCategory('stiker');
-    setActiveStickerEdition(ed);
+    setActiveCategory('stickers');
+    setActiveStickerEdition(String(ed).trim());
     setSearchQuery('');
     setTimeout(scrollToCatalog, 100);
   }, [scrollToCatalog]);
@@ -148,6 +149,7 @@ export default function Home() {
   // Filtered products calculation
   const filteredProducts = useMemo(() => {
     const query = searchQuery.toLowerCase().trim();
+    const normalizedActiveCat = normalizeCategory(activeCategory);
 
     return products.filter((item) => {
       // Filter produk tersedia (sembunyikan sold out jika filter Tersedia aktif)
@@ -156,11 +158,13 @@ export default function Home() {
       }
 
       // Kategori utama
-      const matchCat = activeCategory === 'all' || item.category === activeCategory;
+      const itemCat = normalizeCategory(item.category);
+      const matchCat = normalizedActiveCat === 'all' || itemCat === normalizedActiveCat;
 
       // Sub-filter edisi stiker
       let matchStickerEd = true;
-      if (activeCategory === 'stiker' && activeStickerEdition !== 'all') {
+      const isStickerCat = normalizedActiveCat === 'stickers';
+      if (isStickerCat && activeStickerEdition !== 'all') {
         matchStickerEd = String(item.edition).trim().toLowerCase() === String(activeStickerEdition).trim().toLowerCase();
       }
 
@@ -218,7 +222,7 @@ export default function Home() {
         />
 
         {/* Sub-filter Edisi Stiker (hanya tampil saat kategori stiker aktif) */}
-        {activeCategory === 'stiker' && (
+        {normalizeCategory(activeCategory) === 'stickers' && (
           <StickerEditionFilter
             products={products}
             activeStickerEdition={activeStickerEdition}
