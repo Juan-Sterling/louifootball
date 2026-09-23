@@ -140,7 +140,7 @@ function renderCategoryTabs(categories) {
 
     let html = `
         <button id="cat-all" onclick="filterCategory('all', this)"
-            class="cat-btn font-loui tracking-wider uppercase px-4 py-1.5 rounded-full ${activeCategory === 'all' ? 'bg-lime-400 text-emerald-950 font-black' : 'bg-emerald-950/80 border border-emerald-600/40 text-emerald-100 font-bold hover:bg-emerald-900'} text-xs whitespace-nowrap shadow cursor-pointer transition">
+            class="cat-btn font-loui tracking-wider uppercase px-4 py-1.5 rounded-full ${activeCategory === 'all' ? 'bg-lime-400 text-emerald-950' : 'bg-emerald-950/80 border border-emerald-600/40 text-emerald-100 hover:bg-emerald-900'} text-xs whitespace-nowrap shadow cursor-pointer transition">
             Semua
         </button>
     `;
@@ -156,7 +156,7 @@ function renderCategoryTabs(categories) {
 
         html += `
             <button id="${btnId}" onclick="filterCategory('${slug}', this)"
-                class="cat-btn font-loui tracking-wider uppercase px-4 py-1.5 rounded-full ${isActive ? 'bg-lime-400 text-emerald-950 font-black' : 'bg-emerald-950/80 border border-emerald-600/40 text-emerald-100 font-bold hover:bg-emerald-900'} text-xs whitespace-nowrap shadow cursor-pointer transition">
+                class="cat-btn font-loui tracking-wider uppercase px-4 py-1.5 rounded-full ${isActive ? 'bg-lime-400 text-emerald-950' : 'bg-emerald-950/80 border border-emerald-600/40 text-emerald-100 hover:bg-emerald-900'} text-xs whitespace-nowrap shadow cursor-pointer transition">
                 ${label}
             </button>
         `;
@@ -620,7 +620,7 @@ function renderProducts() {
             </div>
             
             <p class="text-[10px] font-black text-amber-700 tracking-wider uppercase">${editionText}</p>
-            <h3 class="font-loui font-bold text-sm sm:text-base text-gray-900 leading-snug line-clamp-2 mt-0.5 cursor-pointer hover:text-emerald-700 transition tracking-wide" onclick="openModalById('${item.id}')">${productName}</h3>
+            <h3 class="font-loui text-sm sm:text-base text-gray-900 leading-snug line-clamp-2 mt-0.5 cursor-pointer hover:text-emerald-700 transition tracking-wide" onclick="openModalById('${item.id}')">${productName}</h3>
             ${teamYearDisplay ? `<p class="text-[11px] text-gray-500 mt-1 truncate font-medium" title="${teamYearDisplay}">${teamYearDisplay}</p>` : '<p class="text-[11px] text-transparent mt-1 select-none">-</p>'}
           </div>
           <div class="mt-3 pt-2 border-t border-gray-100">

@@ -80,7 +80,7 @@ export default function ProductCard({ product, onOpenModal }) {
         {/* Nama Pemain / Produk */}
         <h3
           onClick={() => onOpenModal(product)}
-          className="font-loui font-bold text-sm sm:text-base text-gray-900 leading-snug line-clamp-2 mt-0.5 cursor-pointer hover:text-emerald-700 transition tracking-wide"
+          className="font-loui text-sm sm:text-base text-gray-900 leading-snug line-clamp-2 mt-0.5 cursor-pointer hover:text-emerald-700 transition tracking-wide"
         >
           {productName}
         </h3>

@@ -14,7 +14,7 @@ export default function Footer() {
     <footer className="bg-emerald-950/95 border-t border-emerald-700/50 mt-10 py-8 text-white backdrop-blur-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-4">
         <div className="flex items-center justify-center gap-2">
-          <span className="font-loui font-bold text-xl sm:text-2xl tracking-wider">
+          <span className="font-loui text-xl sm:text-2xl tracking-wider">
             LOUI<span className="text-lime-400">FOOTBALL</span>
           </span>
         </div>

@@ -304,7 +304,7 @@ Apakah stok masih ada?`);
           </div>
 
           {/* Judul Produk / Nama Pemain */}
-          <h2 className="text-xl sm:text-2xl font-loui font-bold text-gray-950 mt-2.5 leading-tight tracking-wide">
+          <h2 className="text-xl sm:text-2xl font-loui text-gray-950 mt-2.5 leading-tight tracking-wide">
             {productName}
           </h2>
 

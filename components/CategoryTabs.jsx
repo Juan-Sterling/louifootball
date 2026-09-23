@@ -68,8 +68,8 @@ export default function CategoryTabs({
           type="button"
           className={`cat-btn font-loui tracking-wider uppercase px-4 py-1.5 rounded-full text-xs whitespace-nowrap shadow cursor-pointer transition shrink-0 ${
             normalizeCategory(activeCategory) === 'all'
-              ? 'bg-lime-400 text-emerald-950 font-black'
-              : 'bg-emerald-950/80 border border-emerald-600/40 text-emerald-100 font-bold hover:bg-emerald-900'
+              ? 'bg-lime-400 text-emerald-950'
+              : 'bg-emerald-950/80 border border-emerald-600/40 text-emerald-100 hover:bg-emerald-900'
           }`}
         >
           Semua
@@ -91,8 +91,8 @@ export default function CategoryTabs({
               type="button"
               className={`cat-btn font-loui tracking-wider uppercase px-4 py-1.5 rounded-full text-xs whitespace-nowrap shadow cursor-pointer transition shrink-0 ${
                 isActive
-                  ? 'bg-lime-400 text-emerald-950 font-black'
-                  : 'bg-emerald-950/80 border border-emerald-600/40 text-emerald-100 font-bold hover:bg-emerald-900'
+                  ? 'bg-lime-400 text-emerald-950'
+                  : 'bg-emerald-950/80 border border-emerald-600/40 text-emerald-100 hover:bg-emerald-900'
               }`}
             >
               {label}

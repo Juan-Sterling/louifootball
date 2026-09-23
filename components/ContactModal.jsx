@@ -46,7 +46,7 @@ export default function ContactModal({ isOpen, onClose }) {
           <div className="w-12 h-12 bg-lime-400 text-emerald-950 rounded-2xl mx-auto flex items-center justify-center font-black text-xl mb-2 shadow">
             <ChatCircleText size={26} weight="bold" />
           </div>
-          <h3 className="text-xl font-loui font-bold text-white tracking-wide uppercase">Hubungi LOUIFOOTBALL</h3>
+          <h3 className="text-xl font-loui text-white tracking-wide uppercase">Hubungi LOUIFOOTBALL</h3>
           <p className="text-xs text-emerald-200/80 mt-1">
             Pilih saluran kontak atau marketplace resmi kami:
           </p>

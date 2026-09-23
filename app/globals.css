@@ -12,6 +12,7 @@
 
 .font-loui {
   font-family: var(--font-loui-football), 'LOUI FOOTBALL', sans-serif;
+  font-weight: normal !important;
 }
 
 /* Background motif sunburst hijau rumput lapangan */
