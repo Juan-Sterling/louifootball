@@ -10,9 +10,12 @@ import ProductModal from '@/components/ProductModal';
 import ImageZoomModal from '@/components/ImageZoomModal';
 import ContactModal from '@/components/ContactModal';
 import Footer from '@/components/Footer';
+import Pagination from '@/components/Pagination';
 import { supabase } from '@/lib/supabase';
 import fallbackProducts from '@/products.json';
-import { normalizeCategory } from '@/lib/utils';
+import { normalizeCategory, sortCatalogProducts } from '@/lib/utils';
+
+const ITEMS_PER_PAGE = 20;
 
 export default function Home() {
   const [products, setProducts] = useState([]);
@@ -22,6 +25,7 @@ export default function Home() {
   const [isAvailableOnly, setIsAvailableOnly] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
 
   // Modal states
   const [selectedProduct, setSelectedProduct] = useState(null);
@@ -69,26 +73,20 @@ export default function Home() {
           };
         });
 
-        // Urutkan: edisi spesial di paling atas, lalu edisi bernomor terbaru ke terlama
-        mapped.sort((a, b) => {
-          const isSpecialA = isNaN(a.edition) && Boolean(a.edition);
-          const isSpecialB = isNaN(b.edition) && Boolean(b.edition);
-          if (isSpecialA && !isSpecialB) return -1;
-          if (!isSpecialA && isSpecialB) return 1;
-          const edA = parseInt(a.edition, 10) || 0;
-          const edB = parseInt(b.edition, 10) || 0;
-          return edB - edA;
-        });
-
-        setProducts(mapped);
+        // Urutkan katalog: produk sold out di paling bawah, tampilan default prioritaskan pemain bintang
+        const sorted = sortCatalogProducts(mapped, 'all');
+        setProducts(sorted);
       } catch (err) {
         console.warn('Gagal memuat produk dari Supabase, beralih ke fallback lokal:', err);
         const mappedFallback = (fallbackProducts || []).map((item) => {
           const playerName = item.player_name || item.title || 'Produk Loui';
+          const soldOutVal = item.sold_out ? String(item.sold_out).trim() : '';
           return {
             ...item,
             player_name: playerName,
             title: playerName,
+            sold_out: soldOutVal,
+            is_sold_out: soldOutVal.toUpperCase() === 'Y',
             category: normalizeCategory(item.category || 'lainnya'),
             team: item.team ? String(item.team).trim() : '',
             year: item.year ? String(item.year).trim() : '',
@@ -96,7 +94,8 @@ export default function Home() {
             desc: item.desc || '',
           };
         });
-        setProducts(mappedFallback);
+        const sortedFallback = sortCatalogProducts(mappedFallback, 'all');
+        setProducts(sortedFallback);
       } finally {
         setIsLoading(false);
       }
@@ -151,7 +150,7 @@ export default function Home() {
     const query = searchQuery.toLowerCase().trim();
     const normalizedActiveCat = normalizeCategory(activeCategory);
 
-    return products.filter((item) => {
+    const filtered = products.filter((item) => {
       // Filter produk tersedia (sembunyikan sold out jika filter Tersedia aktif)
       if (isAvailableOnly && item.is_sold_out) {
         return false;
@@ -189,7 +188,28 @@ export default function Home() {
 
       return matchCat && matchStickerEd && (titleMatch || editionMatch || teamMatch || yearMatch || descMatch);
     });
+
+    return sortCatalogProducts(filtered, normalizedActiveCat);
   }, [products, activeCategory, activeStickerEdition, searchQuery, isAvailableOnly]);
+
+  // Reset ke halaman 1 setiap kali filter atau pencarian berubah
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeCategory, activeStickerEdition, isAvailableOnly, searchQuery]);
+
+  // Hitung jumlah halaman dan potong produk untuk halaman saat ini
+  const totalPages = Math.max(1, Math.ceil(filteredProducts.length / ITEMS_PER_PAGE));
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+
+  const paginatedProducts = useMemo(() => {
+    const startIndex = (safeCurrentPage - 1) * ITEMS_PER_PAGE;
+    return filteredProducts.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [filteredProducts, safeCurrentPage]);
+
+  const handlePageChange = useCallback((newPage) => {
+    setCurrentPage(newPage);
+    scrollToCatalog();
+  }, [scrollToCatalog]);
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -230,13 +250,23 @@ export default function Home() {
           />
         )}
 
-        {/* Grid Produk */}
+        {/* Grid Produk (Maksimal 20 item per halaman) */}
         <ProductGrid
-          products={filteredProducts}
+          products={paginatedProducts}
           isLoading={isLoading}
           isAvailableOnly={isAvailableOnly}
           onOpenModal={(product) => setSelectedProduct(product)}
         />
+
+        {/* Kontrol Navigasi Pagination */}
+        {!isLoading && filteredProducts.length > 0 && (
+          <Pagination
+            currentPage={safeCurrentPage}
+            totalItems={filteredProducts.length}
+            itemsPerPage={ITEMS_PER_PAGE}
+            onPageChange={handlePageChange}
+          />
+        )}
       </main>
 
       {/* Footer */}

@@ -46,6 +46,10 @@ module.exports = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['var(--font-dm-sans)', 'sans-serif'],
+        loui: ['var(--font-loui-football)', 'sans-serif'],
+      },
       colors: {
         lime: {
           300: '#bef264',

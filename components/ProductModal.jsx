@@ -53,10 +53,15 @@ export default function ProductModal({ product, isOpen, onClose, onOpenZoom }) {
   const currentImg = (activeImg === product.img_add && hasAddImg) ? product.img_add : product.img;
   const currentImgIndex = currentImg === product.img_add ? 1 : 0;
 
-  // Hitung display harga: jika ada varian terpilih, gunakan harga varian.
+  const isLimited = String(product.edition || '').trim().toUpperCase() === 'LIMITED';
+
+  // Hitung display harga: jika edisi LIMITED, tulis 'LIMITED'.
+  // Jika ada varian terpilih, gunakan harga varian.
   // Jika default (belum ada yang dipilih), tampilkan harga terendah - tertinggi.
   let displayPrice = '';
-  if (selectedVariant) {
+  if (isLimited) {
+    displayPrice = 'LIMITED';
+  } else if (selectedVariant) {
     displayPrice = formatRupiah(selectedVariant.price);
   } else if (variants && variants.length > 0) {
     const prices = variants.map((v) => v.price);
@@ -99,7 +104,12 @@ export default function ProductModal({ product, isOpen, onClose, onOpenZoom }) {
 
   const isSoldOut = String(product.sold_out || '').trim().toUpperCase() === 'Y';
 
-  const msg = isSoldOut
+  const msg = isLimited
+    ? encodeURIComponent(`Halo LOUIFOOTBALL, saya ingin bertanya tentang edisi koleksi terbatas:
+
+*${productName}* ${editionText}${variantWaText}${titleWaText}${teamYearWaText}
+Status: Edisi Limited (Koleksi / Tidak Dijual)`)
+    : isSoldOut
     ? encodeURIComponent(`Halo LOUIFOOTBALL, saya ingin bertanya tentang stok produk:
 
 *${productName}* ${editionText}${variantWaText}${titleWaText}${teamYearWaText}
@@ -294,7 +304,7 @@ Apakah stok masih ada?`);
           </div>
 
           {/* Judul Produk / Nama Pemain */}
-          <h2 className="text-lg sm:text-xl font-black text-gray-950 mt-2.5 leading-tight">
+          <h2 className="text-xl sm:text-2xl font-loui font-bold text-gray-950 mt-2.5 leading-tight tracking-wide">
             {productName}
           </h2>
 
@@ -325,8 +335,15 @@ Apakah stok masih ada?`);
 
           {/* Harga & Status Stok */}
           <div className="flex items-center gap-3 mt-2.5">
-            <p className="text-xl sm:text-2xl font-black text-emerald-800">{displayPrice}</p>
-            {isSoldOut && (
+            <p className={`text-xl sm:text-2xl font-black ${isLimited ? 'text-amber-600 tracking-wider' : 'text-emerald-800'}`}>
+              {displayPrice}
+            </p>
+            {isLimited && (
+              <span className="px-2.5 py-0.5 bg-amber-100 border border-amber-300 text-amber-800 text-xs font-black rounded-md uppercase tracking-wider">
+                Edisi Koleksi (Tidak Dijual)
+              </span>
+            )}
+            {isSoldOut && !isLimited && (
               <span className="px-2.5 py-0.5 bg-red-100 border border-red-300 text-red-700 text-xs font-black rounded-md uppercase tracking-wider">
                 Stok Habis
               </span>
@@ -397,6 +414,19 @@ Apakah stok masih ada?`);
             {product.desc || 'Merchandise resmi sepak bola berkualitas dari LOUIFOOTBALL.'}
           </p>
 
+          {/* Info Khusus Edisi Limited */}
+          {isLimited && (
+            <div className="bg-amber-50 border border-amber-200/90 text-amber-900 text-xs rounded-xl p-3 flex items-start gap-2.5 mt-3">
+              <span className="text-base leading-none">⭐</span>
+              <div>
+                <p className="font-bold">Edisi Koleksi Terbatas (Not For Sale)</p>
+                <p className="text-[11px] text-amber-800/90 mt-0.5">
+                  Produk ini merupakan rilisan edisi LIMITED khusus koleksi dan tidak dijual di online shop / marketplace.
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Opsi Pembelian */}
           <div className="mt-5 space-y-2">
             <a
@@ -404,14 +434,18 @@ Apakah stok masih ada?`);
               target="_blank"
               rel="noopener noreferrer"
               className={`w-full font-bold py-3 rounded-2xl flex items-center justify-center gap-2 text-sm shadow-md transition cursor-pointer ${
-                isSoldOut
+                isLimited
+                  ? 'bg-zinc-800 hover:bg-zinc-900 text-amber-300'
+                  : isSoldOut
                   ? 'bg-zinc-800 hover:bg-zinc-900 text-lime-300'
                   : 'bg-emerald-800 hover:bg-emerald-900 text-lime-300'
               }`}
             >
               <WhatsappLogo size={20} weight="bold" className="text-green-400" />
               <span>
-                {isSoldOut
+                {isLimited
+                  ? 'Tanya Info via WhatsApp'
+                  : isSoldOut
                   ? 'Tanya Restock via WhatsApp'
                   : selectedVariant
                   ? `Order Ukuran ${selectedVariant.size} via WhatsApp`
@@ -419,9 +453,18 @@ Apakah stok masih ada?`);
               </span>
             </a>
 
-            {/* Shopee & Tokopedia (Non-aktif jika Sold Out) */}
+            {/* Shopee & Tokopedia (Non-aktif jika Limited atau Sold Out) */}
             <div className="grid grid-cols-2 gap-2 pt-1">
-              {isSoldOut ? (
+              {isLimited ? (
+                <div
+                  aria-disabled="true"
+                  title="Produk edisi Limited tidak dijual di Shopee"
+                  className="bg-gray-100 border border-gray-200 text-gray-400 font-bold py-2.5 rounded-xl flex items-center justify-center gap-1.5 text-xs cursor-not-allowed opacity-60 select-none"
+                >
+                  <ShoppingBagOpen size={16} weight="bold" className="text-gray-400" />
+                  <span>Shopee (Tidak Dijual)</span>
+                </div>
+              ) : isSoldOut ? (
                 <div
                   aria-disabled="true"
                   title="Produk telah habis terjual (Sold Out)"
@@ -442,7 +485,16 @@ Apakah stok masih ada?`);
                 </a>
               )}
 
-              {isSoldOut ? (
+              {isLimited ? (
+                <div
+                  aria-disabled="true"
+                  title="Produk edisi Limited tidak dijual di Tokopedia"
+                  className="bg-gray-100 border border-gray-200 text-gray-400 font-bold py-2.5 rounded-xl flex items-center justify-center gap-1.5 text-xs cursor-not-allowed opacity-60 select-none"
+                >
+                  <Storefront size={16} weight="bold" className="text-gray-400" />
+                  <span>Tokopedia (Tidak Dijual)</span>
+                </div>
+              ) : isSoldOut ? (
                 <div
                   aria-disabled="true"
                   title="Produk telah habis terjual (Sold Out)"

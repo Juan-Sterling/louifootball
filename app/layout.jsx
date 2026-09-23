@@ -1,10 +1,17 @@
 import './globals.css';
-import { Outfit } from 'next/font/google';
+import { DM_Sans } from 'next/font/google';
+import localFont from 'next/font/local';
 
-const outfit = Outfit({
+const dmSans = DM_Sans({
   subsets: ['latin'],
   display: 'swap',
-  variable: '--font-outfit',
+  variable: '--font-dm-sans',
+});
+
+const louiFootball = localFont({
+  src: './LOUI_FOOTBALL.otf',
+  variable: '--font-loui-football',
+  display: 'swap',
 });
 
 export const metadata = {
@@ -18,7 +25,7 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="id" className={outfit.variable}>
+    <html lang="id" className={`${dmSans.variable} ${louiFootball.variable}`}>
       <head>
         <link
           rel="icon"

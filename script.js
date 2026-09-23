@@ -9,12 +9,19 @@ let allCategories = [];
 let activeCategory = 'all';
 let activeStickerEdition = 'all'; // State filter edisi stiker
 let isAvailableOnly = false; // State filter produk tersedia (hide sold out)
+let currentPage = 1; // Halaman aktif saat ini
+const ITEMS_PER_PAGE = 20; // Maksimal produk per halaman
 
 const productGrid = document.getElementById('productGrid');
 const noResult = document.getElementById('noResult');
 const searchInput = document.getElementById('searchInput');
 const editionFilterContainer = document.getElementById('editionFilterContainer');
 const editionButtons = document.getElementById('editionButtons');
+const paginationContainer = document.getElementById('paginationContainer');
+const paginationInfo = document.getElementById('paginationInfo');
+const paginationRange = document.getElementById('paginationRange');
+const paginationTotal = document.getElementById('paginationTotal');
+const paginationButtons = document.getElementById('paginationButtons');
 
 // Product Modal elements
 const modal = document.getElementById('productModal');
@@ -133,7 +140,7 @@ function renderCategoryTabs(categories) {
 
     let html = `
         <button id="cat-all" onclick="filterCategory('all', this)"
-            class="cat-btn px-4 py-1.5 rounded-full ${activeCategory === 'all' ? 'bg-lime-400 text-emerald-950 font-black' : 'bg-emerald-950/80 border border-emerald-600/40 text-emerald-100 font-bold hover:bg-emerald-900'} text-xs whitespace-nowrap shadow cursor-pointer transition">
+            class="cat-btn font-loui tracking-wider uppercase px-4 py-1.5 rounded-full ${activeCategory === 'all' ? 'bg-lime-400 text-emerald-950 font-black' : 'bg-emerald-950/80 border border-emerald-600/40 text-emerald-100 font-bold hover:bg-emerald-900'} text-xs whitespace-nowrap shadow cursor-pointer transition">
             Semua
         </button>
     `;
@@ -149,7 +156,7 @@ function renderCategoryTabs(categories) {
 
         html += `
             <button id="${btnId}" onclick="filterCategory('${slug}', this)"
-                class="cat-btn px-4 py-1.5 rounded-full ${isActive ? 'bg-lime-400 text-emerald-950 font-black' : 'bg-emerald-950/80 border border-emerald-600/40 text-emerald-100 font-bold hover:bg-emerald-900'} text-xs whitespace-nowrap shadow cursor-pointer transition">
+                class="cat-btn font-loui tracking-wider uppercase px-4 py-1.5 rounded-full ${isActive ? 'bg-lime-400 text-emerald-950 font-black' : 'bg-emerald-950/80 border border-emerald-600/40 text-emerald-100 font-bold hover:bg-emerald-900'} text-xs whitespace-nowrap shadow cursor-pointer transition">
                 ${label}
             </button>
         `;
@@ -207,19 +214,127 @@ async function loadProducts() {
         }
     }
 
-    // Urutkan: edisi spesial di posisi paling atas, lalu edisi bernomor terbaru ke terlama otomatis
-    allProducts.sort((a, b) => {
-        const isSpecialA = isNaN(a.edition) && Boolean(a.edition);
-        const isSpecialB = isNaN(b.edition) && Boolean(b.edition);
-        if (isSpecialA && !isSpecialB) return -1;
-        if (!isSpecialA && isSpecialB) return 1;
-        const edA = parseInt(a.edition) || 0;
-        const edB = parseInt(b.edition) || 0;
-        return edB - edA;
-    });
+    // Urutkan: produk sold out di paling bawah, tampilan default ('all') prioritaskan pemain terkenal
+    allProducts = sortCatalogProducts(allProducts, 'all');
 
     buildStickerEditionButtons();
     renderProducts();
+}
+
+function isItemSoldOut(item) {
+    if (!item) return false;
+    if (typeof item.is_sold_out === 'boolean') return item.is_sold_out;
+    return String(item.sold_out || '').trim().toUpperCase() === 'Y';
+}
+
+function isLeicesterCity(item) {
+    if (!item) return false;
+    const team = String(item.team || '').toLowerCase();
+    const title = String(item.title || '').toLowerCase();
+    return team.includes('leicester') || title.includes('leicester') || title.includes('indofoxes');
+}
+
+function getFamousPlayerRank(item) {
+    if (!item) return -1;
+    const text = `${item.player_name || ''} ${item.title || ''}`.toLowerCase();
+
+    // MSN tidak dimasukkan ke sorting pemain terkenal
+    if (text.includes('msn')) {
+        return -1;
+    }
+
+    // Exclude Ronaldo Nazario / R9
+    const isR9 = text.includes('nazario') || /\br9\b/.test(text);
+
+    if (!isR9 && (text.includes('cristiano ronaldo') || /\bcr7\b/.test(text))) {
+        return 0; // Cristiano Ronaldo
+    }
+    if (text.includes('lionel messi') || /\bmessi\b/.test(text)) {
+        return 1; // Lionel Messi
+    }
+    if (text.includes('haaland')) {
+        return 2; // Erling Haaland
+    }
+    if (text.includes('mbappe')) {
+        return 3; // Kylian Mbappe
+    }
+    if (text.includes('neymar')) {
+        return 4; // Neymar Jr.
+    }
+    if (text.includes('yamal') || text.includes('lamine')) {
+        return 5; // Lamine Yamal
+    }
+    return -1;
+}
+
+function compareEdition(a, b) {
+    const isSpecialA = isNaN(a.edition) && Boolean(a.edition);
+    const isSpecialB = isNaN(b.edition) && Boolean(b.edition);
+    if (isSpecialA && !isSpecialB) return -1;
+    if (!isSpecialA && isSpecialB) return 1;
+    const edA = parseInt(a.edition, 10) || 0;
+    const edB = parseInt(b.edition, 10) || 0;
+    return edB - edA;
+}
+
+function sortCatalogProducts(items, category = 'all') {
+    if (!Array.isArray(items)) return [];
+    const isAll = !category || category === 'all';
+
+    return [...items].sort((a, b) => {
+        // 1. Sold out selalu di paling bawah di seluruh kategori
+        const soldA = isItemSoldOut(a);
+        const soldB = isItemSoldOut(b);
+        if (soldA !== soldB) {
+            return soldA ? 1 : -1;
+        }
+
+        // 2. Untuk LEICESTER CITY FC, taruh di atas sold out (posisi paling bawah di antara produk yang tersedia)
+        if (!soldA && !soldB) {
+            const leiA = isLeicesterCity(a);
+            const leiB = isLeicesterCity(b);
+            if (leiA !== leiB) {
+                return leiA ? 1 : -1;
+            }
+        }
+
+        // 3. Di tampilan default ('all' / 'semua'), prioritaskan pemain terkenal di bagian awal/atas
+        if (isAll) {
+            const rankA = getFamousPlayerRank(a);
+            const rankB = getFamousPlayerRank(b);
+            const isFamA = rankA !== -1;
+            const isFamB = rankB !== -1;
+
+            if (isFamA !== isFamB) {
+                return isFamA ? -1 : 1;
+            }
+
+            if (isFamA && isFamB) {
+                const edDiff = compareEdition(a, b);
+                if (edDiff !== 0) return edDiff;
+                if (rankA !== rankB) return rankA - rankB;
+                return (a.id || 0) - (b.id || 0);
+            }
+        }
+
+        // 3. Urutkan berdasarkan edisi (spesial/terbaru lebih dulu)
+        const edDiff = compareEdition(a, b);
+        if (edDiff !== 0) return edDiff;
+
+        // Jika pada edisi yang sama ada pemain terkenal, tetap tampilkan pemain terkenal lebih dulu
+        const rankA = getFamousPlayerRank(a);
+        const rankB = getFamousPlayerRank(b);
+        const hasRankA = rankA !== -1;
+        const hasRankB = rankB !== -1;
+        if (hasRankA !== hasRankB) {
+            return hasRankA ? -1 : 1;
+        }
+        if (hasRankA && hasRankB && rankA !== rankB) {
+            return rankA - rankB;
+        }
+
+        return (a.id || 0) - (b.id || 0);
+    });
 }
 
 // Generate tombol filter edisi berdasarkan data stiker yang ada
@@ -285,6 +400,7 @@ function buildStickerEditionButtons() {
 function selectEditionTab(edition, btnElement) {
     activeStickerEdition = edition;
     searchInput.value = '';
+    currentPage = 1;
 
     // Reset tombol Semua
     document.querySelectorAll('.edition-btn').forEach(btn => {
@@ -316,6 +432,7 @@ function selectEditionDropdown(val) {
     if (!val) return;
     activeStickerEdition = val;
     searchInput.value = '';
+    currentPage = 1;
 
     // Reset tombol Semua
     const btnAll = document.getElementById('btn-ed-all');
@@ -344,6 +461,7 @@ function selectOtherEditionDropdown(val) {
     if (!val) return;
     activeStickerEdition = val;
     searchInput.value = '';
+    currentPage = 1;
 
     // Reset tombol Semua
     const btnAll = document.getElementById('btn-ed-all');
@@ -385,6 +503,7 @@ function handleOlderEditionChange(selectEl) {
 
 function toggleAvailableOnly() {
     isAvailableOnly = !isAvailableOnly;
+    currentPage = 1;
     const btn = document.getElementById('btnAvailableOnly');
     const icon = document.getElementById('iconAvailableOnly');
     if (btn) {
@@ -446,12 +565,24 @@ function renderProducts() {
 
     if (filtered.length === 0) {
         noResult.classList.remove('hidden');
+        if (paginationContainer) {
+            paginationContainer.classList.add('hidden');
+            paginationContainer.classList.remove('flex');
+        }
         return;
     }
     noResult.classList.add('hidden');
 
-    filtered.forEach(item => {
+    const sorted = sortCatalogProducts(filtered, activeCategory);
+    const totalPages = Math.max(1, Math.ceil(sorted.length / ITEMS_PER_PAGE));
+    if (currentPage > totalPages) currentPage = 1;
+
+    const startIdx = (currentPage - 1) * ITEMS_PER_PAGE;
+    const paginatedItems = sorted.slice(startIdx, startIdx + ITEMS_PER_PAGE);
+
+    paginatedItems.forEach(item => {
         const badgeColor = getCategoryBadgeStyle(item.category);
+        const productName = item.player_name || item.title || 'Produk Loui';
         const isNumericEdition = item.edition && !isNaN(item.edition);
         const editionText = item.edition
             ? isNumericEdition
@@ -467,22 +598,33 @@ function renderProducts() {
         if (yearText) teamYearParts.push(yearText);
         const teamYearDisplay = teamYearParts.join(' • ');
 
+        const isSoldOut = isItemSoldOut(item);
+        const isLimited = String(item.edition || '').trim().toUpperCase() === 'LIMITED';
         const card = document.createElement('div');
-        card.className = "bg-white rounded-2xl p-3 flex flex-col justify-between hover:shadow-2xl transition duration-150 border-2 border-transparent hover:border-lime-400";
-        const formattedPrice = getPriceRangeDisplay(item.variants, item.price);
+        card.className = `bg-white rounded-2xl p-3 flex flex-col justify-between hover:shadow-2xl transition duration-150 border-2 ${
+            isSoldOut ? 'border-zinc-200/80' : 'border-transparent hover:border-lime-400'
+        }`;
+        const formattedPrice = isLimited ? 'LIMITED' : getPriceRangeDisplay(item.variants, item.price);
         card.innerHTML = `
           <div>
             <div class="relative aspect-square rounded-xl bg-emerald-50 overflow-hidden mb-2.5 cursor-pointer group" onclick="openModalById('${item.id}')">
               <span class="absolute top-2 left-2 ${badgeColor} text-[9px] sm:text-[10px] font-black px-2 py-0.5 rounded shadow capitalize z-10">${item.category}</span>
+              ${isSoldOut ? `
+                <div class="absolute inset-0 bg-black/60 z-20 flex flex-col items-center justify-center p-2 backdrop-blur-[1px]">
+                  <span class="px-3 py-1 bg-red-600/90 text-white text-[11px] sm:text-xs font-black tracking-widest uppercase rounded-lg shadow-lg border border-red-400/50">
+                    SOLD OUT
+                  </span>
+                </div>
+              ` : ''}
               <img src="${item.img}" alt="${productName}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
             </div>
             
             <p class="text-[10px] font-black text-amber-700 tracking-wider uppercase">${editionText}</p>
-            <h3 class="font-bold text-xs sm:text-sm text-gray-900 leading-snug line-clamp-2 mt-0.5 cursor-pointer hover:text-emerald-700 transition" onclick="openModalById('${item.id}')">${productName}</h3>
+            <h3 class="font-loui font-bold text-sm sm:text-base text-gray-900 leading-snug line-clamp-2 mt-0.5 cursor-pointer hover:text-emerald-700 transition tracking-wide" onclick="openModalById('${item.id}')">${productName}</h3>
             ${teamYearDisplay ? `<p class="text-[11px] text-gray-500 mt-1 truncate font-medium" title="${teamYearDisplay}">${teamYearDisplay}</p>` : '<p class="text-[11px] text-transparent mt-1 select-none">-</p>'}
           </div>
           <div class="mt-3 pt-2 border-t border-gray-100">
-            <p class="text-emerald-950 font-black text-sm sm:text-base">${formattedPrice}</p>
+            <p class="${isLimited ? 'text-amber-600 font-black tracking-wider' : 'text-emerald-950 font-black'} text-sm sm:text-base">${formattedPrice}</p>
             <button onclick="openModalById('${item.id}')" class="w-full mt-2 bg-emerald-800 hover:bg-emerald-900 text-lime-300 text-xs font-bold py-1.5 sm:py-2 rounded-xl transition cursor-pointer">
               Lihat Detail
             </button>
@@ -490,6 +632,99 @@ function renderProducts() {
         `;
         productGrid.appendChild(card);
     });
+
+    renderPaginationControls(sorted.length, totalPages);
+}
+
+function renderPaginationControls(totalItems, totalPages) {
+    if (!paginationContainer) return;
+    if (totalPages <= 1) {
+        paginationContainer.classList.add('hidden');
+        paginationContainer.classList.remove('flex');
+        return;
+    }
+
+    paginationContainer.classList.remove('hidden');
+    paginationContainer.classList.add('flex');
+
+    const startItem = (currentPage - 1) * ITEMS_PER_PAGE + 1;
+    const endItem = Math.min(currentPage * ITEMS_PER_PAGE, totalItems);
+
+    if (paginationRange) paginationRange.textContent = `${startItem} - ${endItem}`;
+    if (paginationTotal) paginationTotal.textContent = totalItems;
+
+    if (!paginationButtons) return;
+
+    const pages = [];
+    if (totalPages <= 7) {
+        for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+        if (currentPage <= 4) {
+            pages.push(1, 2, 3, 4, 5, '...', totalPages);
+        } else if (currentPage >= totalPages - 3) {
+            pages.push(1, '...', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages);
+        } else {
+            pages.push(1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages);
+        }
+    }
+
+    let html = `
+        <button onclick="goToPage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}
+            class="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold transition shadow-sm ${
+                currentPage === 1
+                    ? 'bg-emerald-950/40 text-emerald-400/40 border border-emerald-800/30 cursor-not-allowed'
+                    : 'bg-emerald-950/90 text-emerald-100 border border-emerald-600/50 hover:bg-emerald-900 hover:text-white cursor-pointer active:scale-95'
+            }">
+            <i class="ph-bold ph-caret-left"></i>
+            <span class="hidden xs:inline sm:inline">Sebelumnya</span>
+        </button>
+        <div class="flex items-center gap-1">
+    `;
+
+    pages.forEach(p => {
+        if (p === '...') {
+            html += `<span class="px-1.5 py-1 text-emerald-300 font-bold text-xs select-none">...</span>`;
+        } else {
+            const isActive = p === currentPage;
+            html += `
+                <button onclick="goToPage(${p})"
+                    class="min-w-[32px] h-8 px-2 rounded-xl text-xs font-bold transition cursor-pointer flex items-center justify-center ${
+                        isActive
+                            ? 'bg-lime-400 text-emerald-950 font-black shadow-md scale-105'
+                            : 'bg-emerald-950/80 border border-emerald-600/40 text-emerald-100 hover:bg-emerald-900 hover:text-white'
+                    }">
+                    ${p}
+                </button>
+            `;
+        }
+    });
+
+    html += `
+        </div>
+        <button onclick="goToPage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}
+            class="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold transition shadow-sm ${
+                currentPage === totalPages
+                    ? 'bg-emerald-950/40 text-emerald-400/40 border border-emerald-800/30 cursor-not-allowed'
+                    : 'bg-emerald-950/90 text-emerald-100 border border-emerald-600/50 hover:bg-emerald-900 hover:text-white cursor-pointer active:scale-95'
+            }">
+            <span class="hidden xs:inline sm:inline">Selanjutnya</span>
+            <i class="ph-bold ph-caret-right"></i>
+        </button>
+    `;
+
+    paginationButtons.innerHTML = html;
+}
+
+function goToPage(page) {
+    currentPage = page;
+    renderProducts();
+    const mainEl = document.querySelector('main');
+    if (mainEl) {
+        const header = document.querySelector('header');
+        const offset = header ? header.offsetHeight : 70;
+        const top = mainEl.getBoundingClientRect().top + window.scrollY - offset - 10;
+        window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+    }
 }
 
 function parseVariants(variants) {
@@ -535,11 +770,19 @@ function formatRupiah(val) {
 function openModalById(id) {
     const item = allProducts.find(p => String(p.id) === String(id));
     if (!item) return;
-    const displayPrice = formatRupiah(item.price);
+
+    const isLimited = String(item.edition || '').trim().toUpperCase() === 'LIMITED';
+    const isSoldOut = isItemSoldOut(item);
+    const displayPrice = isLimited ? 'LIMITED' : formatRupiah(item.price);
     const productName = item.player_name || item.title || 'Produk Loui';
 
     modalTitle.innerText = productName;
     modalPrice.innerText = displayPrice;
+    if (isLimited) {
+        modalPrice.className = "text-xl sm:text-2xl font-black text-amber-600 tracking-wider";
+    } else {
+        modalPrice.className = "text-xl sm:text-2xl font-black text-emerald-800";
+    }
     modalDesc.innerText = item.desc || '-';
     modalCategory.innerText = item.category || '';
     const isNumericEdition = item.edition && !isNaN(item.edition);
@@ -591,13 +834,73 @@ function openModalById(id) {
     if (item.year && String(item.year).trim()) teamYearParts.push(`Musim: ${item.year.trim()}`);
     const teamYearWaText = teamYearParts.length > 0 ? `\n${teamYearParts.join('\n')}` : '';
 
-    const msg = encodeURIComponent(`Halo LOUIFOOTBALL, saya ingin memesan:
+    const msg = isLimited
+        ? encodeURIComponent(`Halo LOUIFOOTBALL, saya ingin bertanya tentang edisi koleksi terbatas:
+
+*${productName}* ${editionText}${teamYearWaText}
+Status: Edisi Limited (Koleksi / Tidak Dijual)`)
+        : isSoldOut
+        ? encodeURIComponent(`Halo LOUIFOOTBALL, saya ingin bertanya tentang stok produk:
+
+*${productName}* ${editionText}${teamYearWaText}
+Status: Sold Out
+
+Apakah produk ini akan restock kembali?`)
+        : encodeURIComponent(`Halo LOUIFOOTBALL, saya ingin memesan:
 
 *${productName}* ${editionText}${teamYearWaText}
 Harga: ${displayPrice}
 
 Apakah stok masih ada?`);
+
     modalWaBtn.href = `https://wa.me/${WA_NUMBER}?text=${msg}`;
+    if (isLimited) {
+        modalWaBtn.className = "w-full bg-zinc-800 hover:bg-zinc-900 text-amber-300 font-bold py-3 rounded-2xl flex items-center justify-center gap-2 text-sm shadow-md transition";
+        modalWaBtn.innerHTML = '<i class="ph-bold ph-whatsapp-logo text-lg text-green-400"></i> Tanya Info via WhatsApp';
+    } else if (isSoldOut) {
+        modalWaBtn.className = "w-full bg-zinc-800 hover:bg-zinc-900 text-lime-300 font-bold py-3 rounded-2xl flex items-center justify-center gap-2 text-sm shadow-md transition";
+        modalWaBtn.innerHTML = '<i class="ph-bold ph-whatsapp-logo text-lg text-green-400"></i> Tanya Restock via WhatsApp';
+    } else {
+        modalWaBtn.className = "w-full bg-emerald-800 hover:bg-emerald-900 text-lime-300 font-bold py-3 rounded-2xl flex items-center justify-center gap-2 text-sm shadow-md transition";
+        modalWaBtn.innerHTML = '<i class="ph-bold ph-whatsapp-logo text-lg text-green-400"></i> Order via WhatsApp';
+    }
+
+    // Shopee & Tokopedia buttons
+    const shopeeBtn = document.getElementById('modalShopeeBtn');
+    const tokpedBtn = document.getElementById('modalTokopediaBtn');
+    if (shopeeBtn && tokpedBtn) {
+        if (isLimited) {
+            shopeeBtn.className = "bg-gray-100 border border-gray-200 text-gray-400 font-bold py-2.5 rounded-xl flex items-center justify-center gap-1.5 text-xs cursor-not-allowed opacity-60 select-none";
+            shopeeBtn.removeAttribute('href');
+            shopeeBtn.title = "Produk edisi Limited tidak dijual di Shopee";
+            shopeeBtn.innerHTML = '<i class="ph-bold ph-shopping-bag-open text-base text-gray-400"></i> Shopee (Tidak Dijual)';
+
+            tokpedBtn.className = "bg-gray-100 border border-gray-200 text-gray-400 font-bold py-2.5 rounded-xl flex items-center justify-center gap-1.5 text-xs cursor-not-allowed opacity-60 select-none";
+            tokpedBtn.removeAttribute('href');
+            tokpedBtn.title = "Produk edisi Limited tidak dijual di Tokopedia";
+            tokpedBtn.innerHTML = '<i class="ph-bold ph-storefront text-base text-gray-400"></i> Tokopedia (Tidak Dijual)';
+        } else if (isSoldOut) {
+            shopeeBtn.className = "bg-gray-100 border border-gray-200 text-gray-400 font-bold py-2.5 rounded-xl flex items-center justify-center gap-1.5 text-xs cursor-not-allowed opacity-60 select-none";
+            shopeeBtn.removeAttribute('href');
+            shopeeBtn.title = "Produk telah habis terjual (Sold Out)";
+            shopeeBtn.innerHTML = '<i class="ph-bold ph-shopping-bag-open text-base text-gray-400"></i> Shopee (Habis)';
+
+            tokpedBtn.className = "bg-gray-100 border border-gray-200 text-gray-400 font-bold py-2.5 rounded-xl flex items-center justify-center gap-1.5 text-xs cursor-not-allowed opacity-60 select-none";
+            tokpedBtn.removeAttribute('href');
+            tokpedBtn.title = "Produk telah habis terjual (Sold Out)";
+            tokpedBtn.innerHTML = '<i class="ph-bold ph-storefront text-base text-gray-400"></i> Tokopedia (Habis)';
+        } else {
+            shopeeBtn.className = "bg-orange-50 hover:bg-orange-100 border border-orange-200 text-orange-700 font-bold py-2.5 rounded-xl flex items-center justify-center gap-1.5 text-xs transition cursor-pointer";
+            shopeeBtn.href = "https://id.shp.ee/a5f6X4Wq";
+            shopeeBtn.title = "";
+            shopeeBtn.innerHTML = '<i class="ph-bold ph-shopping-bag-open text-base"></i> Shopee Store';
+
+            tokpedBtn.className = "bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 font-bold py-2.5 rounded-xl flex items-center justify-center gap-1.5 text-xs transition cursor-pointer";
+            tokpedBtn.href = "https://tk.tokopedia.com/ZSqEjQvMt/";
+            tokpedBtn.title = "";
+            tokpedBtn.innerHTML = '<i class="ph-bold ph-storefront text-base text-emerald-600"></i> Tokopedia Store';
+        }
+    }
 
     modal.classList.remove('hidden');
     modal.classList.add('flex');
@@ -805,6 +1108,7 @@ function filterCategory(category, btnElement) {
     activeCategory = category;
     activeStickerEdition = 'all';
     searchInput.value = '';
+    currentPage = 1;
 
     document.querySelectorAll('.cat-btn').forEach(btn => {
         btn.className = 'cat-btn px-4 py-1.5 rounded-full bg-emerald-950/80 border border-emerald-600/40 text-emerald-100 text-xs font-bold whitespace-nowrap hover:bg-emerald-900';
@@ -897,6 +1201,7 @@ function resetToHome(event) {
     searchInput.value = '';
     activeCategory = 'all';
     activeStickerEdition = 'all';
+    currentPage = 1;
 
     // Sembunyikan sub-filter edisi
     editionFilterContainer.classList.add('hidden');
@@ -916,6 +1221,7 @@ function resetToHome(event) {
 }
 
 function handleSearch() {
+    currentPage = 1;
     renderProducts();
 }
 

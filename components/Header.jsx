@@ -39,10 +39,10 @@ export default function Header({ searchQuery, onSearchChange, onSearchSubmit, on
               />
             </div>
             <div className="flex flex-col">
-              <span className="text-base sm:text-lg font-black tracking-tight text-white leading-none group-hover:text-lime-300 transition">
+              <span className="text-lg sm:text-xl font-loui font-bold tracking-wider text-white leading-none group-hover:text-lime-300 transition">
                 LOUI<span className="text-lime-400">FOOTBALL</span>
               </span>
-              <span className="text-[9px] uppercase tracking-widest text-emerald-300 font-semibold">
+              <span className="text-[9px] uppercase tracking-widest text-emerald-300 font-semibold mt-0.5">
                 Merchandise Catalog
               </span>
             </div>
@@ -52,10 +52,10 @@ export default function Header({ searchQuery, onSearchChange, onSearchSubmit, on
           <button
             onClick={onOpenContact}
             type="button"
-            className="sm:hidden flex items-center gap-1.5 bg-emerald-800/80 hover:bg-emerald-700 text-lime-300 border border-emerald-600/60 text-xs font-bold px-3 py-1.5 rounded-full transition shadow"
+            className="sm:hidden flex items-center gap-1.5 bg-emerald-800/80 hover:bg-emerald-700 text-lime-300 border border-emerald-600/60 text-xs font-bold px-3 py-1.5 rounded-full transition shadow font-loui tracking-wide uppercase"
           >
             <AddressBook size={16} weight="bold" />
-            <span>Kontak Toko</span>
+            <span>Hubungi Kami</span>
           </button>
         </div>
 
@@ -82,7 +82,7 @@ export default function Header({ searchQuery, onSearchChange, onSearchSubmit, on
           <button
             onClick={onOpenContact}
             type="button"
-            className="flex items-center gap-2 bg-emerald-900 hover:bg-emerald-800 text-lime-300 border border-emerald-600/60 text-xs sm:text-sm font-bold px-4 py-2 rounded-full transition shadow cursor-pointer"
+            className="flex items-center gap-2 bg-emerald-900 hover:bg-emerald-800 text-lime-300 border border-emerald-600/60 text-xs sm:text-sm font-bold px-4 py-2 rounded-full transition shadow cursor-pointer font-loui tracking-wide uppercase"
           >
             <ChatCircleDots size={18} weight="bold" />
             <span>Hubungi Kami</span>

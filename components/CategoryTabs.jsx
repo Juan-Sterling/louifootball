@@ -66,7 +66,7 @@ export default function CategoryTabs({
         <button
           onClick={() => onSelectCategory('all')}
           type="button"
-          className={`cat-btn px-4 py-1.5 rounded-full text-xs whitespace-nowrap shadow cursor-pointer transition shrink-0 ${
+          className={`cat-btn font-loui tracking-wider uppercase px-4 py-1.5 rounded-full text-xs whitespace-nowrap shadow cursor-pointer transition shrink-0 ${
             normalizeCategory(activeCategory) === 'all'
               ? 'bg-lime-400 text-emerald-950 font-black'
               : 'bg-emerald-950/80 border border-emerald-600/40 text-emerald-100 font-bold hover:bg-emerald-900'
@@ -89,7 +89,7 @@ export default function CategoryTabs({
               key={cat.id || slug}
               onClick={() => onSelectCategory(slug)}
               type="button"
-              className={`cat-btn px-4 py-1.5 rounded-full text-xs whitespace-nowrap shadow cursor-pointer transition shrink-0 ${
+              className={`cat-btn font-loui tracking-wider uppercase px-4 py-1.5 rounded-full text-xs whitespace-nowrap shadow cursor-pointer transition shrink-0 ${
                 isActive
                   ? 'bg-lime-400 text-emerald-950 font-black'
                   : 'bg-emerald-950/80 border border-emerald-600/40 text-emerald-100 font-bold hover:bg-emerald-900'

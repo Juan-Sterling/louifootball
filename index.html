@@ -11,11 +11,42 @@
     <!-- Favicon / Logo Web -->
     <link rel="icon" type="image/jpeg" href="https://res.cloudinary.com/og1jrvy3/image/upload/f_auto,q_auto,w_100/v1789010759/756654575_17897804865557650_2370756875670529296_n.jpg" />
     <link rel="apple-touch-icon" href="https://res.cloudinary.com/og1jrvy3/image/upload/f_auto,q_auto,w_100/v1789010759/756654575_17897804865557650_2370756875670529296_n.jpg" />
+    <!-- Google Fonts: DM Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap" rel="stylesheet">
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"DM Sans"', 'sans-serif'],
+                        loui: ['"LOUI FOOTBALL"', 'sans-serif'],
+                    }
+                }
+            }
+        };
+    </script>
     <!-- Phosphor Icons -->
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <style>
+        @font-face {
+            font-family: 'LOUI FOOTBALL';
+            src: url('public/LOUI_FOOTBALL.otf') format('opentype'), url('LOUI_FOOTBALL.otf') format('opentype'), url('app/LOUI_FOOTBALL.otf') format('opentype');
+            font-weight: normal;
+            font-style: normal;
+        }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+        }
+
+        .font-loui {
+            font-family: 'LOUI FOOTBALL', sans-serif;
+        }
+
         /* Background motif sunburst hijau rumput lapangan */
         .loui-pitch-bg {
             background-color: #27671c;
@@ -75,7 +106,7 @@
                         class="w-10 h-10 sm:w-11 sm:h-11 rounded-xl object-cover border-2 border-white/80 shadow-md group-hover:scale-105 transition"
                         onerror="this.src='https://placehold.co/100x100/225717/ffffff?text=Loui'">
                     <div class="flex flex-col">
-                        <span class="font-black text-lg sm:text-xl tracking-wider text-white leading-tight">LOUI<span
+                        <span class="font-loui font-bold text-xl sm:text-2xl tracking-wider text-white leading-tight">LOUI<span
                                 class="text-lime-400">FOOTBALL</span></span>
                         <span class="text-[9px] uppercase tracking-widest text-emerald-300 font-semibold">Merchandise
                             Catalog</span>
@@ -84,9 +115,9 @@
 
                 <!-- Tombol Kontak Mobile -->
                 <button onclick="openContactModal()"
-                    class="sm:hidden flex items-center gap-1.5 bg-emerald-800/80 hover:bg-emerald-700 text-lime-300 border border-emerald-600/60 text-xs font-bold px-3 py-1.5 rounded-full transition shadow">
+                    class="sm:hidden flex items-center gap-1.5 bg-emerald-800/80 hover:bg-emerald-700 text-lime-300 border border-emerald-600/60 text-xs font-bold px-3 py-1.5 rounded-full transition shadow font-loui tracking-wide uppercase">
                     <i class="ph-bold ph-address-book text-base"></i>
-                    <span>Kontak Toko</span>
+                    <span>Hubungi Kami</span>
                 </button>
             </div>
 
@@ -102,7 +133,7 @@
             <!-- Tombol Kontak Desktop -->
             <div class="hidden sm:block">
                 <button onclick="openContactModal()"
-                    class="flex items-center gap-2 bg-emerald-900 hover:bg-emerald-800 text-lime-300 border border-emerald-600/60 text-xs sm:text-sm font-bold px-4 py-2 rounded-full transition shadow">
+                    class="flex items-center gap-2 bg-emerald-900 hover:bg-emerald-800 text-lime-300 border border-emerald-600/60 text-xs sm:text-sm font-bold px-4 py-2 rounded-full transition shadow font-loui tracking-wide uppercase">
                     <i class="ph-bold ph-chat-circle-dots text-base"></i>
                     <span>Hubungi Kami</span>
                 </button>
@@ -305,13 +336,22 @@
             </p>
         </div>
 
+        <!-- Kontrol Pagination -->
+        <div id="paginationContainer" class="hidden mt-8 pt-6 border-t border-emerald-800/50 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <p id="paginationInfo" class="text-xs text-emerald-200/90 order-2 sm:order-1 font-medium">
+                Menampilkan <span id="paginationRange" class="font-bold text-lime-400">1 - 20</span> dari <span id="paginationTotal" class="font-bold text-white">0</span> produk
+            </p>
+            <nav id="paginationButtons" aria-label="Navigasi Halaman Katalog" class="flex items-center gap-1.5 order-1 sm:order-2 flex-wrap justify-center">
+            </nav>
+        </div>
+
     </main>
 
     <!-- FOOTER -->
     <footer class="bg-emerald-950/95 border-t border-emerald-700/50 mt-10 py-8 text-white">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-4">
             <div class="flex items-center justify-center gap-2">
-                <span class="font-black text-lg tracking-wider">LOUI<span class="text-lime-400">FOOTBALL</span></span>
+                <span class="font-loui font-bold text-xl sm:text-2xl tracking-wider">LOUI<span class="text-lime-400">FOOTBALL</span></span>
             </div>
             <p class="text-xs text-emerald-200/80 max-w-md mx-auto">Toko merchandise sepak bola karya suporter untuk
                 pecinta bola di seluruh Indonesia.</p>
@@ -378,7 +418,7 @@
                     </div>
                 </div>
 
-                <h2 id="modalTitle" class="text-lg sm:text-xl font-black text-gray-950 mt-2.5 leading-tight">Nama Produk</h2>
+                <h2 id="modalTitle" class="text-xl sm:text-2xl font-bold text-gray-950 mt-2.5 leading-tight font-loui tracking-wide">Nama Produk</h2>
 
                 <!-- Info Tim & Tahun Produk (Menggantikan Spec) -->
                 <div id="modalTeamYearContainer" class="flex flex-wrap items-center gap-2 mt-2">
@@ -410,11 +450,11 @@
                     </a>
 
                     <div class="grid grid-cols-2 gap-2 pt-1">
-                        <a href="https://id.shp.ee/a5f6X4Wq" target="_blank"
+                        <a id="modalShopeeBtn" href="https://id.shp.ee/a5f6X4Wq" target="_blank"
                             class="bg-orange-50 hover:bg-orange-100 border border-orange-200 text-orange-700 font-bold py-2.5 rounded-xl flex items-center justify-center gap-1.5 text-xs transition">
                             <i class="ph-bold ph-shopping-bag-open text-base"></i> Shopee Store
                         </a>
-                        <a href="https://tk.tokopedia.com/ZSqEjQvMt/" target="_blank"
+                        <a id="modalTokopediaBtn" href="https://tk.tokopedia.com/ZSqEjQvMt/" target="_blank"
                             class="bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 font-bold py-2.5 rounded-xl flex items-center justify-center gap-1.5 text-xs transition">
                             <i class="ph-bold ph-storefront text-base text-emerald-600"></i> Tokopedia Store
                         </a>
@@ -487,7 +527,7 @@
                     class="w-12 h-12 bg-lime-400 text-emerald-950 rounded-2xl mx-auto flex items-center justify-center font-black text-xl mb-2 shadow">
                     <i class="ph-bold ph-chat-circle-text"></i>
                 </div>
-                <h3 class="text-lg font-black text-white">Hubungi LOUIFOOTBALL</h3>
+                <h3 class="text-xl font-bold text-white font-loui tracking-wide uppercase">Hubungi LOUIFOOTBALL</h3>
                 <p class="text-xs text-emerald-200/80 mt-1">Pilih saluran kontak atau marketplace resmi kami:</p>
             </div>
 

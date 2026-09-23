@@ -29,8 +29,9 @@ export default function ProductCard({ product, onOpenModal }) {
   if (yearText) teamYearParts.push(yearText);
   const teamYearDisplay = teamYearParts.join(' • ');
 
+  const isLimited = String(product.edition || '').trim().toUpperCase() === 'LIMITED';
   const isSoldOut = String(product.sold_out || '').trim().toUpperCase() === 'Y';
-  const formattedPrice = getPriceRangeDisplay(product.variants, product.price);
+  const formattedPrice = isLimited ? 'LIMITED' : getPriceRangeDisplay(product.variants, product.price);
 
   return (
     <div className={`bg-white rounded-2xl p-3 flex flex-col justify-between hover:shadow-2xl transition duration-150 border-2 ${
@@ -79,7 +80,7 @@ export default function ProductCard({ product, onOpenModal }) {
         {/* Nama Pemain / Produk */}
         <h3
           onClick={() => onOpenModal(product)}
-          className="font-bold text-xs sm:text-sm text-gray-900 leading-snug line-clamp-2 mt-0.5 cursor-pointer hover:text-emerald-700 transition"
+          className="font-loui font-bold text-sm sm:text-base text-gray-900 leading-snug line-clamp-2 mt-0.5 cursor-pointer hover:text-emerald-700 transition tracking-wide"
         >
           {productName}
         </h3>
@@ -96,7 +97,9 @@ export default function ProductCard({ product, onOpenModal }) {
 
       {/* Harga dan Tombol Detail */}
       <div className="mt-3 pt-2 border-t border-gray-100">
-        <p className="text-emerald-950 font-black text-sm sm:text-base">{formattedPrice}</p>
+        <p className={`${isLimited ? 'text-amber-600 tracking-wider font-black' : 'text-emerald-950 font-black'} text-sm sm:text-base`}>
+          {formattedPrice}
+        </p>
         <button
           onClick={() => onOpenModal(product)}
           type="button"
