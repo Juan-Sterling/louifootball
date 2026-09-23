@@ -10,11 +10,14 @@ import {
   ShoppingBagOpen,
   Storefront,
   CheckCircle,
+  CaretLeft,
+  CaretRight,
 } from '@phosphor-icons/react';
 import { formatRupiah, parseVariants, WA_NUMBER } from '@/lib/utils';
 
 export default function ProductModal({ product, isOpen, onClose, onOpenZoom }) {
   const [selectedVariant, setSelectedVariant] = useState(null);
+  const [activeImg, setActiveImg] = useState(product?.img || '');
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -26,10 +29,11 @@ export default function ProductModal({ product, isOpen, onClose, onOpenZoom }) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
 
-  // Reset pilihan ukuran saat modal dibuka atau produk berganti
+  // Reset pilihan ukuran dan gambar aktif saat modal dibuka atau produk berganti
   useEffect(() => {
     setSelectedVariant(null);
-  }, [product?.id, isOpen]);
+    setActiveImg(product?.img || '');
+  }, [product?.id, product?.img, isOpen]);
 
   if (!isOpen || !product) return null;
 
@@ -37,6 +41,17 @@ export default function ProductModal({ product, isOpen, onClose, onOpenZoom }) {
   const productTitle = product.title ? String(product.title).trim() : '';
   const productName = playerName || productTitle || 'Produk Loui';
   const variants = parseVariants(product.variants);
+
+  // Status opsi gambar img & img_add
+  const hasAddImg = Boolean(
+    product.img_add &&
+    String(product.img_add).trim() !== '' &&
+    String(product.img_add).trim().toLowerCase() !== 'null' &&
+    String(product.img_add).trim().toLowerCase() !== 'undefined'
+  );
+  const images = [product.img, hasAddImg ? product.img_add : null].filter(Boolean);
+  const currentImg = (activeImg === product.img_add && hasAddImg) ? product.img_add : product.img;
+  const currentImgIndex = currentImg === product.img_add ? 1 : 0;
 
   // Hitung display harga: jika ada varian terpilih, gunakan harga varian.
   // Jika default (belum ada yang dipilih), tampilkan harga terendah - tertinggi.
@@ -119,7 +134,7 @@ Apakah stok masih ada?`);
         </button>
 
         {/* Showcase Gambar Penuh */}
-        <div className="relative w-full bg-zinc-950 flex items-center justify-center p-4 min-h-[260px] max-h-[380px] sm:max-h-[420px] overflow-hidden border-b border-gray-200">
+        <div className="relative w-full bg-zinc-950 flex items-center justify-center p-4 min-h-[260px] max-h-[380px] sm:max-h-[420px] overflow-hidden border-b border-gray-200 select-none">
           {/* Badge Sold Out pada Gambar */}
           {isSoldOut && (
             <div className="absolute top-3 left-3 z-30 bg-red-600/90 border border-red-400/60 text-white font-black text-xs px-3 py-1 rounded-full shadow-lg tracking-wider uppercase">
@@ -127,10 +142,51 @@ Apakah stok masih ada?`);
             </div>
           )}
 
+          {/* Badge Counter Gambar (cth: 1/2) jika ada img_add */}
+          {hasAddImg && (
+            <div className={`absolute top-3 z-30 bg-black/65 backdrop-blur-md border border-white/20 text-white font-bold text-[11px] px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-md ${
+              isSoldOut ? 'left-28' : 'left-3'
+            }`}>
+              <span className="text-lime-300 font-black">{currentImgIndex + 1}</span>
+              <span className="text-white/40">/</span>
+              <span>{images.length}</span>
+            </div>
+          )}
+
+          {/* Tombol Panah Kiri / Kanan jika ada lebih dari 1 gambar */}
+          {hasAddImg && (
+            <>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setActiveImg(images[currentImgIndex === 0 ? 1 : 0]);
+                }}
+                aria-label="Gambar Sebelumnya"
+                className="absolute left-2.5 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-black/60 hover:bg-black text-white flex items-center justify-center backdrop-blur-sm transition cursor-pointer shadow active:scale-95 border border-white/10"
+              >
+                <CaretLeft size={18} weight="bold" />
+              </button>
+
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setActiveImg(images[currentImgIndex === 0 ? 1 : 0]);
+                }}
+                aria-label="Gambar Berikutnya"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-black/60 hover:bg-black text-white flex items-center justify-center backdrop-blur-sm transition cursor-pointer shadow active:scale-95 border border-white/10"
+              >
+                <CaretRight size={18} weight="bold" />
+              </button>
+            </>
+          )}
+
+          {/* Gambar Produk Aktif */}
           <img
-            src={product.img}
+            src={currentImg}
             alt={productName}
-            onClick={() => onOpenZoom(product.img, productName)}
+            onClick={() => onOpenZoom(currentImg, productName)}
             title="Klik untuk memperbesar gambar"
             className="w-full h-full max-h-[360px] sm:max-h-[400px] object-contain drop-shadow-md rounded-lg cursor-zoom-in hover:scale-[1.01] transition duration-200"
             onError={(e) => {
@@ -138,8 +194,46 @@ Apakah stok masih ada?`);
             }}
           />
 
+          {/* Thumbnails Opsi Gambar (img & img_add) di sudut kiri bawah showcase */}
+          {hasAddImg && (
+            <div className="absolute bottom-3 left-3 z-30 flex items-center gap-1.5 bg-black/70 backdrop-blur-md p-1 rounded-xl border border-white/15 shadow-lg">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setActiveImg(product.img);
+                }}
+                title="1"
+                className={`w-9 h-9 rounded-lg overflow-hidden border-2 transition cursor-pointer shrink-0 bg-zinc-900 ${
+                  currentImg === product.img
+                    ? 'border-lime-400 scale-105 shadow-md ring-1 ring-lime-400/50'
+                    : 'border-transparent opacity-60 hover:opacity-100'
+                }`}
+              >
+                <img src={product.img} alt="1" className="w-full h-full object-cover" />
+              </button>
+
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setActiveImg(product.img_add);
+                }}
+                title="2"
+                className={`w-9 h-9 rounded-lg overflow-hidden border-2 transition cursor-pointer shrink-0 bg-zinc-900 ${
+                  currentImg === product.img_add
+                    ? 'border-lime-400 scale-105 shadow-md ring-1 ring-lime-400/50'
+                    : 'border-transparent opacity-60 hover:opacity-100'
+                }`}
+              >
+                <img src={product.img_add} alt="2" className="w-full h-full object-cover" />
+              </button>
+            </div>
+          )}
+
+          {/* Tombol Buka Resolusi Penuh */}
           <button
-            onClick={() => onOpenZoom(product.img, productName)}
+            onClick={() => onOpenZoom(currentImg, productName)}
             type="button"
             className="absolute bottom-3 right-3 bg-black/75 hover:bg-lime-400 hover:text-emerald-950 text-white text-[11px] font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5 backdrop-blur-sm transition shadow cursor-pointer active:scale-95"
           >
@@ -147,6 +241,41 @@ Apakah stok masih ada?`);
             <span>Buka Resolusi Penuh</span>
           </button>
         </div>
+
+        {/* Opsi Pilihan Gambar (1 & 2) */}
+        {hasAddImg && (
+          <div className="bg-emerald-950/[0.04] border-b border-gray-100 px-4 sm:px-5 py-2 flex items-center justify-center gap-3">
+            <button
+              type="button"
+              onClick={() => setActiveImg(product.img)}
+              className={`flex items-center gap-2 px-4 py-1.5 rounded-xl text-xs font-black transition cursor-pointer border ${
+                currentImg === product.img
+                  ? 'bg-emerald-950 text-lime-300 border-emerald-950 shadow-sm ring-2 ring-lime-400'
+                  : 'bg-white text-gray-700 hover:bg-emerald-50 border-gray-200'
+              }`}
+            >
+              <span className="w-5 h-5 rounded-md overflow-hidden bg-black/10 shrink-0 border border-black/10 flex items-center justify-center">
+                <img src={product.img} alt="1" className="w-full h-full object-cover" />
+              </span>
+              <span>1</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveImg(product.img_add)}
+              className={`flex items-center gap-2 px-4 py-1.5 rounded-xl text-xs font-black transition cursor-pointer border ${
+                currentImg === product.img_add
+                  ? 'bg-emerald-950 text-lime-300 border-emerald-950 shadow-sm ring-2 ring-lime-400'
+                  : 'bg-white text-gray-700 hover:bg-emerald-50 border-gray-200'
+              }`}
+            >
+              <span className="w-5 h-5 rounded-md overflow-hidden bg-black/10 shrink-0 border border-black/10 flex items-center justify-center">
+                <img src={product.img_add} alt="2" className="w-full h-full object-cover" />
+              </span>
+              <span>2</span>
+            </button>
+          </div>
+        )}
 
         {/* Area Detail Informasi Produk */}
         <div className="p-5 overflow-y-auto">

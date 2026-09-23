@@ -30,11 +30,14 @@ export default function StickerEditionFilter({
     return { specialEditions: specials, numberedEditions: numbered };
   }, [products]);
 
-  const isNumberedActive = !isNaN(activeStickerEdition) && activeStickerEdition !== 'all';
+  const isNumberedActive = !isNaN(activeStickerEdition) && activeStickerEdition !== 'all' && activeStickerEdition !== '';
+  const isSpecialActive = specialEditions.some(
+    (sp) => String(sp).trim().toLowerCase() === String(activeStickerEdition).trim().toLowerCase()
+  );
 
   return (
-    <div className="flex items-center gap-2 pb-3 mb-3 border-t border-emerald-800/40 pt-2.5 overflow-x-auto no-scrollbar">
-      <span className="text-[11px] font-black text-lime-300 uppercase tracking-wider whitespace-nowrap flex items-center gap-1">
+    <div className="flex items-center gap-2 pb-2.5 mb-3 border-t border-emerald-800/40 pt-2.5 overflow-x-auto category-scrollbar">
+      <span className="text-[11px] font-black text-lime-300 uppercase tracking-wider whitespace-nowrap flex items-center gap-1 shrink-0">
         <Faders size={14} weight="bold" /> Edisi:
       </span>
 
@@ -52,39 +55,21 @@ export default function StickerEditionFilter({
           Semua
         </button>
 
-        {/* Tombol Edisi Spesial */}
-        {specialEditions.map((sp) => {
-          const isActive = String(activeStickerEdition).trim().toLowerCase() === String(sp).trim().toLowerCase();
-          return (
-            <button
-              key={sp}
-              onClick={() => onSelectEdition(sp)}
-              type="button"
-              className={`edition-btn flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-black whitespace-nowrap transition flex-shrink-0 shadow-sm cursor-pointer ${
-                isActive
-                  ? 'bg-amber-400 text-amber-950 border border-amber-400'
-                  : 'bg-gradient-to-r from-amber-500/20 to-yellow-500/20 border border-amber-400 text-amber-300 hover:bg-amber-400 hover:text-amber-950'
-              }`}
-            >
-              <Star size={13} weight="fill" className={isActive ? 'text-amber-950' : 'text-amber-400'} />
-              <span>{sp}</span>
-            </button>
-          );
-        })}
-
-        {/* Dropdown Edisi Bernomor */}
+        {/* Dropdown Edisi Bernomor (Angka) */}
         {numberedEditions.length > 0 && (
-          <div className="relative flex-1 sm:max-w-[220px]">
+          <div className="relative flex-1 min-w-[120px] sm:max-w-[180px]">
             <select
               value={isNumberedActive ? activeStickerEdition : ''}
               onChange={(e) => onSelectEdition(e.target.value)}
               className={`w-full text-xs font-bold py-1.5 pl-3 pr-8 rounded-xl focus:outline-none appearance-none cursor-pointer shadow transition ${
                 isNumberedActive
                   ? 'bg-lime-400 border border-lime-400 text-emerald-950 font-black'
-                  : 'bg-emerald-950/90 border border-emerald-600/50 text-emerald-200'
+                  : 'bg-emerald-950/90 border border-emerald-600/50 text-emerald-200 hover:border-emerald-500'
               }`}
             >
-              <option value="" disabled>Pilih Edisi</option>
+              <option value="" disabled className="bg-emerald-950 text-emerald-400 font-bold">
+                Pilih Edisi
+              </option>
               {numberedEditions.map((ed) => (
                 <option key={ed} value={ed} className="bg-emerald-950 text-white font-bold">
                   Edisi #{ed}
@@ -96,6 +81,37 @@ export default function StickerEditionFilter({
               weight="bold"
               className={`absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none ${
                 isNumberedActive ? 'text-emerald-950' : 'text-emerald-400'
+              }`}
+            />
+          </div>
+        )}
+
+        {/* Dropdown Edisi Lainnya (Huruf: Special, Collab, dll) */}
+        {specialEditions.length > 0 && (
+          <div className="relative flex-1 min-w-[130px] sm:max-w-[190px]">
+            <select
+              value={isSpecialActive ? activeStickerEdition : ''}
+              onChange={(e) => onSelectEdition(e.target.value)}
+              className={`w-full text-xs font-bold py-1.5 pl-3 pr-8 rounded-xl focus:outline-none appearance-none cursor-pointer shadow transition ${
+                isSpecialActive
+                  ? 'bg-amber-400 border border-amber-400 text-amber-950 font-black'
+                  : 'bg-emerald-950/90 border border-amber-400/50 text-amber-300 hover:border-amber-400'
+              }`}
+            >
+              <option value="" disabled className="bg-emerald-950 text-amber-400 font-bold">
+                Edisi Lainnya
+              </option>
+              {specialEditions.map((sp) => (
+                <option key={sp} value={sp} className="bg-emerald-950 text-white font-bold">
+                  {sp}
+                </option>
+              ))}
+            </select>
+            <CaretDown
+              size={12}
+              weight="bold"
+              className={`absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none ${
+                isSpecialActive ? 'text-amber-950' : 'text-amber-400'
               }`}
             />
           </div>

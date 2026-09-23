@@ -8,6 +8,7 @@ let allProducts = [];
 let allCategories = [];
 let activeCategory = 'all';
 let activeStickerEdition = 'all'; // State filter edisi stiker
+let isAvailableOnly = false; // State filter produk tersedia (hide sold out)
 
 const productGrid = document.getElementById('productGrid');
 const noResult = document.getElementById('noResult');
@@ -240,32 +241,35 @@ function buildStickerEditionButtons() {
 
     let html = `
         <button id="btn-ed-all" onclick="selectEditionTab('all', this)"
-            class="edition-btn px-3 py-1.5 rounded-xl bg-lime-400 text-emerald-950 text-xs font-black whitespace-nowrap shadow flex-shrink-0">
+            class="edition-btn px-3 py-1.5 rounded-xl bg-lime-400 text-emerald-950 text-xs font-black whitespace-nowrap shadow flex-shrink-0 cursor-pointer">
             Semua
         </button>
     `;
 
-    // Tombol Edisi Spesial
-    specialEditions.forEach(sp => {
-        html += `
-            <button onclick="selectEditionTab('${sp}', this)"
-                class="edition-btn flex items-center gap-1 px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500/20 to-yellow-500/20 border border-amber-400 text-amber-300 hover:bg-amber-400 hover:text-amber-950 text-xs font-black whitespace-nowrap transition flex-shrink-0 shadow-sm">
-                <i class="ph-fill ph-star text-xs text-amber-400"></i>
-                <span>${sp}</span>
-            </button>
-        `;
-    });
-
-    // Dropdown Khusus Edisi Bernomor
+    // Dropdown Khusus Edisi Bernomor (Angka)
     if (numberedEditions.length > 0) {
         html += `
-            <div class="relative flex-1 sm:max-w-[220px]">
+            <div class="relative flex-1 min-w-[120px] sm:max-w-[180px]">
                 <select id="numberedEditionDropdown" onchange="selectEditionDropdown(this.value)"
-                    class="w-full bg-emerald-950/90 border border-emerald-600/50 text-emerald-200 text-xs font-bold py-1.5 pl-3 pr-8 rounded-xl focus:outline-none focus:ring-1 focus:ring-lime-400 appearance-none cursor-pointer">
+                    class="w-full bg-emerald-950/90 border border-emerald-600/50 text-emerald-200 text-xs font-bold py-1.5 pl-3 pr-8 rounded-xl focus:outline-none appearance-none cursor-pointer shadow">
                     <option value="" disabled selected>Pilih Edisi</option>
-                    ${numberedEditions.map(ed => `<option value="${ed}" class="bg-emerald-950 text-white">Edisi #${ed}</option>`).join('')}
+                    ${numberedEditions.map(ed => `<option value="${ed}" class="bg-emerald-950 text-white font-bold">Edisi #${ed}</option>`).join('')}
                 </select>
                 <i class="ph-bold ph-caret-down absolute right-2.5 top-1/2 -translate-y-1/2 text-emerald-400 pointer-events-none text-xs"></i>
+            </div>
+        `;
+    }
+
+    // Dropdown Edisi Lainnya (Huruf: Special, Collab, dll)
+    if (specialEditions.length > 0) {
+        html += `
+            <div class="relative flex-1 min-w-[130px] sm:max-w-[190px]">
+                <select id="otherEditionDropdown" onchange="selectOtherEditionDropdown(this.value)"
+                    class="w-full bg-emerald-950/90 border border-amber-400/50 text-amber-300 text-xs font-bold py-1.5 pl-3 pr-8 rounded-xl focus:outline-none appearance-none cursor-pointer shadow">
+                    <option value="" disabled selected>Edisi Lainnya</option>
+                    ${specialEditions.map(sp => `<option value="${sp}" class="bg-emerald-950 text-white font-bold">${sp}</option>`).join('')}
+                </select>
+                <i class="ph-bold ph-caret-down absolute right-2.5 top-1/2 -translate-y-1/2 text-amber-400 pointer-events-none text-xs"></i>
             </div>
         `;
     }
@@ -273,42 +277,87 @@ function buildStickerEditionButtons() {
     editionButtons.innerHTML = html;
 }
 
-// Handler saat tombol (Semua / Spesial) diklik
+// Handler saat tombol Semua diklik
 function selectEditionTab(edition, btnElement) {
     activeStickerEdition = edition;
     searchInput.value = '';
 
-    // Reset tombol biasa
+    // Reset tombol Semua
     document.querySelectorAll('.edition-btn').forEach(btn => {
-        btn.className = 'edition-btn px-3 py-1.5 rounded-xl bg-emerald-950/80 border border-emerald-600/40 text-emerald-200 text-xs font-bold whitespace-nowrap hover:bg-emerald-900 flex-shrink-0';
+        btn.className = 'edition-btn px-3 py-1.5 rounded-xl bg-emerald-950/80 border border-emerald-600/40 text-emerald-200 text-xs font-bold whitespace-nowrap hover:bg-emerald-900 flex-shrink-0 cursor-pointer';
     });
-    btnElement.className = 'edition-btn px-3 py-1.5 rounded-xl bg-lime-400 text-emerald-950 text-xs font-black whitespace-nowrap shadow flex-shrink-0';
+    if (btnElement) {
+        btnElement.className = 'edition-btn px-3 py-1.5 rounded-xl bg-lime-400 text-emerald-950 text-xs font-black whitespace-nowrap shadow flex-shrink-0 cursor-pointer';
+    }
 
-    // Reset dropdown kembali ke placeholder
-    const selectEl = document.getElementById('numberedEditionDropdown');
-    if (selectEl) {
-        selectEl.selectedIndex = 0;
-        selectEl.className = 'w-full bg-emerald-950/90 border border-emerald-600/50 text-emerald-200 text-xs font-bold py-1.5 pl-3 pr-8 rounded-xl focus:outline-none appearance-none cursor-pointer';
+    // Reset dropdown nomor
+    const numSelectEl = document.getElementById('numberedEditionDropdown');
+    if (numSelectEl) {
+        numSelectEl.selectedIndex = 0;
+        numSelectEl.className = 'w-full bg-emerald-950/90 border border-emerald-600/50 text-emerald-200 text-xs font-bold py-1.5 pl-3 pr-8 rounded-xl focus:outline-none appearance-none cursor-pointer shadow';
+    }
+
+    // Reset dropdown edisi lainnya
+    const otherSelectEl = document.getElementById('otherEditionDropdown');
+    if (otherSelectEl) {
+        otherSelectEl.selectedIndex = 0;
+        otherSelectEl.className = 'w-full bg-emerald-950/90 border border-amber-400/50 text-amber-300 text-xs font-bold py-1.5 pl-3 pr-8 rounded-xl focus:outline-none appearance-none cursor-pointer shadow';
     }
 
     renderProducts();
 }
 
-// Handler saat dropdown edisi dipilih
+// Handler saat dropdown edisi angka dipilih
 function selectEditionDropdown(val) {
     if (!val) return;
     activeStickerEdition = val;
     searchInput.value = '';
 
-    // Reset tombol Semua / Spesial
-    document.querySelectorAll('.edition-btn').forEach(btn => {
-        btn.className = 'edition-btn px-3 py-1.5 rounded-xl bg-emerald-950/80 border border-emerald-600/40 text-emerald-200 text-xs font-bold whitespace-nowrap hover:bg-emerald-900 flex-shrink-0';
-    });
+    // Reset tombol Semua
+    const btnAll = document.getElementById('btn-ed-all');
+    if (btnAll) {
+        btnAll.className = 'edition-btn px-3 py-1.5 rounded-xl bg-emerald-950/80 border border-emerald-600/40 text-emerald-200 text-xs font-bold whitespace-nowrap hover:bg-emerald-900 flex-shrink-0 cursor-pointer';
+    }
 
-    // Beri aksen aktif pada dropdown
-    const selectEl = document.getElementById('numberedEditionDropdown');
-    if (selectEl) {
-        selectEl.className = 'w-full bg-lime-400 border border-lime-400 text-emerald-950 text-xs font-black py-1.5 pl-3 pr-8 rounded-xl focus:outline-none shadow appearance-none cursor-pointer';
+    // Aktifkan dropdown nomor
+    const numSelectEl = document.getElementById('numberedEditionDropdown');
+    if (numSelectEl) {
+        numSelectEl.className = 'w-full bg-lime-400 border border-lime-400 text-emerald-950 text-xs font-black py-1.5 pl-3 pr-8 rounded-xl focus:outline-none shadow appearance-none cursor-pointer';
+    }
+
+    // Reset dropdown edisi lainnya
+    const otherSelectEl = document.getElementById('otherEditionDropdown');
+    if (otherSelectEl) {
+        otherSelectEl.selectedIndex = 0;
+        otherSelectEl.className = 'w-full bg-emerald-950/90 border border-amber-400/50 text-amber-300 text-xs font-bold py-1.5 pl-3 pr-8 rounded-xl focus:outline-none appearance-none cursor-pointer shadow';
+    }
+
+    renderProducts();
+}
+
+// Handler saat dropdown edisi lainnya (huruf) dipilih
+function selectOtherEditionDropdown(val) {
+    if (!val) return;
+    activeStickerEdition = val;
+    searchInput.value = '';
+
+    // Reset tombol Semua
+    const btnAll = document.getElementById('btn-ed-all');
+    if (btnAll) {
+        btnAll.className = 'edition-btn px-3 py-1.5 rounded-xl bg-emerald-950/80 border border-emerald-600/40 text-emerald-200 text-xs font-bold whitespace-nowrap hover:bg-emerald-900 flex-shrink-0 cursor-pointer';
+    }
+
+    // Reset dropdown nomor
+    const numSelectEl = document.getElementById('numberedEditionDropdown');
+    if (numSelectEl) {
+        numSelectEl.selectedIndex = 0;
+        numSelectEl.className = 'w-full bg-emerald-950/90 border border-emerald-600/50 text-emerald-200 text-xs font-bold py-1.5 pl-3 pr-8 rounded-xl focus:outline-none appearance-none cursor-pointer shadow';
+    }
+
+    // Aktifkan dropdown edisi lainnya
+    const otherSelectEl = document.getElementById('otherEditionDropdown');
+    if (otherSelectEl) {
+        otherSelectEl.className = 'w-full bg-amber-400 border border-amber-400 text-amber-950 text-xs font-black py-1.5 pl-3 pr-8 rounded-xl focus:outline-none shadow appearance-none cursor-pointer';
     }
 
     renderProducts();
@@ -330,11 +379,37 @@ function handleOlderEditionChange(selectEl) {
     filterStickerEdition(val, selectEl);
 }
 
+function toggleAvailableOnly() {
+    isAvailableOnly = !isAvailableOnly;
+    const btn = document.getElementById('btnAvailableOnly');
+    const icon = document.getElementById('iconAvailableOnly');
+    if (btn) {
+        if (isAvailableOnly) {
+            btn.className = "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs transition cursor-pointer shadow-md select-none shrink-0 bg-lime-400 text-emerald-950 font-black ring-2 ring-lime-300/50";
+            if (icon) {
+                icon.className = "ph-fill ph-check-circle text-emerald-950";
+            }
+        } else {
+            btn.className = "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs transition cursor-pointer shadow-sm select-none shrink-0 bg-emerald-950/90 border border-emerald-600/50 text-emerald-200 hover:bg-emerald-900 hover:text-white font-bold";
+            if (icon) {
+                icon.className = "ph-bold ph-check-circle text-lime-400";
+            }
+        }
+    }
+    renderProducts();
+}
+
 function renderProducts() {
     const query = searchInput.value.toLowerCase().trim();
     productGrid.innerHTML = '';
 
     const filtered = allProducts.filter(item => {
+        // Filter produk tersedia jika aktif
+        if (isAvailableOnly) {
+            const isSold = String(item.sold_out || '').trim().toUpperCase() === 'Y';
+            if (isSold) return false;
+        }
+
         // Filter kategori utama
         const matchCat = (activeCategory === 'all' || item.category === activeCategory);
 

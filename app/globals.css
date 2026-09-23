@@ -30,7 +30,7 @@ header.sticky-header {
   z-index: 50;
 }
 
-/* Hilangkan tampilan scrollbar untuk kategori pills */
+/* Hilangkan tampilan scrollbar untuk elemen tertentu jika dibutuhkan */
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
@@ -38,4 +38,28 @@ header.sticky-header {
 .no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+
+/* Scrollbar elegan untuk kategori & filter agar terlihat jelas bisa digeser di HP */
+.category-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(163, 230, 53, 0.5) rgba(6, 78, 59, 0.4);
+}
+
+.category-scrollbar::-webkit-scrollbar {
+  height: 4px;
+}
+
+.category-scrollbar::-webkit-scrollbar-track {
+  background: rgba(6, 78, 59, 0.35);
+  border-radius: 9999px;
+}
+
+.category-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(163, 230, 53, 0.55);
+  border-radius: 9999px;
+}
+
+.category-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(163, 230, 53, 0.9);
 }

@@ -178,18 +178,30 @@
     <!-- KATALOG UTAMA -->
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex-1 w-full">
 
-        <!-- Kategori Tabs Utama (Dirender Dinamis dari Database Supabase - Tabel 'categories') -->
-        <div id="categoryTabs" class="flex items-center gap-2 overflow-x-auto pb-2 mb-2 no-scrollbar">
-            <button id="cat-all" onclick="filterCategory('all', this)"
-                class="cat-btn px-4 py-1.5 rounded-full bg-lime-400 text-emerald-950 text-xs font-black whitespace-nowrap shadow cursor-pointer">
-                Semua
-            </button>
-            <!-- Skeleton pills saat kategori sedang dimuat dari Supabase -->
-            <div id="categoryTabsSkeleton" class="flex items-center gap-2">
-                <div class="h-7 w-16 bg-emerald-900/60 rounded-full animate-pulse"></div>
-                <div class="h-7 w-20 bg-emerald-900/60 rounded-full animate-pulse"></div>
-                <div class="h-7 w-20 bg-emerald-900/60 rounded-full animate-pulse"></div>
-                <div class="h-7 w-16 bg-emerald-900/60 rounded-full animate-pulse"></div>
+        <!-- Kategori Tabs Utama & Filter Tersedia -->
+        <div class="flex items-center justify-between gap-2 pb-2 mb-2">
+            <div id="categoryTabs" class="flex items-center gap-2 overflow-x-auto no-scrollbar flex-1 min-w-0 pr-1">
+                <button id="cat-all" onclick="filterCategory('all', this)"
+                    class="cat-btn px-4 py-1.5 rounded-full bg-lime-400 text-emerald-950 text-xs font-black whitespace-nowrap shadow cursor-pointer shrink-0">
+                    Semua
+                </button>
+                <!-- Skeleton pills saat kategori sedang dimuat dari Supabase -->
+                <div id="categoryTabsSkeleton" class="flex items-center gap-2">
+                    <div class="h-7 w-16 bg-emerald-900/60 rounded-full animate-pulse"></div>
+                    <div class="h-7 w-20 bg-emerald-900/60 rounded-full animate-pulse"></div>
+                    <div class="h-7 w-20 bg-emerald-900/60 rounded-full animate-pulse"></div>
+                    <div class="h-7 w-16 bg-emerald-900/60 rounded-full animate-pulse"></div>
+                </div>
+            </div>
+
+            <!-- Tombol Filter Tersedia -->
+            <div class="shrink-0 pl-1.5 border-l border-emerald-800/60 flex items-center">
+                <button id="btnAvailableOnly" onclick="toggleAvailableOnly()"
+                    title="Klik untuk menyaring hanya produk yang tersedia"
+                    class="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs transition cursor-pointer shadow-sm select-none shrink-0 bg-emerald-950/90 border border-emerald-600/50 text-emerald-200 hover:bg-emerald-900 hover:text-white font-bold">
+                    <i id="iconAvailableOnly" class="ph-bold ph-check-circle text-lime-400"></i>
+                    <span>Tersedia</span>
+                </button>
             </div>
         </div>
 

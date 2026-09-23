@@ -18,6 +18,7 @@ export default function Home() {
   const [categories, setCategories] = useState([]);
   const [activeCategory, setActiveCategory] = useState('all');
   const [activeStickerEdition, setActiveStickerEdition] = useState('all');
+  const [isAvailableOnly, setIsAvailableOnly] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
 
@@ -136,7 +137,12 @@ export default function Home() {
     setSearchQuery('');
     setActiveCategory('all');
     setActiveStickerEdition('all');
+    setIsAvailableOnly(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
+
+  const handleToggleAvailableOnly = useCallback(() => {
+    setIsAvailableOnly((prev) => !prev);
   }, []);
 
   // Filtered products calculation
@@ -144,6 +150,11 @@ export default function Home() {
     const query = searchQuery.toLowerCase().trim();
 
     return products.filter((item) => {
+      // Filter produk tersedia (sembunyikan sold out jika filter Tersedia aktif)
+      if (isAvailableOnly && item.is_sold_out) {
+        return false;
+      }
+
       // Kategori utama
       const matchCat = activeCategory === 'all' || item.category === activeCategory;
 
@@ -174,7 +185,7 @@ export default function Home() {
 
       return matchCat && matchStickerEd && (titleMatch || editionMatch || teamMatch || yearMatch || descMatch);
     });
-  }, [products, activeCategory, activeStickerEdition, searchQuery]);
+  }, [products, activeCategory, activeStickerEdition, searchQuery, isAvailableOnly]);
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -202,6 +213,8 @@ export default function Home() {
           setCategories={setCategories}
           activeCategory={activeCategory}
           onSelectCategory={handleSelectCategory}
+          isAvailableOnly={isAvailableOnly}
+          onToggleAvailableOnly={handleToggleAvailableOnly}
         />
 
         {/* Sub-filter Edisi Stiker (hanya tampil saat kategori stiker aktif) */}
@@ -217,6 +230,7 @@ export default function Home() {
         <ProductGrid
           products={filteredProducts}
           isLoading={isLoading}
+          isAvailableOnly={isAvailableOnly}
           onOpenModal={(product) => setSelectedProduct(product)}
         />
       </main>

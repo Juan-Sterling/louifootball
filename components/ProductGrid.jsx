@@ -4,7 +4,7 @@ import React from 'react';
 import ProductCard from './ProductCard';
 import { SoccerBall } from '@phosphor-icons/react';
 
-export default function ProductGrid({ products, isLoading, onOpenModal }) {
+export default function ProductGrid({ products, isLoading, isAvailableOnly, onOpenModal }) {
   if (isLoading) {
     return (
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3.5 sm:gap-4">
@@ -56,7 +56,11 @@ export default function ProductGrid({ products, isLoading, onOpenModal }) {
           <SoccerBall size={32} />
         </div>
         <p className="text-base font-bold text-white">Produk tidak ditemukan</p>
-        <p className="text-xs text-emerald-200/80 mt-1">Coba kata kunci pencarian lain atau pilih kategori berbeda.</p>
+        <p className="text-xs text-emerald-200/80 mt-1">
+          {isAvailableOnly
+            ? 'Tidak ada produk yang sedang tersedia untuk pilihan filter ini.'
+            : 'Coba kata kunci pencarian lain atau pilih kategori berbeda.'}
+        </p>
       </div>
     );
   }
