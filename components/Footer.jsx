@@ -13,13 +13,15 @@ export default function Footer() {
   return (
     <footer className="bg-emerald-950/95 border-t border-emerald-700/50 mt-10 py-8 text-white backdrop-blur-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-4">
-        <div className="flex items-center justify-center gap-2">
-          <span className="font-loui text-xl sm:text-2xl tracking-wider">
-            LOUI<span className="text-lime-400">FOOTBALL</span>
-          </span>
+        <div className="flex items-center justify-center">
+          <img
+            src="https://res.cloudinary.com/og1jrvy3/image/upload/v1790248865/PROFILE_LOGO_LOUI_FOOTBALL_-_transparent.png"
+            alt="LOUIFOOTBALL"
+            className="w-20 h-20 sm:w-24 sm:h-24 object-contain mx-auto drop-shadow-md"
+          />
         </div>
-        <p className="text-xs text-emerald-200/80 max-w-md mx-auto">
-          Toko merchandise sepak bola karya suporter untuk pecinta bola di seluruh Indonesia.
+        <p className="text-xs sm:text-sm text-emerald-200/80 max-w-md mx-auto">
+          Made by a Football Fans, for Football Fans
         </p>
 
         {/* Tombol Kontak & Marketplace Footer */}
