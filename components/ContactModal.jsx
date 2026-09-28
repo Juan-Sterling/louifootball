@@ -7,7 +7,6 @@ import {
   WhatsappLogo,
   InstagramLogo,
   ShoppingBagOpen,
-  Storefront,
   CaretRight,
 } from '@phosphor-icons/react';
 import { WA_NUMBER } from '@/lib/utils';
@@ -105,25 +104,6 @@ export default function ContactModal({ isOpen, onClose }) {
               <div>
                 <p className="text-xs font-bold text-white">Shopee Store</p>
                 <p className="text-[10px] text-emerald-300">Gratis ongkir & voucher</p>
-              </div>
-            </div>
-            <CaretRight size={16} weight="bold" className="text-gray-400 group-hover:text-white transition" />
-          </a>
-
-          {/* Tokopedia Store */}
-          <a
-            href="https://tk.tokopedia.com/ZSqEjQvMt/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center justify-between p-3 rounded-2xl bg-emerald-900/80 hover:bg-emerald-800 border border-emerald-700/60 transition group cursor-pointer"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-emerald-500/20 text-lime-400 flex items-center justify-center text-xl">
-                <Storefront size={22} weight="bold" />
-              </div>
-              <div>
-                <p className="text-xs font-bold text-white">Tokopedia Store</p>
-                <p className="text-[10px] text-emerald-300">Cashback & cicilan resmi</p>
               </div>
             </div>
             <CaretRight size={16} weight="bold" className="text-gray-400 group-hover:text-white transition" />

@@ -865,40 +865,24 @@ Apakah stok masih ada?`);
         modalWaBtn.innerHTML = '<i class="ph-bold ph-whatsapp-logo text-lg text-green-400"></i> Order via WhatsApp';
     }
 
-    // Shopee & Tokopedia buttons
+    // Shopee button
     const shopeeBtn = document.getElementById('modalShopeeBtn');
-    const tokpedBtn = document.getElementById('modalTokopediaBtn');
-    if (shopeeBtn && tokpedBtn) {
+    if (shopeeBtn) {
         if (isLimited) {
-            shopeeBtn.className = "bg-gray-100 border border-gray-200 text-gray-400 font-bold py-2.5 rounded-xl flex items-center justify-center gap-1.5 text-xs cursor-not-allowed opacity-60 select-none";
+            shopeeBtn.className = "w-full bg-gray-100 border border-gray-200 text-gray-400 font-bold py-2.5 rounded-xl flex items-center justify-center gap-1.5 text-xs cursor-not-allowed opacity-60 select-none";
             shopeeBtn.removeAttribute('href');
             shopeeBtn.title = "Produk edisi Limited tidak dijual di Shopee";
             shopeeBtn.innerHTML = '<i class="ph-bold ph-shopping-bag-open text-base text-gray-400"></i> Shopee (Tidak Dijual)';
-
-            tokpedBtn.className = "bg-gray-100 border border-gray-200 text-gray-400 font-bold py-2.5 rounded-xl flex items-center justify-center gap-1.5 text-xs cursor-not-allowed opacity-60 select-none";
-            tokpedBtn.removeAttribute('href');
-            tokpedBtn.title = "Produk edisi Limited tidak dijual di Tokopedia";
-            tokpedBtn.innerHTML = '<i class="ph-bold ph-storefront text-base text-gray-400"></i> Tokopedia (Tidak Dijual)';
         } else if (isSoldOut) {
-            shopeeBtn.className = "bg-gray-100 border border-gray-200 text-gray-400 font-bold py-2.5 rounded-xl flex items-center justify-center gap-1.5 text-xs cursor-not-allowed opacity-60 select-none";
+            shopeeBtn.className = "w-full bg-gray-100 border border-gray-200 text-gray-400 font-bold py-2.5 rounded-xl flex items-center justify-center gap-1.5 text-xs cursor-not-allowed opacity-60 select-none";
             shopeeBtn.removeAttribute('href');
             shopeeBtn.title = "Produk telah habis terjual (Sold Out)";
             shopeeBtn.innerHTML = '<i class="ph-bold ph-shopping-bag-open text-base text-gray-400"></i> Shopee (Habis)';
-
-            tokpedBtn.className = "bg-gray-100 border border-gray-200 text-gray-400 font-bold py-2.5 rounded-xl flex items-center justify-center gap-1.5 text-xs cursor-not-allowed opacity-60 select-none";
-            tokpedBtn.removeAttribute('href');
-            tokpedBtn.title = "Produk telah habis terjual (Sold Out)";
-            tokpedBtn.innerHTML = '<i class="ph-bold ph-storefront text-base text-gray-400"></i> Tokopedia (Habis)';
         } else {
-            shopeeBtn.className = "bg-orange-50 hover:bg-orange-100 border border-orange-200 text-orange-700 font-bold py-2.5 rounded-xl flex items-center justify-center gap-1.5 text-xs transition cursor-pointer";
+            shopeeBtn.className = "w-full bg-orange-50 hover:bg-orange-100 border border-orange-200 text-orange-700 font-bold py-2.5 rounded-xl flex items-center justify-center gap-1.5 text-xs transition cursor-pointer";
             shopeeBtn.href = "https://id.shp.ee/a5f6X4Wq";
             shopeeBtn.title = "";
             shopeeBtn.innerHTML = '<i class="ph-bold ph-shopping-bag-open text-base"></i> Shopee Store';
-
-            tokpedBtn.className = "bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 font-bold py-2.5 rounded-xl flex items-center justify-center gap-1.5 text-xs transition cursor-pointer";
-            tokpedBtn.href = "https://tk.tokopedia.com/ZSqEjQvMt/";
-            tokpedBtn.title = "";
-            tokpedBtn.innerHTML = '<i class="ph-bold ph-storefront text-base text-emerald-600"></i> Tokopedia Store';
         }
     }
 

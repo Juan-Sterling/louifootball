@@ -5,7 +5,6 @@ import {
   WhatsappLogo,
   InstagramLogo,
   ShoppingBagOpen,
-  Storefront,
 } from '@phosphor-icons/react';
 import { WA_NUMBER } from '@/lib/utils';
 
@@ -52,15 +51,6 @@ export default function Footer() {
           >
             <ShoppingBagOpen size={18} weight="bold" className="text-orange-400" />
             <span>Shopee</span>
-          </a>
-          <a
-            href="https://tk.tokopedia.com/ZSqEjQvMt/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-1.5 bg-emerald-900 hover:bg-emerald-800 text-white text-xs font-bold px-3.5 py-2 rounded-xl border border-emerald-600/50 transition cursor-pointer"
-          >
-            <Storefront size={18} weight="bold" className="text-lime-400" />
-            <span>Tokopedia</span>
           </a>
         </div>
 

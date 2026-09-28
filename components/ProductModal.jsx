@@ -8,7 +8,6 @@ import {
   CalendarBlank,
   WhatsappLogo,
   ShoppingBagOpen,
-  Storefront,
   CheckCircle,
   CaretLeft,
   CaretRight,
@@ -446,13 +445,13 @@ Apakah stok masih ada?`);
               </span>
             </a>
 
-            {/* Shopee & Tokopedia (Non-aktif jika Limited atau Sold Out) */}
-            <div className="grid grid-cols-2 gap-2 pt-1">
+            {/* Shopee (Non-aktif jika Limited atau Sold Out) */}
+            <div className="pt-1">
               {isLimited ? (
                 <div
                   aria-disabled="true"
                   title="Produk edisi Limited tidak dijual di Shopee"
-                  className="bg-gray-100 border border-gray-200 text-gray-400 font-bold py-2.5 rounded-xl flex items-center justify-center gap-1.5 text-xs cursor-not-allowed opacity-60 select-none"
+                  className="w-full bg-gray-100 border border-gray-200 text-gray-400 font-bold py-2.5 rounded-xl flex items-center justify-center gap-1.5 text-xs cursor-not-allowed opacity-60 select-none"
                 >
                   <ShoppingBagOpen size={16} weight="bold" className="text-gray-400" />
                   <span>Shopee (Tidak Dijual)</span>
@@ -461,7 +460,7 @@ Apakah stok masih ada?`);
                 <div
                   aria-disabled="true"
                   title="Produk telah habis terjual (Sold Out)"
-                  className="bg-gray-100 border border-gray-200 text-gray-400 font-bold py-2.5 rounded-xl flex items-center justify-center gap-1.5 text-xs cursor-not-allowed opacity-60 select-none"
+                  className="w-full bg-gray-100 border border-gray-200 text-gray-400 font-bold py-2.5 rounded-xl flex items-center justify-center gap-1.5 text-xs cursor-not-allowed opacity-60 select-none"
                 >
                   <ShoppingBagOpen size={16} weight="bold" className="text-gray-400" />
                   <span>Shopee (Habis)</span>
@@ -471,40 +470,10 @@ Apakah stok masih ada?`);
                   href="https://id.shp.ee/a5f6X4Wq"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="bg-orange-50 hover:bg-orange-100 border border-orange-200 text-orange-700 font-bold py-2.5 rounded-xl flex items-center justify-center gap-1.5 text-xs transition cursor-pointer"
+                  className="w-full bg-orange-50 hover:bg-orange-100 border border-orange-200 text-orange-700 font-bold py-2.5 rounded-xl flex items-center justify-center gap-1.5 text-xs transition cursor-pointer"
                 >
                   <ShoppingBagOpen size={16} weight="bold" />
                   <span>Shopee Store</span>
-                </a>
-              )}
-
-              {isLimited ? (
-                <div
-                  aria-disabled="true"
-                  title="Produk edisi Limited tidak dijual di Tokopedia"
-                  className="bg-gray-100 border border-gray-200 text-gray-400 font-bold py-2.5 rounded-xl flex items-center justify-center gap-1.5 text-xs cursor-not-allowed opacity-60 select-none"
-                >
-                  <Storefront size={16} weight="bold" className="text-gray-400" />
-                  <span>Tokopedia (Tidak Dijual)</span>
-                </div>
-              ) : isSoldOut ? (
-                <div
-                  aria-disabled="true"
-                  title="Produk telah habis terjual (Sold Out)"
-                  className="bg-gray-100 border border-gray-200 text-gray-400 font-bold py-2.5 rounded-xl flex items-center justify-center gap-1.5 text-xs cursor-not-allowed opacity-60 select-none"
-                >
-                  <Storefront size={16} weight="bold" className="text-gray-400" />
-                  <span>Tokopedia (Habis)</span>
-                </div>
-              ) : (
-                <a
-                  href="https://tk.tokopedia.com/ZSqEjQvMt/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 font-bold py-2.5 rounded-xl flex items-center justify-center gap-1.5 text-xs transition cursor-pointer"
-                >
-                  <Storefront size={16} weight="bold" />
-                  <span>Tokopedia</span>
                 </a>
               )}
             </div>
