@@ -118,12 +118,10 @@ export default function Home() {
   const handleSelectCategory = useCallback((cat) => {
     setActiveCategory(normalizeCategory(cat));
     setActiveStickerEdition('all');
-    setSearchQuery('');
   }, []);
 
   const handleSelectEdition = useCallback((ed) => {
     setActiveStickerEdition(String(ed).trim());
-    setSearchQuery('');
   }, []);
 
   const handleHeroSelectEdition = useCallback((ed) => {

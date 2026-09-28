@@ -24,11 +24,6 @@ export default function ProductCard({ product, onOpenModal }) {
   const isYearValid = rawYear && rawYear.toLowerCase() !== 'null' && rawYear.toLowerCase() !== 'undefined' && rawYear !== '-';
   const yearText = isYearValid ? rawYear : '';
 
-  const teamYearParts = [];
-  if (teamText) teamYearParts.push(teamText);
-  if (yearText) teamYearParts.push(yearText);
-  const teamYearDisplay = teamYearParts.join(' • ');
-
   const isLimited = String(product.edition || '').trim().toUpperCase() === 'LIMITED';
   const isSoldOut = String(product.sold_out || '').trim().toUpperCase() === 'Y';
   const formattedPrice = isLimited ? 'LIMITED' : getPriceRangeDisplay(product.variants, product.price);
@@ -85,13 +80,22 @@ export default function ProductCard({ product, onOpenModal }) {
           {productName}
         </h3>
 
-        {/* Tim dan Tahun */}
-        {teamYearDisplay ? (
-          <p className="text-[11px] text-gray-500 mt-1 truncate font-medium" title={teamYearDisplay}>
-            {teamYearDisplay}
+        {/* Tim */}
+        {teamText ? (
+          <p className="text-[11px] text-gray-500 mt-1 truncate font-medium" title={teamText}>
+            {teamText}
           </p>
         ) : (
           <p className="text-[11px] text-transparent mt-1 select-none">-</p>
+        )}
+
+        {/* Tahun (Di bawah Tim) */}
+        {yearText ? (
+          <p className="text-[11px] text-gray-400 mt-0.5 truncate font-medium" title={yearText}>
+            {yearText}
+          </p>
+        ) : (
+          <p className="text-[11px] text-transparent mt-0.5 select-none">-</p>
         )}
       </div>
 

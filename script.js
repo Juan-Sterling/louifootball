@@ -593,10 +593,6 @@ function renderProducts() {
         // Format Tim dan Tahun (menggantikan spesifikasi)
         const teamText = item.team ? String(item.team).trim() : '';
         const yearText = item.year ? String(item.year).trim() : '';
-        const teamYearParts = [];
-        if (teamText) teamYearParts.push(teamText);
-        if (yearText) teamYearParts.push(yearText);
-        const teamYearDisplay = teamYearParts.join(' • ');
 
         const isSoldOut = isItemSoldOut(item);
         const isLimited = String(item.edition || '').trim().toUpperCase() === 'LIMITED';
@@ -621,7 +617,8 @@ function renderProducts() {
             
             <p class="text-[10px] font-black text-amber-700 tracking-wider uppercase">${editionText}</p>
             <h3 class="font-loui text-sm sm:text-base text-gray-900 leading-snug line-clamp-2 mt-0.5 cursor-pointer hover:text-emerald-700 transition tracking-wide" onclick="openModalById('${item.id}')">${productName}</h3>
-            ${teamYearDisplay ? `<p class="text-[11px] text-gray-500 mt-1 truncate font-medium" title="${teamYearDisplay}">${teamYearDisplay}</p>` : '<p class="text-[11px] text-transparent mt-1 select-none">-</p>'}
+            ${teamText ? `<p class="text-[11px] text-gray-500 mt-1 truncate font-medium" title="${teamText}">${teamText}</p>` : '<p class="text-[11px] text-transparent mt-1 select-none">-</p>'}
+            ${yearText ? `<p class="text-[11px] text-gray-400 mt-0.5 truncate font-medium" title="${yearText}">${yearText}</p>` : '<p class="text-[11px] text-transparent mt-0.5 select-none">-</p>'}
           </div>
           <div class="mt-3 pt-2 border-t border-gray-100">
             <p class="${isLimited ? 'text-amber-600 font-black tracking-wider' : 'text-emerald-950 font-black'} text-sm sm:text-base">${formattedPrice}</p>
@@ -1091,7 +1088,6 @@ if (zoomViewport) {
 function filterCategory(category, btnElement) {
     activeCategory = category;
     activeStickerEdition = 'all';
-    searchInput.value = '';
     currentPage = 1;
 
     document.querySelectorAll('.cat-btn').forEach(btn => {
@@ -1122,7 +1118,6 @@ function filterCategory(category, btnElement) {
 // Sub-filter edisi khusus stiker
 function filterStickerEdition(edition, btnElement) {
     activeStickerEdition = edition;
-    searchInput.value = '';
 
     document.querySelectorAll('.edition-btn').forEach(btn => {
         btn.className = 'edition-btn px-3 py-1 rounded-lg bg-emerald-950/80 border border-emerald-600/40 text-emerald-200 text-xs font-bold whitespace-nowrap hover:bg-emerald-900';
