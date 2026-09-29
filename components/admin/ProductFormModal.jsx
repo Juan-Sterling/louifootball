@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   X,
   Check,
@@ -60,6 +60,17 @@ export default function ProductFormModal({
     (selectedCategory?.category || '').toLowerCase().includes('poster');
   const isLimited = String(formData.edition || '').trim().toUpperCase() === 'LIMITED';
   const activeCloudinaryFolder = getCloudinaryFolderByCategory(formData.category_id, selectedCategory?.category);
+
+  // Categories available for selection in dropdown:
+  // - Saat menambah produk baru: hanya kategori aktif (is_active !== false)
+  // - Saat mengedit produk lama: kategori aktif + kategori produk saat ini jika telah dinonaktifkan
+  const selectableCategories = useMemo(() => {
+    return categories.filter((c) => {
+      if (c.is_active !== false) return true;
+      if (isEditing && String(c.id) === String(formData.category_id)) return true;
+      return false;
+    });
+  }, [categories, isEditing, formData.category_id]);
 
   // Track images newly uploaded in this modal session (for auto-delete if replaced or cancelled)
   const sessionUploadedImages = useRef(new Map());
@@ -217,8 +228,9 @@ export default function ProductFormModal({
         setVariantsList([]);
       }
     } else {
-      // New product defaults
-      const defaultCatId = categories[0]?.id ? String(categories[0].id) : '1';
+      // New product defaults: pilih kategori aktif pertama
+      const firstActiveCat = categories.find((c) => c.is_active !== false) || categories[0];
+      const defaultCatId = firstActiveCat?.id ? String(firstActiveCat.id) : '1';
       setFormData({
         title: '',
         player_name: '',
@@ -467,9 +479,9 @@ export default function ProductFormModal({
                   className={`w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-lg bg-emerald-950 border ${errors.category_id ? 'border-rose-500' : 'border-emerald-700/80'
                     } text-white focus:outline-none focus:border-lime-400 font-bold cursor-pointer`}
                 >
-                  {categories.map((c) => (
+                  {selectableCategories.map((c) => (
                     <option key={c.id} value={c.id} className="bg-emerald-950 text-white font-medium">
-                      {c.category?.toUpperCase()}
+                      {c.category?.toUpperCase()}{c.is_active === false ? ' (Non-Aktif)' : ''}
                     </option>
                   ))}
                 </select>

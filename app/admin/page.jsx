@@ -21,11 +21,15 @@ import {
   Eye,
   Faders,
   CaretDown,
+  Tag,
+  Megaphone,
 } from '@phosphor-icons/react';
 import { supabase } from '@/lib/supabase';
 import { formatRupiah, parseVariants, getCategoryBadgeStyle, normalizeCategory, sortCatalogProducts } from '@/lib/utils';
 import ProductFormModal from '@/components/admin/ProductFormModal';
 import DeleteConfirmModal from '@/components/admin/DeleteConfirmModal';
+import CategoryManager from '@/components/admin/CategoryManager';
+import PromotionManager from '@/components/admin/PromotionManager';
 import { useToast } from '@/components/admin/Toast';
 
 export default function AdminDashboardPage() {
@@ -34,8 +38,30 @@ export default function AdminDashboardPage() {
   // Data states
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [promotions, setPromotions] = useState([]);
+  const [activeTab, setActiveTab] = useState('produk'); // 'produk', 'kategori', 'iklan'
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Sync tab with URL search parameter if present
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get('tab');
+      if (tabParam && ['produk', 'kategori', 'iklan'].includes(tabParam.toLowerCase())) {
+        setActiveTab(tabParam.toLowerCase());
+      }
+    }
+  }, []);
+
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location);
+      url.searchParams.set('tab', tab);
+      window.history.replaceState({}, '', url);
+    }
+  };
 
   // Filter & Search states
   const [searchQuery, setSearchQuery] = useState('');
@@ -78,6 +104,16 @@ export default function AdminDashboardPage() {
         .select('*, categories(*)');
 
       if (prodError) throw prodError;
+
+      // 3. Fetch promotions for hero carousel
+      const { data: promoData, error: promoError } = await supabase
+        .from('promotions')
+        .select('*')
+        .order('sort_order', { ascending: true })
+        .order('created_at', { ascending: false });
+
+      if (promoError) console.warn('Promotions query error:', promoError);
+      if (promoData) setPromotions(promoData);
 
       // Map products to clean structure matching main page (app/page.jsx)
       const mapped = (prodData || []).map((item) => {
@@ -301,47 +337,128 @@ export default function AdminDashboardPage() {
 
   return (
     <div className="space-y-6">
-      {/* Top Header & Action */}
+      {/* Top Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold font-loui text-white tracking-wider uppercase flex items-center gap-2">
-            <span>Katalog & Stok Produk</span>
-            <span className="text-xs font-sans font-semibold px-2.5 py-0.5 rounded-full bg-lime-400 text-emerald-950">
-              {stats.total} Produk
-            </span>
+            {activeTab === 'produk' && (
+              <>
+                <span>Katalog & Stok Produk</span>
+                <span className="text-xs font-sans font-semibold px-2.5 py-0.5 rounded-full bg-lime-400 text-emerald-950">
+                  {stats.total} Produk
+                </span>
+              </>
+            )}
+            {activeTab === 'kategori' && (
+              <>
+                <span>Manajemen Kategori</span>
+                <span className="text-xs font-sans font-semibold px-2.5 py-0.5 rounded-full bg-lime-400 text-emerald-950">
+                  {categories.length} Kategori
+                </span>
+              </>
+            )}
+            {activeTab === 'iklan' && (
+              <>
+                <span>Manajemen Promosi & Iklan</span>
+                <span className="text-xs font-sans font-semibold px-2.5 py-0.5 rounded-full bg-lime-400 text-emerald-950">
+                  {promotions.length} Banner
+                </span>
+              </>
+            )}
           </h1>
           <p className="text-xs sm:text-sm text-emerald-300/80 mt-1">
-            Kelola data produk, toggle status SOLD OUT, tambah varian poster, dan unggah gambar.
+            {activeTab === 'produk' && 'Kelola data produk, toggle status SOLD OUT, tambah varian poster, dan unggah gambar.'}
+            {activeTab === 'kategori' && 'Kelola daftar kategori produk, spesifikasi bahan material, dan deskripsi kategori katalog.'}
+            {activeTab === 'iklan' && 'Kelola banner promosi carousel di beranda, urutan tayang, badge warna, dan tautan aksi.'}
           </p>
-        </div>
-
-        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-          {/* Refresh Button */}
-          <button
-            type="button"
-            onClick={() => loadData(true)}
-            disabled={isRefreshing || isLoading}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-900/60 border border-emerald-700/60 text-emerald-200 text-xs font-semibold hover:bg-emerald-800 hover:text-white transition cursor-pointer disabled:opacity-50"
-            title="Muat ulang data"
-          >
-            <ArrowClockwise size={16} className={isRefreshing ? 'animate-spin text-lime-400' : ''} />
-            <span className="hidden sm:inline">Segarkan</span>
-          </button>
-
-          {/* Add Product Button */}
-          <button
-            type="button"
-            onClick={handleOpenAddModal}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-lime-400 to-lime-500 text-emerald-950 font-bold text-xs sm:text-sm shadow-lg shadow-lime-950/40 hover:from-lime-300 hover:to-lime-400 transition cursor-pointer active:scale-95"
-          >
-            <Plus size={18} weight="bold" />
-            <span>Tambah Produk</span>
-          </button>
         </div>
       </div>
 
-      {/* KPI Stats Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+      {/* Navbar di atas KPI Stats Cards (PRODUK, KATEGORI, IKLAN) */}
+      <nav className="p-1.5 sm:p-2 rounded-2xl bg-emerald-950/90 border border-emerald-700/50 shadow-xl backdrop-blur-md flex items-center justify-between gap-2 overflow-x-auto">
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          {/* Tab PRODUK */}
+          <button
+            type="button"
+            onClick={() => handleTabChange('produk')}
+            className={`flex items-center gap-2 px-3.5 sm:px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm uppercase tracking-wider transition cursor-pointer ${
+              activeTab === 'produk'
+                ? 'bg-gradient-to-r from-lime-400 to-lime-500 text-emerald-950 shadow-lg shadow-lime-950/40 scale-[1.02]'
+                : 'text-emerald-300 hover:text-white hover:bg-emerald-900/60 font-semibold'
+            }`}
+          >
+            <Package size={18} weight={activeTab === 'produk' ? 'bold' : 'regular'} />
+            <span>PRODUK</span>
+            <span
+              className={`text-[10px] px-2 py-0.5 rounded-full font-mono font-bold ${
+                activeTab === 'produk' ? 'bg-emerald-950 text-lime-400' : 'bg-emerald-900 text-emerald-300'
+              }`}
+            >
+              {products.length}
+            </span>
+          </button>
+
+          {/* Tab KATEGORI */}
+          <button
+            type="button"
+            onClick={() => handleTabChange('kategori')}
+            className={`flex items-center gap-2 px-3.5 sm:px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm uppercase tracking-wider transition cursor-pointer ${
+              activeTab === 'kategori'
+                ? 'bg-gradient-to-r from-lime-400 to-lime-500 text-emerald-950 shadow-lg shadow-lime-950/40 scale-[1.02]'
+                : 'text-emerald-300 hover:text-white hover:bg-emerald-900/60 font-semibold'
+            }`}
+          >
+            <Tag size={18} weight={activeTab === 'kategori' ? 'bold' : 'regular'} />
+            <span>KATEGORI</span>
+            <span
+              className={`text-[10px] px-2 py-0.5 rounded-full font-mono font-bold ${
+                activeTab === 'kategori' ? 'bg-emerald-950 text-lime-400' : 'bg-emerald-900 text-emerald-300'
+              }`}
+            >
+              {categories.length}
+            </span>
+          </button>
+
+          {/* Tab IKLAN */}
+          <button
+            type="button"
+            onClick={() => handleTabChange('iklan')}
+            className={`flex items-center gap-2 px-3.5 sm:px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm uppercase tracking-wider transition cursor-pointer ${
+              activeTab === 'iklan'
+                ? 'bg-gradient-to-r from-lime-400 to-lime-500 text-emerald-950 shadow-lg shadow-lime-950/40 scale-[1.02]'
+                : 'text-emerald-300 hover:text-white hover:bg-emerald-900/60 font-semibold'
+            }`}
+          >
+            <Megaphone size={18} weight={activeTab === 'iklan' ? 'bold' : 'regular'} />
+            <span>IKLAN</span>
+            <span
+              className={`text-[10px] px-2 py-0.5 rounded-full font-mono font-bold ${
+                activeTab === 'iklan' ? 'bg-emerald-950 text-lime-400' : 'bg-emerald-900 text-emerald-300'
+              }`}
+            >
+              {promotions.length}
+            </span>
+          </button>
+        </div>
+
+        {/* Refresh Button */}
+        <button
+          type="button"
+          onClick={() => loadData(true)}
+          disabled={isRefreshing || isLoading}
+          className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-900/60 border border-emerald-700/60 text-emerald-200 text-xs font-semibold hover:bg-emerald-800 hover:text-white transition cursor-pointer disabled:opacity-50 shrink-0"
+          title="Segarkan data aktif"
+        >
+          <ArrowClockwise size={16} className={isRefreshing ? 'animate-spin text-lime-400' : ''} />
+          <span className="hidden sm:inline">Segarkan Data</span>
+        </button>
+      </nav>
+
+      {/* ===================== VIEW PRODUK ===================== */}
+      {activeTab === 'produk' && (
+        <div className="space-y-6">
+          {/* KPI Stats Cards */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
         {/* Total Produk */}
         <div className="p-4 rounded-2xl bg-emerald-950/80 border border-emerald-700/40 backdrop-blur-sm">
           <div className="flex items-center justify-between text-emerald-400 text-xs font-semibold mb-1">
@@ -427,7 +544,7 @@ export default function AdminDashboardPage() {
               <option value="all">Semua Kategori ({stats.totalCats})</option>
               {categories.map((cat) => (
                 <option key={cat.id} value={cat.id}>
-                  {cat.category?.toUpperCase()}
+                  {cat.category?.toUpperCase()}{cat.is_active === false ? ' (Non-Aktif)' : ''}
                 </option>
               ))}
             </select>
@@ -527,6 +644,31 @@ export default function AdminDashboardPage() {
             </button>
           </div>
         )}
+      </div>
+
+      {/* Action Toolbar di atas Table Product (Tombol Tambah Produk dipindahkan ke sini) */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+            <span>Daftar Produk Katalog</span>
+            <span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-900 border border-emerald-700/60 text-emerald-300 font-mono">
+              {filteredProducts.length} Item
+            </span>
+          </h2>
+          <p className="text-[11px] text-emerald-400/70">
+            Kelola stok produk, toggle status SOLD OUT instan, dan varian harga.
+          </p>
+        </div>
+
+        {/* Tombol Tambah Produk */}
+        <button
+          type="button"
+          onClick={handleOpenAddModal}
+          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-lime-400 to-lime-500 text-emerald-950 font-bold text-xs sm:text-sm shadow-lg shadow-lime-950/40 hover:from-lime-300 hover:to-lime-400 transition cursor-pointer active:scale-95 shrink-0"
+        >
+          <Plus size={18} weight="bold" />
+          <span>Tambah Produk</span>
+        </button>
       </div>
 
       {/* Main Products Table */}
@@ -838,6 +980,31 @@ export default function AdminDashboardPage() {
           </div>
         )}
       </div>
+        </div>
+      )}
+
+      {/* ===================== VIEW KATEGORI (CRUD) ===================== */}
+      {activeTab === 'kategori' && (
+        <CategoryManager
+          categories={categories}
+          setCategories={setCategories}
+          products={products}
+          isLoading={isLoading}
+          onRefresh={loadData}
+        />
+      )}
+
+      {/* ===================== VIEW IKLAN (CRUD) ===================== */}
+      {activeTab === 'iklan' && (
+        <PromotionManager
+          promotions={promotions}
+          setPromotions={setPromotions}
+          categories={categories}
+          isLoading={isLoading}
+          onRefresh={loadData}
+          onZoomImage={setZoomImage}
+        />
+      )}
 
       {/* Modal Tambah / Edit Produk */}
       <ProductFormModal
