@@ -20,7 +20,7 @@ export default function CloudinaryWidget({
   value,
   onChange,
   onDelete,
-  label = 'Foto Produk (Otomatis Masuk ke Cloudinary)',
+  label = 'Foto Produk',
   description = '',
   required = false,
   folder = 'louifootball product',
@@ -89,7 +89,7 @@ export default function CloudinaryWidget({
       const data = await res.json();
 
       if (!res.ok || data.error) {
-        throw new Error(data.error || 'Gagal mengunggah foto ke Cloudinary.');
+        throw new Error(data.error || 'Gagal mengunggah foto.');
       }
 
       if (data.secure_url) {
@@ -98,7 +98,7 @@ export default function CloudinaryWidget({
         onChange(data.secure_url, data.public_id);
         setLocalPreview('');
       } else {
-        throw new Error('Tidak menerima URL gambar dari server Cloudinary.');
+        throw new Error('Tidak menerima URL gambar dari server.');
       }
     } catch (err) {
       console.error('Upload error:', err);
@@ -187,10 +187,10 @@ export default function CloudinaryWidget({
                 </div>
               </div>
               <p className="text-xs font-bold text-white tracking-wide">
-                Mengunggah foto dari perangkat ke Cloudinary...
+                Mengunggah foto dari perangkat...
               </p>
               <p className="text-[11px] text-emerald-300/80">
-                Harap tunggu beberapa detik hingga link Cloudinary selesai dibuat.
+                Harap tunggu beberapa detik hingga proses upload selesai.
               </p>
             </div>
           ) : (
@@ -203,7 +203,7 @@ export default function CloudinaryWidget({
                   Klik untuk pilih foto dari perangkat atau seret foto ke sini
                 </p>
                 <p className="text-[11px] text-emerald-300/70 mt-0.5">
-                  Format didukung: JPG, PNG, WEBP, atau AVIF (Otomatis masuk ke Cloudinary)
+                  Format didukung: JPG, PNG, WEBP, atau AVIF
                 </p>
               </div>
               <button
@@ -239,7 +239,7 @@ export default function CloudinaryWidget({
             <div className="flex items-center gap-2">
               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-900 border border-lime-400/40 text-lime-300 text-[11px] font-bold">
                 <CheckCircle size={14} weight="fill" className="text-lime-400" />
-                Foto Berhasil Masuk ke Cloudinary
+                Foto Berhasil Diunggah
               </span>
             </div>
 

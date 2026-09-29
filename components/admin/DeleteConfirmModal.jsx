@@ -123,7 +123,7 @@ export default function DeleteConfirmModal({
         </div>
 
         <p className="text-xs text-emerald-200/90 leading-relaxed">
-          Apakah Anda yakin ingin menghapus produk ini dari database katalog Supabase? Data yang dihapus tidak dapat dipulihkan kembali.
+          Apakah Anda yakin ingin menghapus produk ini dari database katalog? Data yang dihapus tidak dapat dipulihkan kembali.
         </p>
 
         {/* Action Buttons */}

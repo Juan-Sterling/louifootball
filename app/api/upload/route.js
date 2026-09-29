@@ -82,13 +82,13 @@ export async function POST(request) {
     const data = await res.json();
 
     if (!res.ok || data.error) {
-      const errMsg = data.error?.message || 'Gagal mengunggah gambar ke Cloudinary.';
+      const errMsg = data.error?.message || 'Gagal mengunggah gambar.';
       let userFriendlyMsg = errMsg;
 
       if (errMsg.includes('Upload preset must be whitelisted for unsigned uploads')) {
-        userFriendlyMsg = `Upload Preset "${customPreset}" di akun Cloudinary (${customCloud}) belum disetel ke mode "Unsigned". Silakan buka Dashboard Cloudinary > Settings > Upload > Edit Preset "${customPreset}" > ubah Signing Mode ke "Unsigned", atau masukkan CLOUDINARY_API_KEY & CLOUDINARY_API_SECRET ke file .env.local.`;
+        userFriendlyMsg = `Upload Preset "${customPreset}" belum disetel ke mode "Unsigned". Silakan periksa pengaturan preset upload atau masukkan API Key & API Secret ke file .env.local.`;
       } else if (errMsg.includes('Upload preset not found')) {
-        userFriendlyMsg = `Upload Preset "${customPreset}" tidak ditemukan di akun Cloudinary (${customCloud}). Buat Upload Preset baru dengan mode Unsigned di Cloudinary.`;
+        userFriendlyMsg = `Upload Preset "${customPreset}" tidak ditemukan. Buat Upload Preset baru dengan mode Unsigned.`;
       }
 
       return NextResponse.json({ error: userFriendlyMsg, rawError: errMsg }, { status: 400 });
@@ -186,7 +186,7 @@ export async function DELETE(request) {
           success: false,
           requiresCredentials: true,
           error:
-            'Cloudinary mewajibkan CLOUDINARY_API_KEY & CLOUDINARY_API_SECRET untuk menghapus file secara aman. Silakan masukkan di "Opsi Cloudinary" atau file .env.local.',
+            'Diperlukan konfigurasi API Key & Secret untuk menghapus file secara aman. Silakan masukkan di file .env.local.',
         },
         { status: 400 }
       );
@@ -198,9 +198,7 @@ export async function DELETE(request) {
           success: false,
           requiresCredentials: true,
           error:
-            'CLOUDINARY_API_SECRET tidak boleh sama dengan CLOUDINARY_API_KEY. Nilai API Key saat ini adalah "' +
-            apiKey +
-            '". Silakan buka Cloudinary Dashboard dan salin nilai API Secret yang sebenarnya (kode alfanumerik rahasia di samping API Key).',
+            'API Secret tidak boleh sama dengan API Key. Silakan periksa kembali nilai API Secret yang sebenarnya di file .env.local.',
         },
         { status: 400 }
       );
@@ -225,13 +223,13 @@ export async function DELETE(request) {
 
     return NextResponse.json({
       success: true,
-      message: `Gambar "${targetPublicId}" berhasil dihapus dari Cloudinary.`,
+      message: `Gambar "${targetPublicId}" berhasil dihapus.`,
       result,
     });
   } catch (error) {
     console.error('Delete image API route error:', error);
     return NextResponse.json(
-      { error: error.message || 'Gagal menghapus gambar dari Cloudinary.' },
+      { error: error.message || 'Gagal menghapus gambar.' },
       { status: 500 }
     );
   }

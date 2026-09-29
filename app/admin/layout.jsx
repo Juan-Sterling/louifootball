@@ -221,7 +221,7 @@ export default function AdminLayout({ children }) {
 
         {/* Admin Footer */}
         <footer className="relative z-10 border-t border-emerald-900/60 bg-emerald-950/60 backdrop-blur-sm py-4 text-center text-xs text-emerald-400/70">
-          <p>© {new Date().getFullYear()} LOUIFOOTBALL Admin Portal • Powered by Supabase & Cloudinary</p>
+          <p>© {new Date().getFullYear()} LOUIFOOTBALL Admin Portal</p>
         </footer>
       </div>
     </ToastProvider>

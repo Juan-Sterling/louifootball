@@ -8,11 +8,8 @@ import {
   EnvelopeSimple,
   Eye,
   EyeSlash,
-  SoccerBall,
   SignIn,
-  UserPlus,
   WarningCircle,
-  CheckCircle,
   ArrowLeft,
   Spinner,
 } from '@phosphor-icons/react';
@@ -23,18 +20,15 @@ export default function AdminLoginPage() {
   const router = useRouter();
   const { showToast } = useToast();
 
-  const [mode, setMode] = useState('login'); // 'login' or 'signup'
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMessage('');
-    setSuccessMessage('');
 
     if (!email || !password) {
       setErrorMessage('Harap masukkan email dan kata sandi.');
@@ -44,42 +38,21 @@ export default function AdminLoginPage() {
     setIsLoading(true);
 
     try {
-      if (mode === 'login') {
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email: email.trim(),
-          password: password,
-        });
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password: password,
+      });
 
-        if (error) {
-          throw error;
-        }
+      if (error) {
+        throw error;
+      }
 
-        if (data?.session) {
-          showToast('Login berhasil! Mengalihkan ke dasbor...', 'success');
-          router.replace('/admin');
-        }
-      } else {
-        // Sign up mode
-        const { data, error } = await supabase.auth.signUp({
-          email: email.trim(),
-          password: password,
-        });
-
-        if (error) {
-          throw error;
-        }
-
-        if (data?.session) {
-          showToast('Pendaftaran akun berhasil! Mengalihkan ke dasbor...', 'success');
-          router.replace('/admin');
-        } else {
-          setSuccessMessage(
-            'Pendaftaran berhasil! Jika konfirmasi email aktif di Supabase, silakan periksa inbox email Anda untuk mengonfirmasi.'
-          );
-        }
+      if (data?.session) {
+        showToast('Login berhasil! Mengalihkan ke dasbor...', 'success');
+        router.replace('/admin');
       }
     } catch (err) {
-      console.error('Supabase Auth error:', err);
+      console.error('Auth error:', err);
       let msg = err.message || 'Gagal masuk ke sistem.';
       if (msg.includes('Invalid login credentials')) {
         msg = 'Email atau kata sandi tidak cocok. Silakan periksa kembali.';
@@ -119,44 +92,8 @@ export default function AdminLoginPage() {
             Portal Administrasi & Stok
           </p>
           <p className="text-xs text-emerald-300/80 mt-1">
-            Gunakan akun Supabase Auth Anda untuk mengakses dasbor.
+            Gunakan akun admin Anda untuk mengakses dasbor.
           </p>
-        </div>
-
-        {/* Tab Switcher: Masuk / Daftar */}
-        <div className="flex rounded-xl bg-emerald-900/50 p-1 mb-5 border border-emerald-800/70 text-xs">
-          <button
-            type="button"
-            onClick={() => {
-              setMode('login');
-              setErrorMessage('');
-              setSuccessMessage('');
-            }}
-            className={`flex-1 py-2 rounded-lg font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
-              mode === 'login'
-                ? 'bg-lime-400 text-emerald-950 shadow'
-                : 'text-emerald-300 hover:text-white'
-            }`}
-          >
-            <SignIn size={14} weight="bold" />
-            <span>Masuk</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setMode('signup');
-              setErrorMessage('');
-              setSuccessMessage('');
-            }}
-            className={`flex-1 py-2 rounded-lg font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
-              mode === 'signup'
-                ? 'bg-lime-400 text-emerald-950 shadow'
-                : 'text-emerald-300 hover:text-white'
-            }`}
-          >
-            <UserPlus size={14} weight="bold" />
-            <span>Daftar Akun Baru</span>
-          </button>
         </div>
 
         {/* Feedback Alerts */}
@@ -167,14 +104,7 @@ export default function AdminLoginPage() {
           </div>
         )}
 
-        {successMessage && (
-          <div className="mb-4 p-3 rounded-xl bg-emerald-900/90 border border-lime-400/50 text-emerald-100 text-xs flex items-start gap-2 animate-in fade-in duration-200">
-            <CheckCircle size={18} weight="fill" className="text-lime-400 shrink-0 mt-0.5" />
-            <span>{successMessage}</span>
-          </div>
-        )}
-
-        {/* Login / Signup Form */}
+        {/* Login Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Email */}
           <div>
@@ -235,15 +165,10 @@ export default function AdminLoginPage() {
                 <Spinner size={18} className="animate-spin" />
                 <span>Memproses...</span>
               </>
-            ) : mode === 'login' ? (
+            ) : (
               <>
                 <SignIn size={18} weight="bold" />
                 <span>Masuk ke Dasbor Admin</span>
-              </>
-            ) : (
-              <>
-                <UserPlus size={18} weight="bold" />
-                <span>Daftarkan Akun Admin</span>
               </>
             )}
           </button>

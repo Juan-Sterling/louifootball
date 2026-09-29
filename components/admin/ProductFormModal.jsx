@@ -3,16 +3,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   X,
+  Check,
   Plus,
   Trash,
   CheckCircle,
   Spinner,
   Tag,
-  CurrencyDollar,
   ListPlus,
-  Code,
   Sparkle,
-  Info,
   Camera,
 } from '@phosphor-icons/react';
 import { supabase } from '@/lib/supabase';
@@ -44,11 +42,8 @@ export default function ProductFormModal({
     sold_out: false, // boolean in form, converted to 'Y' or null
   });
 
-  // Variants State
+  // Variants State (Visual Form Only)
   const [variantsList, setVariantsList] = useState([]);
-  const [variantMode, setVariantMode] = useState('visual'); // 'visual' or 'json'
-  const [variantsJsonText, setVariantsJsonText] = useState('[]');
-  const [jsonError, setJsonError] = useState('');
 
   // Status and submission state
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -60,6 +55,10 @@ export default function ProductFormModal({
     String(formData.category_id) === '3' ||
     (selectedCategory?.category || '').toLowerCase().includes('keychain') ||
     (selectedCategory?.category || '').toLowerCase().includes('kunci');
+  const isPoster =
+    String(formData.category_id) === '4' ||
+    (selectedCategory?.category || '').toLowerCase().includes('poster');
+  const isLimited = String(formData.edition || '').trim().toUpperCase() === 'LIMITED';
   const activeCloudinaryFolder = getCloudinaryFolderByCategory(formData.category_id, selectedCategory?.category);
 
   // Track images newly uploaded in this modal session (for auto-delete if replaced or cancelled)
@@ -97,18 +96,18 @@ export default function ProductFormModal({
       if (!res.ok || !data.success) {
         if (data.requiresCredentials) {
           showToast(
-            'Foto belum terhapus dari Cloudinary: Buka "Opsi Cloudinary" dan masukkan API Key & Secret, atau atur di .env.local.',
+            'Foto belum terhapus dari penyimpanan: Periksa API Key & Secret atau konfigurasi di .env.local.',
             'warning',
             5500
           );
         } else {
-          console.warn('Gagal menghapus gambar di Cloudinary:', data.error || data.message);
+          console.warn('Gagal menghapus gambar:', data.error || data.message);
         }
       } else {
-        showToast('Foto berhasil dihapus dari Cloudinary.', 'info', 2500);
+        showToast('Foto berhasil dihapus.', 'info', 2500);
       }
     } catch (err) {
-      console.warn('Gagal menghapus gambar di Cloudinary:', err);
+      console.warn('Gagal menghapus gambar:', err);
     }
   };
 
@@ -172,6 +171,23 @@ export default function ProductFormModal({
     onClose();
   };
 
+  // Edition Change Handler (locks price to 0 if LIMITED)
+  const handleEditionChange = (val) => {
+    const isNowLimited = String(val || '').trim().toUpperCase() === 'LIMITED';
+    setFormData((prev) => ({
+      ...prev,
+      edition: val,
+      ...(isNowLimited ? { price: '0' } : {}),
+    }));
+    if (isNowLimited) {
+      setErrors((prev) => {
+        const next = { ...prev };
+        delete next.price;
+        return next;
+      });
+    }
+  };
+
   // Initialize or reset form when modal opens
   useEffect(() => {
     if (!isOpen) return;
@@ -179,12 +195,13 @@ export default function ProductFormModal({
     sessionUploadedImages.current.clear();
 
     if (productToEdit) {
+      const isProdLimited = String(productToEdit.edition || '').trim().toUpperCase() === 'LIMITED';
       setFormData({
         title: productToEdit.title || '',
         player_name: productToEdit.player_name || productToEdit.title || '',
         team: productToEdit.team || '',
         category_id: productToEdit.category_id ? String(productToEdit.category_id) : (categories[0]?.id ? String(categories[0].id) : '1'),
-        price: productToEdit.price !== undefined && productToEdit.price !== null ? String(productToEdit.price) : '',
+        price: isProdLimited ? '0' : productToEdit.price !== undefined && productToEdit.price !== null ? String(productToEdit.price) : '',
         edition: productToEdit.edition !== undefined && productToEdit.edition !== null ? String(productToEdit.edition) : '',
         year: productToEdit.year || '',
         img: productToEdit.img || '',
@@ -196,10 +213,8 @@ export default function ProductFormModal({
       const parsed = parseVariants(productToEdit.variants);
       if (parsed && parsed.length > 0) {
         setVariantsList(parsed);
-        setVariantsJsonText(JSON.stringify(parsed, null, 2));
       } else {
         setVariantsList([]);
-        setVariantsJsonText('[]');
       }
     } else {
       // New product defaults
@@ -217,34 +232,30 @@ export default function ProductFormModal({
         sold_out: false,
       });
       setVariantsList([]);
-      setVariantsJsonText('[]');
     }
 
     setErrors({});
-    setJsonError('');
-    setVariantMode('visual');
   }, [isOpen, productToEdit, categories]);
 
   // Sync category change for posters default variants
   const handleCategoryChange = (e) => {
     const newCatId = e.target.value;
-    setFormData((prev) => ({ ...prev, category_id: newCatId }));
-
-    // If changing to Poster (id: 4) and variants are empty, suggest default poster variants
     const chosenCat = categories.find((c) => String(c.id) === String(newCatId));
-    const isPoster = chosenCat && (chosenCat.category?.toLowerCase().includes('poster') || String(newCatId) === '4');
+    const isCatPoster = chosenCat && (chosenCat.category?.toLowerCase().includes('poster') || String(newCatId) === '4');
 
-    if (isPoster && variantsList.length === 0) {
+    setFormData((prev) => ({
+      ...prev,
+      category_id: newCatId,
+      ...(isCatPoster && !isLimited && (!prev.price || prev.price === '10000') ? { price: '0' } : {}),
+    }));
+
+    if (isCatPoster && variantsList.length === 0) {
       const defaultPosterVariants = [
         { size: 'A3', price: 250000 },
         { size: 'A2', price: 325000 },
         { size: 'A1', price: 400000 },
       ];
       setVariantsList(defaultPosterVariants);
-      setVariantsJsonText(JSON.stringify(defaultPosterVariants, null, 2));
-      if (!formData.price || formData.price === '10000') {
-        setFormData((prev) => ({ ...prev, price: '250000' }));
-      }
     }
   };
 
@@ -252,7 +263,6 @@ export default function ProductFormModal({
   const handleAddVariant = () => {
     const updated = [...variantsList, { size: '', price: Number(formData.price) || 0 }];
     setVariantsList(updated);
-    setVariantsJsonText(JSON.stringify(updated, null, 2));
   };
 
   const handleUpdateVariant = (index, field, value) => {
@@ -264,13 +274,10 @@ export default function ProductFormModal({
       updated[index] = { ...updated[index], [field]: value };
     }
     setVariantsList(updated);
-    setVariantsJsonText(JSON.stringify(updated, null, 2));
   };
 
   const handleRemoveVariant = (index) => {
-    const updated = variantsList.filter((_, i) => i !== index);
-    setVariantsList(updated);
-    setVariantsJsonText(JSON.stringify(updated, null, 2));
+    setVariantsList((prev) => prev.filter((_, i) => i !== index));
   };
 
   const applyPosterPreset = () => {
@@ -280,43 +287,7 @@ export default function ProductFormModal({
       { size: 'A1', price: 400000 },
     ];
     setVariantsList(defaultPosterVariants);
-    setVariantsJsonText(JSON.stringify(defaultPosterVariants, null, 2));
-    setJsonError('');
     showToast('Preset varian poster (A3, A2, A1) berhasil diterapkan', 'info');
-  };
-
-  // Sync JSON text change
-  const handleJsonTextChange = (e) => {
-    const val = e.target.value;
-    setVariantsJsonText(val);
-
-    try {
-      if (!val.trim()) {
-        setVariantsList([]);
-        setJsonError('');
-        return;
-      }
-      const parsed = JSON.parse(val);
-      if (!Array.isArray(parsed)) {
-        setJsonError('Format JSON harus berupa Array / Daftar Objek, contoh: [{"size": "A3", "price": 250000}]');
-        return;
-      }
-      setVariantsList(parsed);
-      setJsonError('');
-    } catch (err) {
-      setJsonError(`JSON tidak valid: ${err.message}`);
-    }
-  };
-
-  // Format / Prettify JSON
-  const handlePrettifyJson = () => {
-    try {
-      const parsed = JSON.parse(variantsJsonText);
-      setVariantsJsonText(JSON.stringify(parsed, null, 2));
-      setJsonError('');
-    } catch {
-      // ignore
-    }
   };
 
   // Form Validation
@@ -328,16 +299,32 @@ export default function ProductFormModal({
     if (!formData.category_id) {
       newErrors.category_id = 'Pilih kategori produk.';
     }
-    const cleanPrice = parseInt(String(formData.price).replace(/[^0-9]/g, ''), 10);
-    if (isNaN(cleanPrice) || cleanPrice <= 0) {
-      newErrors.price = 'Harga produk harus lebih dari 0.';
-    }
-    if (!formData.img.trim()) {
-      newErrors.img = 'Unggah atau masukkan URL gambar produk.';
+
+    if (isPoster) {
+      // Untuk poster: Varian Ukuran & Harga wajib diisi!
+      if (!variantsList || variantsList.length === 0) {
+        newErrors.variants = 'Poster wajib memiliki minimal 1 varian ukuran dan harga.';
+      } else {
+        const hasEmptySize = variantsList.some((v) => !String(v.size || '').trim());
+        const hasInvalidPrice = variantsList.some(
+          (v) => !v.price || Number(v.price) <= 0 || isNaN(Number(v.price))
+        );
+        if (hasEmptySize) {
+          newErrors.variants = 'Nama/kode ukuran varian poster wajib diisi (misal A3, A2, A1).';
+        } else if (hasInvalidPrice) {
+          newErrors.variants = 'Harga untuk setiap varian ukuran poster harus lebih dari 0.';
+        }
+      }
+    } else {
+      // Produk non-poster: validasi harga normal
+      const cleanPrice = parseInt(String(formData.price || 0).replace(/[^0-9]/g, ''), 10);
+      if (!isLimited && (isNaN(cleanPrice) || cleanPrice <= 0)) {
+        newErrors.price = 'Harga produk harus lebih dari 0.';
+      }
     }
 
-    if (jsonError) {
-      newErrors.variants = 'Format JSON varian masih terdapat kesalahan.';
+    if (!formData.img.trim()) {
+      newErrors.img = 'Unggah atau masukkan URL gambar produk.';
     }
 
     setErrors(newErrors);
@@ -355,27 +342,22 @@ export default function ProductFormModal({
     setIsSubmitting(true);
 
     try {
-      // Determine final variants
+      // Determine final variants: only for poster
       let finalVariants = null;
-      if (variantMode === 'json') {
-        if (variantsJsonText.trim()) {
-          try {
-            const parsed = JSON.parse(variantsJsonText);
-            if (Array.isArray(parsed) && parsed.length > 0) {
-              finalVariants = parsed;
-            }
-          } catch {
-            throw new Error('Format JSON varian tidak valid.');
-          }
-        }
-      } else {
-        const cleaned = variantsList.filter((v) => v.size && v.price > 0);
+      if (isPoster) {
+        const cleaned = variantsList.filter(
+          (v) => String(v.size || '').trim() && Number(v.price) > 0
+        );
         if (cleaned.length > 0) {
           finalVariants = cleaned;
         }
       }
 
-      const numericPrice = parseInt(String(formData.price).replace(/[^0-9]/g, ''), 10) || 0;
+      // If poster or LIMITED, price is 0 (for poster price is on the variants)
+      const numericPrice = (isLimited || isPoster)
+        ? 0
+        : parseInt(String(formData.price || 0).replace(/[^0-9]/g, ''), 10) || 0;
+
       const cleanTitle = formData.title.trim().toUpperCase();
       const cleanPlayer = formData.player_name.trim() ? formData.player_name.trim().toUpperCase() : cleanTitle;
       const cleanTeam = formData.team.trim() ? formData.team.trim().toUpperCase() : null;
@@ -482,9 +464,8 @@ export default function ProductFormModal({
                 <select
                   value={formData.category_id}
                   onChange={handleCategoryChange}
-                  className={`w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-lg bg-emerald-950 border ${
-                    errors.category_id ? 'border-rose-500' : 'border-emerald-700/80'
-                  } text-white focus:outline-none focus:border-lime-400 font-bold cursor-pointer`}
+                  className={`w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-lg bg-emerald-950 border ${errors.category_id ? 'border-rose-500' : 'border-emerald-700/80'
+                    } text-white focus:outline-none focus:border-lime-400 font-bold cursor-pointer`}
                 >
                   {categories.map((c) => (
                     <option key={c.id} value={c.id} className="bg-emerald-950 text-white font-medium">
@@ -493,6 +474,64 @@ export default function ProductFormModal({
                   ))}
                 </select>
                 {errors.category_id && <p className="text-[11px] text-rose-400 mt-1">{errors.category_id}</p>}
+              </div>
+
+              {/* Edisi Produk - Pindah ke Atas */}
+              <div className="sm:col-span-2 p-3 rounded-xl bg-emerald-900/30 border border-emerald-700/60 shadow-sm">
+                <div className="flex flex-wrap items-center justify-between gap-1.5 mb-1.5">
+                  <label className="text-xs font-bold uppercase tracking-wider text-emerald-200 flex items-center gap-1.5">
+                    <Sparkle size={15} className="text-lime-400" />
+                    Edisi Produk
+                  </label>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => handleEditionChange('LIMITED')}
+                      className={`px-2.5 py-0.5 text-[11px] font-bold rounded-lg transition cursor-pointer ${
+                        isLimited
+                          ? 'bg-amber-400 text-emerald-950 shadow-sm font-black'
+                          : 'bg-emerald-900/80 text-amber-300 hover:bg-emerald-800 border border-amber-500/40'
+                      }`}
+                    >
+                      ★ LIMITED
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleEditionChange('SPECIAL')}
+                      className={`px-2.5 py-0.5 text-[11px] font-semibold rounded-lg transition cursor-pointer ${
+                        formData.edition?.toUpperCase() === 'SPECIAL'
+                          ? 'bg-lime-400 text-emerald-950 font-bold'
+                          : 'bg-emerald-900/80 text-emerald-200 hover:bg-emerald-800 border border-emerald-700'
+                      }`}
+                    >
+                      SPECIAL
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleEditionChange('1')}
+                      className={`px-2.5 py-0.5 text-[11px] font-semibold rounded-lg transition cursor-pointer ${
+                        formData.edition === '1'
+                          ? 'bg-lime-400 text-emerald-950 font-bold'
+                          : 'bg-emerald-900/80 text-emerald-200 hover:bg-emerald-800 border border-emerald-700'
+                      }`}
+                    >
+                      Edisi 1
+                    </button>
+                  </div>
+                </div>
+                <input
+                  type="text"
+                  value={formData.edition}
+                  onChange={(e) => handleEditionChange(e.target.value)}
+                  placeholder="Contoh: 1, 12, SPECIAL, atau LIMITED"
+                  className="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-lg bg-emerald-950 border border-emerald-700/60 text-white placeholder-emerald-600/50 focus:outline-none focus:border-lime-400 font-semibold uppercase"
+                />
+                {isLimited && (
+                  <p className="text-[11px] text-amber-300 font-semibold mt-1.5 flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                    <span>Edisi LIMITED aktif: Harga produk dikunci ke Rp 0 (tidak bisa diisi).</span>
+                  </p>
+                )}
               </div>
 
               {/* Judul Produk */}
@@ -505,9 +544,8 @@ export default function ProductFormModal({
                   value={formData.title}
                   onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))}
                   placeholder="Contoh: CR7 SPORTING CP DEBUT"
-                  className={`w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-lg bg-emerald-900/60 border ${
-                    errors.title ? 'border-rose-500' : 'border-emerald-700/60'
-                  } text-white placeholder-emerald-600/50 focus:outline-none focus:border-lime-400 focus:ring-1 focus:ring-lime-400 font-semibold uppercase`}
+                  className={`w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-lg bg-emerald-900/60 border ${errors.title ? 'border-rose-500' : 'border-emerald-700/60'
+                    } text-white placeholder-emerald-600/50 focus:outline-none focus:border-lime-400 focus:ring-1 focus:ring-lime-400 font-semibold uppercase`}
                 />
                 {errors.title && <p className="text-[11px] text-rose-400 mt-1">{errors.title}</p>}
               </div>
@@ -541,48 +579,48 @@ export default function ProductFormModal({
                 />
               </div>
 
-              {/* Harga Dasar */}
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-emerald-300 mb-1">
-                  Harga Satuan (Rp) <span className="text-rose-400">*</span>
-                </label>
-                <div className="relative">
-                  <span className="absolute left-3.5 top-2.5 text-xs text-lime-400 font-bold">Rp</span>
-                  <input
-                    type="text"
-                    value={formData.price}
-                    onChange={(e) => {
-                      const num = e.target.value.replace(/[^0-9]/g, '');
-                      setFormData((prev) => ({ ...prev, price: num }));
-                    }}
-                    placeholder="10000"
-                    className={`w-full pl-9 pr-3.5 py-2.5 text-xs sm:text-sm rounded-lg bg-emerald-900/60 border ${
-                      errors.price ? 'border-rose-500' : 'border-emerald-700/60'
-                    } text-white font-mono font-bold focus:outline-none focus:border-lime-400`}
-                  />
+              {/* Harga Dasar (Hanya muncul jika BUKAN poster) */}
+              {!isPoster && (
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-emerald-300 mb-1">
+                    Harga Satuan (Rp) {!isLimited && <span className="text-rose-400">*</span>}
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3.5 top-2.5 text-xs text-lime-400 font-bold">Rp</span>
+                    <input
+                      type="text"
+                      value={isLimited ? '0' : formData.price}
+                      disabled={isLimited}
+                      onChange={(e) => {
+                        if (isLimited) return;
+                        const num = e.target.value.replace(/[^0-9]/g, '');
+                        setFormData((prev) => ({ ...prev, price: num }));
+                      }}
+                      placeholder={isLimited ? '0 (LIMITED)' : '10000'}
+                      className={`w-full pl-9 pr-3.5 py-2.5 text-xs sm:text-sm rounded-lg border font-mono font-bold focus:outline-none ${
+                        isLimited
+                          ? 'bg-emerald-950/70 border-amber-500/40 text-amber-300 cursor-not-allowed opacity-90'
+                          : errors.price
+                          ? 'bg-emerald-900/60 border-rose-500 text-white focus:border-lime-400'
+                          : 'bg-emerald-900/60 border-emerald-700/60 text-white focus:border-lime-400'
+                      }`}
+                    />
+                  </div>
+                  {isLimited ? (
+                    <span className="text-[10px] text-amber-300 font-bold mt-1 block">
+                      ★ Edisi LIMITED: Harga diatur otomatis ke Rp 0
+                    </span>
+                  ) : (
+                    <span className="text-[10px] text-emerald-400/80 mt-1 block">
+                      Format: {formatRupiah(formData.price || 0)}
+                    </span>
+                  )}
+                  {errors.price && !isLimited && <p className="text-[11px] text-rose-400 mt-1">{errors.price}</p>}
                 </div>
-                <span className="text-[10px] text-emerald-400/80 mt-1 block">
-                  Format: {formatRupiah(formData.price || 0)}
-                </span>
-                {errors.price && <p className="text-[11px] text-rose-400 mt-1">{errors.price}</p>}
-              </div>
-
-              {/* Edisi */}
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-emerald-300 mb-1">
-                  Edisi Produk
-                </label>
-                <input
-                  type="text"
-                  value={formData.edition}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, edition: e.target.value }))}
-                  placeholder="Contoh: 1, 12, atau Special"
-                  className="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-lg bg-emerald-900/60 border border-emerald-700/60 text-white placeholder-emerald-600/50 focus:outline-none focus:border-lime-400 font-medium"
-                />
-              </div>
+              )}
 
               {/* Tahun Rilis */}
-              <div>
+              <div className={isPoster ? 'sm:col-span-2' : ''}>
                 <label className="block text-xs font-semibold uppercase tracking-wider text-emerald-300 mb-1">
                   Tahun Musim / Rilis
                 </label>
@@ -603,21 +641,32 @@ export default function ProductFormModal({
                 <span className="text-[11px] text-emerald-300">
                   {formData.sold_out
                     ? 'Produk saat ini berstatus SOLD OUT (Habis).'
-                    : 'Produk saat ini berstatus NORMAL (Tersedia untuk dipesan).'}
+                    : 'Produk saat ini berstatus TERSEDIA (Tersedia untuk dipesan).'}
                 </span>
               </div>
               <button
                 type="button"
+                role="switch"
+                aria-checked={formData.sold_out}
                 onClick={() => setFormData((prev) => ({ ...prev, sold_out: !prev.sold_out }))}
-                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                  formData.sold_out ? 'bg-rose-500' : 'bg-emerald-700'
-                }`}
+                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-lime-400/50 ${formData.sold_out ? 'bg-rose-600' : 'bg-emerald-700'
+                  }`}
+                title={
+                  formData.sold_out
+                    ? 'Status: SOLD OUT (Habis). Klik untuk beralih ke TERSEDIA'
+                    : 'Status: TERSEDIA. Klik untuk beralih ke SOLD OUT'
+                }
               >
                 <span
-                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                    formData.sold_out ? 'translate-x-5' : 'translate-x-0'
-                  }`}
-                />
+                  className={`pointer-events-none inline-flex h-5 w-5 transform items-center justify-center rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${formData.sold_out ? 'translate-x-5 text-rose-600' : 'translate-x-0 text-emerald-700'
+                    }`}
+                >
+                  {formData.sold_out ? (
+                    <X size={10} weight="bold" />
+                  ) : (
+                    <Check size={10} weight="bold" />
+                  )}
+                </span>
               </button>
             </div>
           </div>
@@ -662,39 +711,44 @@ export default function ProductFormModal({
             )}
           </div>
 
-          {/* Section 3: Varian Ukuran & Harga (Khusus Poster) */}
-          <div className="space-y-3 pt-2">
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-emerald-800/60 pb-1.5">
-              <h3 className="text-xs font-bold text-lime-400 tracking-wider uppercase flex items-center gap-1.5">
-                <ListPlus size={14} /> 3. Varian Produk (Ukuran & Harga)
-              </h3>
-              <div className="flex items-center gap-1 bg-emerald-950 p-0.5 rounded-lg border border-emerald-800 text-[11px]">
-                <button
-                  type="button"
-                  onClick={() => setVariantMode('visual')}
-                  className={`px-2.5 py-1 rounded-md transition font-medium cursor-pointer ${
-                    variantMode === 'visual' ? 'bg-lime-400 text-emerald-950 font-bold' : 'text-emerald-300 hover:text-white'
-                  }`}
-                >
-                  Form Terpisah
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setVariantMode('json')}
-                  className={`px-2.5 py-1 rounded-md transition font-medium cursor-pointer ${
-                    variantMode === 'json' ? 'bg-lime-400 text-emerald-950 font-bold' : 'text-emerald-300 hover:text-white'
-                  }`}
-                >
-                  Teks JSON
-                </button>
+          {/* Section 3: Varian Ukuran & Harga (HANYA MUNCUL JIKA KATEGORI POSTER) */}
+          {isPoster && (
+            <div className="space-y-3 pt-2 animate-in fade-in duration-200">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-emerald-800/60 pb-1.5">
+                <h3 className="text-xs font-bold text-lime-400 tracking-wider uppercase flex items-center gap-1.5">
+                  <ListPlus size={14} /> 3. Varian Ukuran & Harga Poster <span className="text-rose-400">*</span>
+                </h3>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={applyPosterPreset}
+                    className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-purple-900/60 border border-purple-500/40 text-purple-200 hover:bg-purple-800 text-xs font-medium transition cursor-pointer"
+                  >
+                    <Sparkle size={13} />
+                    <span>Gunakan Preset Poster (A3, A2, A1)</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleAddVariant}
+                    className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-800 text-emerald-100 hover:bg-emerald-700 text-xs font-semibold transition cursor-pointer border border-emerald-600/60"
+                  >
+                    <Plus size={13} weight="bold" />
+                    <span>Tambah Varian</span>
+                  </button>
+                </div>
               </div>
-            </div>
 
-            <p className="text-[11px] text-emerald-300/80">
-              Digunakan khusus untuk produk dengan beberapa pilihan ukuran seperti <strong className="text-lime-300">Poster (A3, A2, A1)</strong> atau kaos. Kosongkan jika produk hanya memiliki satu harga tunggal.
-            </p>
+              <p className="text-[11px] text-emerald-300/80">
+                Tentukan harga untuk masing-masing ukuran poster seperti <strong className="text-lime-300">A3, A2, dan A1</strong>. Bagian ini wajib diisi minimal 1 ukuran dengan harga valid.
+              </p>
 
-            {variantMode === 'visual' ? (
+              {errors.variants && (
+                <div className="p-2.5 rounded-xl bg-rose-950/80 border border-rose-500/50 text-rose-200 text-xs font-semibold animate-in fade-in duration-200 flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-rose-400 shrink-0" />
+                  <span>{errors.variants}</span>
+                </div>
+              )}
+
               <div className="space-y-2.5">
                 {variantsList.map((item, idx) => (
                   <div
@@ -713,13 +767,16 @@ export default function ProductFormModal({
                     </div>
                     <div className="flex-1">
                       <label className="block text-[10px] text-emerald-400 mb-0.5">Harga (Rp)</label>
-                      <input
-                        type="text"
-                        value={item.price}
-                        onChange={(e) => handleUpdateVariant(idx, 'price', e.target.value)}
-                        placeholder="250000"
-                        className="w-full px-2.5 py-1.5 rounded bg-emerald-950 border border-emerald-700 text-white font-mono font-bold focus:outline-none focus:border-lime-400 text-xs"
-                      />
+                      <div className="relative">
+                        <span className="absolute left-2.5 top-1.5 text-xs text-lime-400 font-bold">Rp</span>
+                        <input
+                          type="text"
+                          value={item.price}
+                          onChange={(e) => handleUpdateVariant(idx, 'price', e.target.value)}
+                          placeholder="250000"
+                          className="w-full pl-8 pr-2.5 py-1.5 rounded bg-emerald-950 border border-emerald-700 text-white font-mono font-bold focus:outline-none focus:border-lime-400 text-xs"
+                        />
+                      </div>
                     </div>
                     <button
                       type="button"
@@ -731,88 +788,11 @@ export default function ProductFormModal({
                     </button>
                   </div>
                 ))}
-
-                <div className="flex flex-wrap items-center gap-2 pt-1">
-                  <button
-                    type="button"
-                    onClick={handleAddVariant}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-800 text-emerald-100 hover:bg-emerald-700 text-xs font-semibold transition cursor-pointer"
-                  >
-                    <Plus size={14} weight="bold" />
-                    <span>Tambah Varian Ukuran</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={applyPosterPreset}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-900/60 border border-purple-500/40 text-purple-200 hover:bg-purple-800 text-xs font-medium transition cursor-pointer"
-                  >
-                    <Sparkle size={14} />
-                    <span>Gunakan Preset Poster (A3, A2, A1)</span>
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between text-[11px] text-emerald-400">
-                  <span className="flex items-center gap-1">
-                    <Code size={14} /> Format JSON Varian
-                  </span>
-                  <button
-                    type="button"
-                    onClick={handlePrettifyJson}
-                    className="text-lime-300 hover:underline cursor-pointer"
-                  >
-                    Rapikan / Prettify
-                  </button>
-                </div>
-                <textarea
-                  rows={5}
-                  value={variantsJsonText}
-                  onChange={handleJsonTextChange}
-                  placeholder={`[\n  { "size": "A3", "price": 250000 },\n  { "size": "A2", "price": 325000 }\n]`}
-                  className={`w-full p-3 font-mono text-xs rounded-lg bg-emerald-950 border ${
-                    jsonError ? 'border-rose-500' : 'border-emerald-700/70'
-                  } text-emerald-100 focus:outline-none focus:border-lime-400`}
-                />
-                {jsonError ? (
-                  <p className="text-[11px] text-rose-400">{jsonError}</p>
-                ) : (
-                  <p className="text-[10px] text-emerald-400/70">
-                    Sintaks valid: Array berisi objek dengan key &quot;size&quot; dan &quot;price&quot;.
-                  </p>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Section 4: Spesifikasi & Deskripsi Info */}
-          <div className="space-y-2 pt-2">
-            <h3 className="text-xs font-bold text-lime-400 tracking-wider uppercase flex items-center gap-1.5 border-b border-emerald-800/60 pb-1.5">
-              <Info size={14} /> 4. Spesifikasi & Deskripsi Kategori
-            </h3>
-
-            <div className="p-3 rounded-lg bg-emerald-900/40 border border-emerald-700/40 space-y-2 text-xs">
-              <div className="flex items-center justify-between text-emerald-200">
-                <span className="font-semibold text-lime-300">
-                  Kategori: {selectedCategory?.category?.toUpperCase() || '-'}
-                </span>
-                <span className="text-[10px] text-emerald-400">Bawaan Template</span>
-              </div>
-              <div>
-                <span className="text-[11px] text-emerald-400 font-semibold block">Spesifikasi Material:</span>
-                <p className="text-emerald-100 text-xs italic">
-                  {selectedCategory?.spec || 'Vinyl Waterproof / Standar Koleksi Resmi'}
-                </p>
-              </div>
-              <div>
-                <span className="text-[11px] text-emerald-400 font-semibold block">Deskripsi Standar:</span>
-                <p className="text-emerald-100 text-xs leading-relaxed">
-                  {selectedCategory?.desc || 'Merchandise resmi sepak bola berkualitas dari LOUIFOOTBALL.'}
-                </p>
               </div>
             </div>
-          </div>
+          )}
+
+
 
           {/* Modal Footer / Actions */}
           <div className="pt-4 border-t border-emerald-800/80 flex items-center justify-end gap-3 shrink-0">

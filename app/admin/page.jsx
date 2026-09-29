@@ -19,9 +19,11 @@ import {
   ArrowsClockwise,
   WarningCircle,
   Eye,
+  Faders,
+  CaretDown,
 } from '@phosphor-icons/react';
 import { supabase } from '@/lib/supabase';
-import { formatRupiah, getCategoryBadgeStyle, normalizeCategory } from '@/lib/utils';
+import { formatRupiah, parseVariants, getCategoryBadgeStyle, normalizeCategory, sortCatalogProducts } from '@/lib/utils';
 import ProductFormModal from '@/components/admin/ProductFormModal';
 import DeleteConfirmModal from '@/components/admin/DeleteConfirmModal';
 import { useToast } from '@/components/admin/Toast';
@@ -39,6 +41,7 @@ export default function AdminDashboardPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState('all');
   const [selectedStatusFilter, setSelectedStatusFilter] = useState('all'); // 'all', 'normal', 'sold_out'
+  const [sortBy, setSortBy] = useState('catalog_default'); // 'catalog_default', 'id_desc', 'id_asc', 'name_asc', 'name_desc', 'price_desc', 'price_asc'
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
@@ -52,6 +55,7 @@ export default function AdminDashboardPage() {
 
   // Quick Sold Out Toggle in-flight tracker
   const [togglingId, setTogglingId] = useState(null);
+  const [expandedVariantId, setExpandedVariantId] = useState(null);
 
   // Load products and categories from Supabase
   const loadData = useCallback(async (isSilent = false) => {
@@ -71,15 +75,43 @@ export default function AdminDashboardPage() {
       // 2. Fetch products with joined categories
       const { data: prodData, error: prodError } = await supabase
         .from('products')
-        .select('*, categories(*)')
-        .order('id', { ascending: false });
+        .select('*, categories(*)');
 
       if (prodError) throw prodError;
 
-      setProducts(prodData || []);
+      // Map products to clean structure matching main page (app/page.jsx)
+      const mapped = (prodData || []).map((item) => {
+        const catObj = item.categories || {};
+        const playerName = item.player_name ? String(item.player_name).trim() : '';
+        const productTitle = item.title ? String(item.title).trim() : '';
+        const resolvedPlayerName = playerName || productTitle || 'Produk Loui';
+        const soldOutVal = item.sold_out ? String(item.sold_out).trim() : '';
+        const rawYear = item.year ? String(item.year).trim() : '';
+        const isYearValid = rawYear && rawYear.toLowerCase() !== 'null' && rawYear.toLowerCase() !== 'undefined' && rawYear !== '-';
+        const cleanYear = isYearValid ? rawYear : '';
+
+        const rawTeam = item.team ? String(item.team).trim() : '';
+        const isTeamValid = rawTeam && rawTeam.toLowerCase() !== 'null' && rawTeam.toLowerCase() !== 'undefined' && rawTeam !== '-';
+        const cleanTeam = isTeamValid ? rawTeam : '';
+
+        return {
+          ...item,
+          player_name: resolvedPlayerName,
+          title: productTitle || resolvedPlayerName,
+          sold_out: soldOutVal,
+          is_sold_out: soldOutVal.toUpperCase() === 'Y',
+          category: normalizeCategory(catObj.category || item.category || 'lainnya'),
+          team: cleanTeam,
+          year: cleanYear,
+          spec: catObj.spec || item.spec || 'Koleksi Resmi',
+          desc: catObj.desc || item.desc || '',
+        };
+      });
+
+      setProducts(mapped);
     } catch (err) {
       console.error('Failed to load admin data:', err);
-      showToast(`Gagal memuat data dari Supabase: ${err.message || 'Error'}`, 'error');
+      showToast(`Gagal memuat data: ${err.message || 'Error'}`, 'error');
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
@@ -91,37 +123,93 @@ export default function AdminDashboardPage() {
     loadData();
   }, [loadData]);
 
-  // Filtered products list
+  // Filtered & Sorted products list (pencarian & sorting disamakan dengan halaman utama)
   const filteredProducts = useMemo(() => {
     const query = searchQuery.toLowerCase().trim();
 
-    return products.filter((item) => {
-      // Search matching title, player_name, or team
+    // 1. Filter data
+    const filtered = products.filter((item) => {
+      // Pencarian teks (disamakan persis dengan halaman utama + pencarian ID)
       if (query) {
-        const titleMatch = (item.title || '').toLowerCase().includes(query);
-        const playerMatch = (item.player_name || '').toLowerCase().includes(query);
-        const teamMatch = (item.team || '').toLowerCase().includes(query);
+        const name = (item.player_name || item.title || '').toLowerCase();
+        const rawTitle = (item.title || '').toLowerCase();
+        const titleMatch = name.includes(query) || rawTitle.includes(query);
+
+        const edRaw = item.edition ? String(item.edition).trim() : '';
+        const edLower = edRaw.toLowerCase();
+        const isSpecialEd = edLower === 'special' || edLower === 'spesial';
+        const editionMatch = edRaw
+          ? (
+              edLower === query ||
+              edLower.includes(query) ||
+              `edisi ${edLower}`.includes(query) ||
+              `#${edLower}`.includes(query) ||
+              (isSpecialEd && (query.includes('special') || query.includes('spesial')))
+            )
+          : false;
+
+        const teamMatch = item.team ? item.team.toLowerCase().includes(query) : false;
+        const yearMatch = item.year ? String(item.year).toLowerCase().includes(query) : false;
+        const descMatch =
+          (item.desc || '').toLowerCase().includes(query) ||
+          (item.spec || '').toLowerCase().includes(query);
+        const catMatch = (item.category || item.categories?.category || '').toLowerCase().includes(query);
         const idMatch = String(item.id).includes(query);
-        if (!titleMatch && !playerMatch && !teamMatch && !idMatch) {
+
+        if (!titleMatch && !editionMatch && !teamMatch && !yearMatch && !descMatch && !catMatch && !idMatch) {
           return false;
         }
       }
 
-      // Category filter
+      // Filter Kategori
       if (selectedCategoryFilter !== 'all') {
         if (String(item.category_id) !== String(selectedCategoryFilter)) {
           return false;
         }
       }
 
-      // Status filter (Normal vs SOLD OUT)
+      // Filter Status (Normal vs SOLD OUT)
       const isSoldOut = String(item.sold_out || '').trim().toUpperCase() === 'Y';
       if (selectedStatusFilter === 'sold_out' && !isSoldOut) return false;
       if (selectedStatusFilter === 'normal' && isSoldOut) return false;
 
       return true;
     });
-  }, [products, searchQuery, selectedCategoryFilter, selectedStatusFilter]);
+
+    // 2. Sorting
+    if (sortBy === 'id_desc') {
+      return [...filtered].sort((a, b) => (b.id || 0) - (a.id || 0));
+    }
+    if (sortBy === 'id_asc') {
+      return [...filtered].sort((a, b) => (a.id || 0) - (b.id || 0));
+    }
+    if (sortBy === 'name_asc') {
+      return [...filtered].sort((a, b) =>
+        (a.player_name || a.title || '').localeCompare(b.player_name || b.title || '')
+      );
+    }
+    if (sortBy === 'name_desc') {
+      return [...filtered].sort((a, b) =>
+        (b.player_name || b.title || '').localeCompare(a.player_name || a.title || '')
+      );
+    }
+    if (sortBy === 'price_desc') {
+      return [...filtered].sort((a, b) => (b.price || 0) - (a.price || 0));
+    }
+    if (sortBy === 'price_asc') {
+      return [...filtered].sort((a, b) => (a.price || 0) - (b.price || 0));
+    }
+
+    // Default Sorting: Sesuai Urutan Halaman Utama (sortCatalogProducts)
+    let activeCatName = 'all';
+    if (selectedCategoryFilter !== 'all') {
+      const chosen = categories.find((c) => String(c.id) === String(selectedCategoryFilter));
+      if (chosen?.category) {
+        activeCatName = normalizeCategory(chosen.category);
+      }
+    }
+    return sortCatalogProducts(filtered, activeCatName);
+  }, [products, searchQuery, selectedCategoryFilter, selectedStatusFilter, sortBy, categories]);
 
   // Pagination calculation
   const totalItems = filteredProducts.length;
@@ -134,7 +222,7 @@ export default function AdminDashboardPage() {
   // Reset to first page when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, selectedCategoryFilter, selectedStatusFilter, pageSize]);
+  }, [searchQuery, selectedCategoryFilter, selectedStatusFilter, sortBy, pageSize]);
 
   // Quick Action: Toggle Sold Out Status
   const handleToggleSoldOut = async (product) => {
@@ -144,11 +232,19 @@ export default function AdminDashboardPage() {
     const isCurrentlySoldOut = String(product.sold_out || '').trim().toUpperCase() === 'Y';
     // If currently SOLD OUT ('Y'), toggle to NULL (Normal). Otherwise, toggle to 'Y' (SOLD OUT).
     const newSoldOutVal = isCurrentlySoldOut ? null : 'Y';
-    const statusText = newSoldOutVal === 'Y' ? 'SOLD OUT' : 'NORMAL / TERSEDIA';
+    const statusText = newSoldOutVal === 'Y' ? 'SOLD OUT' : 'TERSEDIA';
 
     // Optimistic UI update
     setProducts((prev) =>
-      prev.map((p) => (p.id === product.id ? { ...p, sold_out: newSoldOutVal } : p))
+      prev.map((p) =>
+        p.id === product.id
+          ? {
+              ...p,
+              sold_out: newSoldOutVal,
+              is_sold_out: newSoldOutVal === 'Y',
+            }
+          : p
+      )
     );
 
     try {
@@ -160,7 +256,15 @@ export default function AdminDashboardPage() {
       if (error) {
         // Rollback optimistic update
         setProducts((prev) =>
-          prev.map((p) => (p.id === product.id ? { ...p, sold_out: product.sold_out } : p))
+          prev.map((p) =>
+            p.id === product.id
+              ? {
+                  ...p,
+                  sold_out: product.sold_out,
+                  is_sold_out: String(product.sold_out || '').trim().toUpperCase() === 'Y',
+                }
+              : p
+          )
         );
         throw error;
       }
@@ -207,7 +311,7 @@ export default function AdminDashboardPage() {
             </span>
           </h1>
           <p className="text-xs sm:text-sm text-emerald-300/80 mt-1">
-            Kelola data produk, toggle status SOLD OUT, tambah varian poster, dan unggah gambar via Cloudinary.
+            Kelola data produk, toggle status SOLD OUT, tambah varian poster, dan unggah gambar.
           </p>
         </div>
 
@@ -218,7 +322,7 @@ export default function AdminDashboardPage() {
             onClick={() => loadData(true)}
             disabled={isRefreshing || isLoading}
             className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-900/60 border border-emerald-700/60 text-emerald-200 text-xs font-semibold hover:bg-emerald-800 hover:text-white transition cursor-pointer disabled:opacity-50"
-            title="Muat ulang data dari Supabase"
+            title="Muat ulang data"
           >
             <ArrowClockwise size={16} className={isRefreshing ? 'animate-spin text-lime-400' : ''} />
             <span className="hidden sm:inline">Segarkan</span>
@@ -250,10 +354,10 @@ export default function AdminDashboardPage() {
           <span className="text-[10px] text-emerald-400/80">Seluruh item katalog</span>
         </div>
 
-        {/* Produk Normal / Tersedia */}
+        {/* Produk Tersedia */}
         <div className="p-4 rounded-2xl bg-emerald-950/80 border border-emerald-700/40 backdrop-blur-sm">
           <div className="flex items-center justify-between text-emerald-400 text-xs font-semibold mb-1">
-            <span>Tersedia (Normal)</span>
+            <span>Tersedia</span>
             <CheckCircle size={18} className="text-lime-400" weight="fill" />
           </div>
           <div className="text-xl sm:text-2xl font-bold font-mono text-lime-400">
@@ -299,7 +403,7 @@ export default function AdminDashboardPage() {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Cari berdasarkan judul produk, nama pemain, tim, atau ID..."
+              placeholder="Cari pemain, edisi (cth: #12), tim, tahun, ID..."
               className="w-full pl-10 pr-10 py-2.5 text-xs sm:text-sm rounded-xl bg-emerald-900/60 border border-emerald-700/60 text-white placeholder-emerald-500/60 focus:outline-none focus:border-lime-400 focus:ring-1 focus:ring-lime-400 transition"
             />
             {searchQuery && (
@@ -314,7 +418,7 @@ export default function AdminDashboardPage() {
           </div>
 
           {/* Filter Kategori */}
-          <div className="w-full md:w-56 shrink-0">
+          <div className="w-full md:w-52 shrink-0">
             <select
               value={selectedCategoryFilter}
               onChange={(e) => setSelectedCategoryFilter(e.target.value)}
@@ -329,28 +433,46 @@ export default function AdminDashboardPage() {
             </select>
           </div>
 
-          {/* Filter Status (Normal vs SOLD OUT) */}
-          <div className="w-full md:w-48 shrink-0">
+          {/* Filter Status (Tersedia vs SOLD OUT) */}
+          <div className="w-full md:w-44 shrink-0">
             <select
               value={selectedStatusFilter}
               onChange={(e) => setSelectedStatusFilter(e.target.value)}
               className="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-xl bg-emerald-900/60 border border-emerald-700/60 text-white focus:outline-none focus:border-lime-400 cursor-pointer"
             >
               <option value="all">Semua Status</option>
-              <option value="normal">Normal / Tersedia ({stats.normalCount})</option>
+              <option value="normal">Tersedia ({stats.normalCount})</option>
               <option value="sold_out">SOLD OUT ({stats.soldOutCount})</option>
+            </select>
+          </div>
+
+          {/* Pengurutan (Sorting) */}
+          <div className="w-full md:w-56 shrink-0">
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-xl bg-emerald-900/60 border border-emerald-700/60 text-white focus:outline-none focus:border-lime-400 cursor-pointer"
+              title="Pilihan Pengurutan Produk"
+            >
+              <option value="catalog_default">Default (Sesuai Halaman Utama)</option>
+              <option value="id_desc">ID Terbaru</option>
+              <option value="id_asc">ID Terlama</option>
+              <option value="name_asc">Nama Pemain/Produk (A - Z)</option>
+              <option value="name_desc">Nama Pemain/Produk (Z - A)</option>
+              <option value="price_desc">Harga Tertinggi</option>
+              <option value="price_asc">Harga Terendah</option>
             </select>
           </div>
         </div>
 
         {/* Active Filter Indicators */}
-        {(searchQuery || selectedCategoryFilter !== 'all' || selectedStatusFilter !== 'all') && (
+        {(searchQuery || selectedCategoryFilter !== 'all' || selectedStatusFilter !== 'all' || sortBy !== 'catalog_default') && (
           <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-emerald-800/40 text-xs text-emerald-300">
             <span>Filter Aktif:</span>
             {searchQuery && (
               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-900 border border-emerald-700 text-[11px]">
                 Pencarian: &quot;{searchQuery}&quot;
-                <button onClick={() => setSearchQuery('')} className="hover:text-white">
+                <button onClick={() => setSearchQuery('')} className="hover:text-white cursor-pointer">
                   <X size={12} />
                 </button>
               </span>
@@ -358,7 +480,7 @@ export default function AdminDashboardPage() {
             {selectedCategoryFilter !== 'all' && (
               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-900 border border-emerald-700 text-[11px]">
                 Kategori: {categories.find((c) => String(c.id) === String(selectedCategoryFilter))?.category?.toUpperCase()}
-                <button onClick={() => setSelectedCategoryFilter('all')} className="hover:text-white">
+                <button onClick={() => setSelectedCategoryFilter('all')} className="hover:text-white cursor-pointer">
                   <X size={12} />
                 </button>
               </span>
@@ -366,7 +488,28 @@ export default function AdminDashboardPage() {
             {selectedStatusFilter !== 'all' && (
               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-900 border border-emerald-700 text-[11px]">
                 Status: {selectedStatusFilter === 'sold_out' ? 'SOLD OUT' : 'Tersedia'}
-                <button onClick={() => setSelectedStatusFilter('all')} className="hover:text-white">
+                <button onClick={() => setSelectedStatusFilter('all')} className="hover:text-white cursor-pointer">
+                  <X size={12} />
+                </button>
+              </span>
+            )}
+            {sortBy !== 'catalog_default' && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-900 border border-emerald-700 text-[11px]">
+                Urutan:{' '}
+                {sortBy === 'id_desc'
+                  ? 'ID Terbaru'
+                  : sortBy === 'id_asc'
+                  ? 'ID Terlama'
+                  : sortBy === 'name_asc'
+                  ? 'Nama (A-Z)'
+                  : sortBy === 'name_desc'
+                  ? 'Nama (Z-A)'
+                  : sortBy === 'price_desc'
+                  ? 'Harga Tertinggi'
+                  : sortBy === 'price_asc'
+                  ? 'Harga Terendah'
+                  : sortBy}
+                <button onClick={() => setSortBy('catalog_default')} className="hover:text-white cursor-pointer">
                   <X size={12} />
                 </button>
               </span>
@@ -376,6 +519,7 @@ export default function AdminDashboardPage() {
                 setSearchQuery('');
                 setSelectedCategoryFilter('all');
                 setSelectedStatusFilter('all');
+                setSortBy('catalog_default');
               }}
               className="text-lime-400 hover:underline text-[11px] ml-auto cursor-pointer"
             >
@@ -390,7 +534,7 @@ export default function AdminDashboardPage() {
         {isLoading ? (
           <div className="py-20 flex flex-col items-center justify-center text-center">
             <Spinner size={32} className="animate-spin text-lime-400 mb-3" />
-            <p className="text-sm font-semibold text-emerald-200">Memuat data produk dari Supabase...</p>
+            <p className="text-sm font-semibold text-emerald-200">Memuat data produk...</p>
           </div>
         ) : filteredProducts.length === 0 ? (
           <div className="py-16 px-4 flex flex-col items-center justify-center text-center">
@@ -419,7 +563,7 @@ export default function AdminDashboardPage() {
                   <th className="py-3 px-4 min-w-[200px]">Judul Produk</th>
                   <th className="py-3 px-4 min-w-[120px]">Kategori</th>
                   <th className="py-3 px-4 min-w-[130px]">Harga</th>
-                  <th className="py-3 px-4 min-w-[170px]">Status Keterangan</th>
+                  <th className="py-3 px-4 min-w-[190px]">Status Keterangan</th>
                   <th className="py-3 px-4 min-w-[140px] text-right">Aksi</th>
                 </tr>
               </thead>
@@ -429,6 +573,9 @@ export default function AdminDashboardPage() {
                   const isTogglingThis = togglingId === product.id;
                   const catName = product.categories?.category || product.category || 'stiker';
                   const catBadgeClass = getCategoryBadgeStyle(catName);
+                  const isPoster = String(product.category_id) === '4' || String(catName).toLowerCase().includes('poster');
+                  const variants = parseVariants(product.variants);
+                  const isLimited = String(product.edition || '').trim().toUpperCase() === 'LIMITED' || (product.price === 0 && !isPoster && !variants);
 
                   return (
                     <tr
@@ -496,66 +643,113 @@ export default function AdminDashboardPage() {
 
                       {/* 4. Harga & Varian */}
                       <td className="py-3 px-4">
-                        <div className="font-mono font-bold text-lime-400 text-xs sm:text-sm">
-                          {formatRupiah(product.price)}
-                        </div>
-                        {product.variants && Array.isArray(product.variants) && product.variants.length > 0 && (
-                          <div className="text-[10px] text-purple-300 mt-0.5 flex items-center gap-1">
-                            <span className="w-1.5 h-1.5 rounded-full bg-purple-400 inline-block" />
-                            {product.variants.length} Varian Ukuran
+                        {isLimited ? (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-amber-400 text-emerald-950 font-black text-xs uppercase tracking-wider shadow-sm">
+                            LIMITED
+                          </span>
+                        ) : isPoster || (variants && variants.length > 0) ? (
+                          <div className="relative">
+                            <button
+                              type="button"
+                              onClick={() => setExpandedVariantId(expandedVariantId === product.id ? null : product.id)}
+                              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition cursor-pointer border ${
+                                expandedVariantId === product.id
+                                  ? 'bg-purple-600 text-white border-purple-400 shadow-md shadow-purple-950/50'
+                                  : 'bg-purple-950/70 hover:bg-purple-900/90 text-purple-200 border-purple-500/40'
+                              }`}
+                              title="Klik untuk melihat rincian harga tiap varian"
+                            >
+                              <span className="w-1.5 h-1.5 rounded-full bg-purple-400" />
+                              <span>{variants?.length || 3} Varian Ukuran</span>
+                              <CaretDown
+                                size={12}
+                                className={`transition-transform duration-200 ${
+                                  expandedVariantId === product.id ? 'rotate-180' : ''
+                                }`}
+                              />
+                            </button>
+
+                            {expandedVariantId === product.id && (
+                              <div className="mt-1.5 p-2 rounded-xl bg-emerald-950/95 border border-purple-500/50 shadow-xl text-xs space-y-1.5 min-w-[170px] animate-in fade-in duration-150">
+                                <div className="text-[10px] font-bold text-purple-300 uppercase tracking-wider pb-1 border-b border-emerald-800 flex items-center justify-between">
+                                  <span>Rincian Varian</span>
+                                  <span className="text-[9px] text-emerald-400 font-normal">
+                                    {variants?.length || 0} Ukuran
+                                  </span>
+                                </div>
+                                {variants && variants.length > 0 ? (
+                                  <div className="space-y-1">
+                                    {variants.map((v, idx) => (
+                                      <div key={idx} className="flex items-center justify-between gap-3 text-[11px]">
+                                        <span className="font-semibold text-purple-200">Ukuran {v.size}:</span>
+                                        <span className="font-mono font-bold text-lime-400">{formatRupiah(v.price)}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <div className="text-[10px] text-emerald-300/80 italic">
+                                    Ukuran A3, A2, A1
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="font-mono font-bold text-lime-400 text-xs sm:text-sm">
+                            {formatRupiah(product.price)}
                           </div>
                         )}
                       </td>
 
-                      {/* 5. Status Keterangan (Normal vs SOLD OUT) & Quick Toggle */}
+                      {/* 5. Status Keterangan (Tersedia vs SOLD OUT) - Menggunakan Switch Toggle */}
                       <td className="py-3 px-4">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2.5">
+                          {/* Switch Component */}
+                          <button
+                            type="button"
+                            role="switch"
+                            aria-checked={isSoldOut}
+                            onClick={() => handleToggleSoldOut(product)}
+                            disabled={isTogglingThis}
+                            className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-lime-400/50 disabled:opacity-50 disabled:cursor-not-allowed ${
+                              isSoldOut ? 'bg-rose-600' : 'bg-emerald-700'
+                            }`}
+                            title={
+                              isSoldOut
+                                ? 'Status: SOLD OUT (Habis). Klik switch untuk ubah ke TERSEDIA'
+                                : 'Status: TERSEDIA. Klik switch untuk ubah ke SOLD OUT'
+                            }
+                          >
+                            <span
+                              className={`pointer-events-none inline-flex h-5 w-5 transform items-center justify-center rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                                isSoldOut ? 'translate-x-5 text-rose-600' : 'translate-x-0 text-emerald-700'
+                              }`}
+                            >
+                              {isTogglingThis ? (
+                                <Spinner size={10} className="animate-spin text-emerald-800" />
+                              ) : isSoldOut ? (
+                                <X size={10} weight="bold" />
+                              ) : (
+                                <Check size={10} weight="bold" />
+                              )}
+                            </span>
+                          </button>
+
                           {/* Status Badge */}
                           <span
-                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold shadow-sm ${
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold shadow-sm transition-colors ${
                               isSoldOut
                                 ? 'bg-rose-950 text-rose-300 border border-rose-500/50'
                                 : 'bg-emerald-900 text-lime-300 border border-lime-400/40'
                             }`}
                           >
                             <span
-                              className={`w-2 h-2 rounded-full ${
+                              className={`w-1.5 h-1.5 rounded-full ${
                                 isSoldOut ? 'bg-rose-400 animate-pulse' : 'bg-lime-400'
                               }`}
                             />
-                            {isSoldOut ? 'SOLD OUT' : 'NORMAL'}
+                            {isSoldOut ? 'SOLD OUT' : 'TERSEDIA'}
                           </span>
-
-                          {/* Tombol Cepat "Toggle Sold Out" */}
-                          <button
-                            type="button"
-                            onClick={() => handleToggleSoldOut(product)}
-                            disabled={isTogglingThis}
-                            className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition flex items-center gap-1 cursor-pointer border active:scale-95 disabled:opacity-50 ${
-                              isSoldOut
-                                ? 'bg-emerald-800 hover:bg-emerald-700 text-lime-200 border-emerald-600'
-                                : 'bg-rose-900/80 hover:bg-rose-800 text-rose-100 border-rose-700'
-                            }`}
-                            title={
-                              isSoldOut
-                                ? 'Klik satu kali untuk ubah status ke NORMAL (Tersedia)'
-                                : 'Klik satu kali untuk ubah status ke SOLD OUT'
-                            }
-                          >
-                            {isTogglingThis ? (
-                              <Spinner size={12} className="animate-spin text-white" />
-                            ) : isSoldOut ? (
-                              <>
-                                <Check size={12} weight="bold" />
-                                <span>Set Normal</span>
-                              </>
-                            ) : (
-                              <>
-                                <X size={12} weight="bold" />
-                                <span>Set Sold Out</span>
-                              </>
-                            )}
-                          </button>
                         </div>
                       </td>
 
@@ -577,7 +771,7 @@ export default function AdminDashboardPage() {
                             type="button"
                             onClick={() => setProductToDelete(product)}
                             className="p-2 rounded-lg bg-rose-950/60 hover:bg-rose-900 text-rose-300 hover:text-white border border-rose-800/40 transition cursor-pointer"
-                            title="Hapus Produk dari Supabase"
+                            title="Hapus Produk"
                           >
                             <Trash size={15} />
                           </button>
