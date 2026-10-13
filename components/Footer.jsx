@@ -14,7 +14,7 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-4">
         <div className="flex items-center justify-center">
           <img
-            src="https://res.cloudinary.com/og1jrvy3/image/upload/v1790248865/PROFILE_LOGO_LOUI_FOOTBALL_-_transparent.png"
+            src="https://res.cloudinary.com/og1jrvy3/image/upload/f_auto,q_auto/v1790248865/PROFILE_LOGO_LOUI_FOOTBALL_-_transparent.png"
             alt="LOUIFOOTBALL"
             className="w-20 h-20 sm:w-24 sm:h-24 object-contain mx-auto drop-shadow-md"
           />

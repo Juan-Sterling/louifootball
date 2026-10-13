@@ -27,7 +27,7 @@ import {
   Megaphone,
 } from '@phosphor-icons/react';
 import { supabase } from '@/lib/supabase';
-import { formatRupiah, parseVariants, getCategoryBadgeStyle, normalizeCategory, sortCatalogProducts } from '@/lib/utils';
+import { formatRupiah, parseVariants, getCategoryBadgeStyle, normalizeCategory, sortCatalogProducts, optimizeCloudinaryUrl } from '@/lib/utils';
 import ProductFormModal from '@/components/admin/ProductFormModal';
 import DeleteConfirmModal from '@/components/admin/DeleteConfirmModal';
 import CategoryManager from '@/components/admin/CategoryManager';
@@ -123,7 +123,7 @@ export default function AdminDashboardPage() {
         .order('created_at', { ascending: false });
 
       if (promoError) console.warn('Promotions query error:', promoError);
-      if (promoData) setPromotions(promoData);
+      if (promoData) setPromotions(promoData.map((p) => ({ ...p, img: optimizeCloudinaryUrl(p.img) })));
 
       // Map products to clean structure matching main page (app/page.jsx)
       const mapped = (prodData || []).map((item) => {
@@ -146,6 +146,8 @@ export default function AdminDashboardPage() {
           title: productTitle || resolvedPlayerName,
           sold_out: soldOutVal,
           is_sold_out: soldOutVal.toUpperCase() === 'Y',
+          img: optimizeCloudinaryUrl(item.img),
+          img_add: item.img_add ? optimizeCloudinaryUrl(item.img_add) : item.img_add,
           category: normalizeCategory(catObj.category || item.category || 'lainnya'),
           team: cleanTeam,
           year: cleanYear,
@@ -972,7 +974,7 @@ export default function AdminDashboardPage() {
                             <>
                               {/* eslint-disable-next-line @next/next/no-img-element */}
                               <img
-                                src={product.img}
+                                src={optimizeCloudinaryUrl(product.img)}
                                 alt={product.title}
                                 className="w-full h-full object-contain p-0.5 group-hover:scale-110 transition duration-200"
                               />
@@ -1367,7 +1369,7 @@ export default function AdminDashboardPage() {
           <div className="relative max-w-lg max-h-[85vh] bg-emerald-950 p-2 rounded-2xl border border-lime-400/40">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={zoomImage}
+              src={optimizeCloudinaryUrl(zoomImage)}
               alt="Zoomed product"
               className="max-w-full max-h-[80vh] object-contain rounded-xl mx-auto"
             />

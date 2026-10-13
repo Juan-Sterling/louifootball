@@ -14,7 +14,7 @@ import {
   SoccerBall,
 } from '@phosphor-icons/react';
 import { supabase } from '@/lib/supabase';
-import { getPromoTheme } from '@/lib/utils';
+import { getPromoTheme, optimizeCloudinaryUrl } from '@/lib/utils';
 import CloudinaryWidget from './CloudinaryWidget';
 import { useToast } from './Toast';
 
@@ -118,7 +118,7 @@ export default function PromotionFormModal({
         badge_main: formData.badge_main.trim(),
         badge_sub: formData.badge_sub.trim(),
         badge_color: formData.badge_color,
-        img: formData.img.trim(),
+        img: optimizeCloudinaryUrl(formData.img.trim()),
         action_type: formData.action_type,
         action_target: formData.action_target.trim(),
         btn_text: formData.btn_text.trim() || 'Lihat di Katalog',
@@ -293,7 +293,7 @@ export default function PromotionFormModal({
           <div>
             <CloudinaryWidget
               value={formData.img}
-              onChange={(url) => setFormData({ ...formData, img: url })}
+              onChange={(url) => setFormData({ ...formData, img: optimizeCloudinaryUrl(url) })}
               onDelete={() => setFormData({ ...formData, img: '' })}
               label="Banner / Foto Iklan"
               description="Foto merchandise atau gambar promosi untuk slide carousel"
@@ -445,7 +445,7 @@ export default function PromotionFormModal({
                   {formData.img ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
-                      src={formData.img}
+                      src={optimizeCloudinaryUrl(formData.img)}
                       alt={formData.title}
                       className="w-full h-full object-cover"
                     />

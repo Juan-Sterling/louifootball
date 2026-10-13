@@ -12,7 +12,7 @@ import {
   CaretLeft,
   CaretRight,
 } from '@phosphor-icons/react';
-import { formatRupiah, parseVariants, WA_NUMBER } from '@/lib/utils';
+import { formatRupiah, parseVariants, WA_NUMBER, optimizeCloudinaryUrl } from '@/lib/utils';
 
 export default function ProductModal({ product, isOpen, onClose, onOpenZoom }) {
   const [selectedVariant, setSelectedVariant] = useState(null);
@@ -48,9 +48,11 @@ export default function ProductModal({ product, isOpen, onClose, onOpenZoom }) {
     String(product.img_add).trim().toLowerCase() !== 'null' &&
     String(product.img_add).trim().toLowerCase() !== 'undefined'
   );
-  const images = [product.img, hasAddImg ? product.img_add : null].filter(Boolean);
-  const currentImg = (activeImg === product.img_add && hasAddImg) ? product.img_add : product.img;
-  const currentImgIndex = currentImg === product.img_add ? 1 : 0;
+  const optimizedImg = product?.img ? optimizeCloudinaryUrl(product.img) : '';
+  const optimizedImgAdd = product?.img_add ? optimizeCloudinaryUrl(product.img_add) : '';
+  const images = [optimizedImg, hasAddImg ? optimizedImgAdd : null].filter(Boolean);
+  const currentImg = (activeImg === product.img_add && hasAddImg) ? optimizedImgAdd : optimizedImg;
+  const currentImgIndex = currentImg === optimizedImgAdd ? 1 : 0;
 
   const isLimited = String(product.edition || '').trim().toUpperCase() === 'LIMITED';
 
@@ -217,7 +219,7 @@ Apakah stok masih ada?`);
                     : 'border-transparent opacity-60 hover:opacity-100'
                   }`}
               >
-                <img src={product.img} alt="1" className="w-full h-full object-cover" />
+                <img src={optimizedImg} alt="1" className="w-full h-full object-cover" />
               </button>
 
               <button
@@ -227,12 +229,12 @@ Apakah stok masih ada?`);
                   setActiveImg(product.img_add);
                 }}
                 title="2"
-                className={`w-9 h-9 rounded-lg overflow-hidden border-2 transition cursor-pointer shrink-0 bg-zinc-900 ${currentImg === product.img_add
+                className={`w-9 h-9 rounded-lg overflow-hidden border-2 transition cursor-pointer shrink-0 bg-zinc-900 ${currentImg === optimizedImgAdd
                     ? 'border-lime-400 scale-105 shadow-md ring-1 ring-lime-400/50'
                     : 'border-transparent opacity-60 hover:opacity-100'
                   }`}
               >
-                <img src={product.img_add} alt="2" className="w-full h-full object-cover" />
+                <img src={optimizedImgAdd} alt="2" className="w-full h-full object-cover" />
               </button>
             </div>
           )}
@@ -260,7 +262,7 @@ Apakah stok masih ada?`);
                 }`}
             >
               <span className="w-5 h-5 rounded-md overflow-hidden bg-black/10 shrink-0 border border-black/10 flex items-center justify-center">
-                <img src={product.img} alt="1" className="w-full h-full object-cover" />
+                <img src={optimizedImg} alt="1" className="w-full h-full object-cover" />
               </span>
               <span>1</span>
             </button>
@@ -268,13 +270,13 @@ Apakah stok masih ada?`);
             <button
               type="button"
               onClick={() => setActiveImg(product.img_add)}
-              className={`flex items-center gap-2 px-4 py-1.5 rounded-xl text-xs font-black transition cursor-pointer border ${currentImg === product.img_add
+              className={`flex items-center gap-2 px-4 py-1.5 rounded-xl text-xs font-black transition cursor-pointer border ${currentImg === optimizedImgAdd
                   ? 'bg-emerald-950 text-lime-300 border-emerald-950 shadow-sm ring-2 ring-lime-400'
                   : 'bg-white text-gray-700 hover:bg-emerald-50 border-gray-200'
                 }`}
             >
               <span className="w-5 h-5 rounded-md overflow-hidden bg-black/10 shrink-0 border border-black/10 flex items-center justify-center">
-                <img src={product.img_add} alt="2" className="w-full h-full object-cover" />
+                <img src={optimizedImgAdd} alt="2" className="w-full h-full object-cover" />
               </span>
               <span>2</span>
             </button>

@@ -18,7 +18,7 @@ import {
   Sparkle,
 } from '@phosphor-icons/react';
 import { supabase } from '@/lib/supabase';
-import { getPromoTheme } from '@/lib/utils';
+import { getPromoTheme, optimizeCloudinaryUrl } from '@/lib/utils';
 import PromotionFormModal from './PromotionFormModal';
 import PromotionDeleteModal from './PromotionDeleteModal';
 import { useToast } from './Toast';
@@ -304,14 +304,14 @@ export default function PromotionManager({
                       {/* Banner Thumbnail */}
                       <td className="py-3 px-4 text-center">
                         <div
-                          onClick={() => promo.img && onZoomImage && onZoomImage(promo.img)}
+                          onClick={() => promo.img && onZoomImage && onZoomImage(optimizeCloudinaryUrl(promo.img))}
                           className="w-14 h-14 mx-auto rounded-xl bg-emerald-900/80 border border-emerald-700/60 overflow-hidden flex items-center justify-center cursor-pointer group relative shadow-sm"
                           title="Klik untuk melihat foto lebih besar"
                         >
                           {promo.img ? (
                             // eslint-disable-next-line @next/next/no-img-element
                             <img
-                              src={promo.img}
+                              src={optimizeCloudinaryUrl(promo.img)}
                               alt={promo.title}
                               className="w-full h-full object-cover group-hover:scale-110 transition duration-200"
                             />

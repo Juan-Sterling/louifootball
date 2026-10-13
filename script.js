@@ -4,6 +4,63 @@ const SUPABASE_URL = "https://dnnjcwhyyvcetswashku.supabase.co";
 const SUPABASE_KEY = "sb_publishable__pCa3Ej5Z0G8Irhdw8sbcg_Se8C31Hy";
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+function optimizeCloudinaryUrl(url, extraTransform = '') {
+    if (!url || typeof url !== 'string') return url || '';
+    if (!url.includes('res.cloudinary.com') || !url.includes('/image/upload/')) {
+        return url;
+    }
+
+    const uploadToken = '/image/upload/';
+    const uploadIndex = url.indexOf(uploadToken);
+    if (uploadIndex === -1) return url;
+
+    const prefix = url.substring(0, uploadIndex + uploadToken.length);
+    const remainder = url.substring(uploadIndex + uploadToken.length);
+
+    const segments = remainder.split('/');
+    const firstSeg = segments[0] || '';
+
+    const isVersion = /^v\d+$/.test(firstSeg);
+    const hasTransformationSyntax =
+        !isVersion &&
+        (firstSeg.includes(',') || /^[a-z]{1,4}_[a-zA-Z0-9_\-.:]+/.test(firstSeg));
+
+    if (hasTransformationSyntax) {
+        const transList = firstSeg.split(',').map((t) => t.trim()).filter(Boolean);
+        const hasFAuto = transList.some((t) => t.startsWith('f_'));
+        const hasQAuto = transList.some((t) => t.startsWith('q_'));
+
+        const newTransList = [];
+        if (!hasFAuto) newTransList.push('f_auto');
+        if (!hasQAuto) newTransList.push('q_auto');
+        newTransList.push(...transList);
+
+        if (extraTransform) {
+            const extraList = extraTransform.split(',').map((t) => t.trim()).filter(Boolean);
+            for (const et of extraList) {
+                if (!newTransList.includes(et)) {
+                    newTransList.push(et);
+                }
+            }
+        }
+
+        segments[0] = newTransList.join(',');
+        return prefix + segments.join('/');
+    }
+
+    const baseTrans = ['f_auto', 'q_auto'];
+    if (extraTransform) {
+        const extraList = extraTransform.split(',').map((t) => t.trim()).filter(Boolean);
+        for (const et of extraList) {
+            if (!baseTrans.includes(et)) {
+                baseTrans.push(et);
+            }
+        }
+    }
+
+    return prefix + baseTrans.join(',') + '/' + remainder;
+}
+
 let allProducts = [];
 let allCategories = [];
 let activeCategory = 'all';
@@ -184,6 +241,8 @@ async function loadProducts() {
                 ...item,
                 player_name: playerName,
                 title: playerName,
+                img: optimizeCloudinaryUrl(item.img),
+                img_add: item.img_add ? optimizeCloudinaryUrl(item.img_add) : item.img_add,
                 category: (catObj.category || item.category || 'lainnya').toLowerCase().trim(),
                 team: item.team ? String(item.team).trim() : '',
                 year: item.year ? String(item.year).trim() : '',
@@ -202,6 +261,8 @@ async function loadProducts() {
                     ...item,
                     player_name: playerName,
                     title: playerName,
+                    img: optimizeCloudinaryUrl(item.img),
+                    img_add: item.img_add ? optimizeCloudinaryUrl(item.img_add) : item.img_add,
                     category: (item.category || '').toLowerCase().trim(),
                     team: item.team ? String(item.team).trim() : '',
                     year: item.year ? String(item.year).trim() : '',
@@ -612,7 +673,7 @@ function renderProducts() {
                   </span>
                 </div>
               ` : ''}
-              <img src="${item.img}" alt="${productName}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
+              <img src="${optimizeCloudinaryUrl(item.img)}" alt="${productName}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
             </div>
             
             <p class="text-[10px] font-black text-amber-700 tracking-wider uppercase">${editionText}</p>
@@ -816,9 +877,9 @@ function openModalById(id) {
         }
     }
 
-    modalImg.src = item.img;
+    modalImg.src = optimizeCloudinaryUrl(item.img);
     if (modalImgLink && modalImgLink.tagName === 'A') {
-        modalImgLink.href = item.img;
+        modalImgLink.href = optimizeCloudinaryUrl(item.img);
     }
 
     const editionText = item.edition
@@ -1495,7 +1556,7 @@ function renderPromotions(promotions) {
             </div>
             <div class="w-full sm:w-2/5 flex justify-center items-center">
                 <div class="relative w-full max-w-[135px] sm:max-w-[180px] md:max-w-[210px] aspect-square bg-emerald-950/70 border border-emerald-500/40 rounded-2xl p-2 flex items-center justify-center shadow-md">
-                    <img src="${promo.img}"
+                    <img src="${optimizeCloudinaryUrl(promo.img)}"
                         alt="${promo.title} - LOUI Football"
                         class="w-full h-full object-contain rounded-xl drop-shadow pointer-events-none"
                         onerror="this.src='https://placehold.co/400x400/022c22/34d399?text=LOUI+PROMO'">
@@ -1716,7 +1777,10 @@ async function loadPromotions() {
             throw error || new Error("Data promosi kosong atau gagal dimuat dari Supabase");
         }
 
-        allPromotions = data;
+        allPromotions = (data || []).map((promo) => ({
+            ...promo,
+            img: optimizeCloudinaryUrl(promo.img),
+        }));
     } catch (err) {
         console.warn("Gagal memuat promosi dari Database, beralih ke promo default:", err);
         allPromotions = [

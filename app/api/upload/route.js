@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { v2 as cloudinary } from 'cloudinary';
+import { optimizeCloudinaryUrl } from '@/lib/utils';
 
 // Default configuration fallbacks
 const DEFAULT_CLOUD_NAME =
@@ -92,7 +93,7 @@ export async function POST(request) {
 
         return NextResponse.json({
           success: true,
-          secure_url: result.secure_url,
+          secure_url: optimizeCloudinaryUrl(result.secure_url),
           public_id: result.public_id,
           format: result.format,
           width: result.width,
@@ -139,7 +140,7 @@ export async function POST(request) {
 
     return NextResponse.json({
       success: true,
-      secure_url: data.secure_url,
+      secure_url: optimizeCloudinaryUrl(data.secure_url),
       public_id: data.public_id,
       format: data.format,
       width: data.width,

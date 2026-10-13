@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { WarningCircle, Trash, X, Spinner } from '@phosphor-icons/react';
 import { supabase } from '@/lib/supabase';
-import { formatRupiah } from '@/lib/utils';
+import { formatRupiah, optimizeCloudinaryUrl } from '@/lib/utils';
 import { useToast } from './Toast';
 
 export default function DeleteConfirmModal({
@@ -101,7 +101,7 @@ export default function DeleteConfirmModal({
             {product.img ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
-                src={product.img}
+                src={optimizeCloudinaryUrl(product.img)}
                 alt={product.title}
                 className="w-full h-full object-contain p-0.5"
               />

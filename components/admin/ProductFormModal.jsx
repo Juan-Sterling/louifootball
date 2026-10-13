@@ -14,7 +14,7 @@ import {
   Camera,
 } from '@phosphor-icons/react';
 import { supabase } from '@/lib/supabase';
-import { formatRupiah, parseVariants, getCloudinaryFolderByCategory } from '@/lib/utils';
+import { formatRupiah, parseVariants, getCloudinaryFolderByCategory, optimizeCloudinaryUrl } from '@/lib/utils';
 import CloudinaryWidget from './CloudinaryWidget';
 import { useToast } from './Toast';
 
@@ -125,16 +125,17 @@ export default function ProductFormModal({
 
   // Main Image Change Handler (deletes old image if replaced during this session)
   const handleMainImageChange = (newUrl, newPublicId) => {
+    const optimizedUrl = newUrl ? optimizeCloudinaryUrl(newUrl) : '';
     const oldUrl = formData.img;
-    if (oldUrl && oldUrl !== newUrl && sessionUploadedImages.current.has(oldUrl)) {
+    if (oldUrl && oldUrl !== optimizedUrl && sessionUploadedImages.current.has(oldUrl)) {
       const oldItem = sessionUploadedImages.current.get(oldUrl);
       deleteCloudinaryImage(oldUrl, oldItem?.public_id);
       sessionUploadedImages.current.delete(oldUrl);
     }
-    if (newUrl) {
-      sessionUploadedImages.current.set(newUrl, { url: newUrl, public_id: newPublicId });
+    if (optimizedUrl) {
+      sessionUploadedImages.current.set(optimizedUrl, { url: optimizedUrl, public_id: newPublicId });
     }
-    setFormData((prev) => ({ ...prev, img: newUrl }));
+    setFormData((prev) => ({ ...prev, img: optimizedUrl }));
     if (errors.img) setErrors((prev) => ({ ...prev, img: '' }));
   };
 
@@ -150,16 +151,17 @@ export default function ProductFormModal({
 
   // Secondary Image Change Handler (Keychain 2 Sisi)
   const handleSecondaryImageChange = (newUrl, newPublicId) => {
+    const optimizedUrl = newUrl ? optimizeCloudinaryUrl(newUrl) : '';
     const oldUrl = formData.img_add;
-    if (oldUrl && oldUrl !== newUrl && sessionUploadedImages.current.has(oldUrl)) {
+    if (oldUrl && oldUrl !== optimizedUrl && sessionUploadedImages.current.has(oldUrl)) {
       const oldItem = sessionUploadedImages.current.get(oldUrl);
       deleteCloudinaryImage(oldUrl, oldItem?.public_id);
       sessionUploadedImages.current.delete(oldUrl);
     }
-    if (newUrl) {
-      sessionUploadedImages.current.set(newUrl, { url: newUrl, public_id: newPublicId });
+    if (optimizedUrl) {
+      sessionUploadedImages.current.set(optimizedUrl, { url: optimizedUrl, public_id: newPublicId });
     }
-    setFormData((prev) => ({ ...prev, img_add: newUrl }));
+    setFormData((prev) => ({ ...prev, img_add: optimizedUrl }));
   };
 
   // Secondary Image Delete Handler
@@ -386,8 +388,8 @@ export default function ProductFormModal({
         price: numericPrice,
         edition: formData.edition ? String(formData.edition).trim() : null,
         year: formData.year ? String(formData.year).trim() : null,
-        img: formData.img.trim(),
-        img_add: isKeychain && formData.img_add ? formData.img_add.trim() : null,
+        img: optimizeCloudinaryUrl(formData.img.trim()),
+        img_add: isKeychain && formData.img_add ? optimizeCloudinaryUrl(formData.img_add.trim()) : null,
         sold_out: formData.sold_out ? 'Y' : null,
         is_active: formData.is_active !== false,
         variants: finalVariants,

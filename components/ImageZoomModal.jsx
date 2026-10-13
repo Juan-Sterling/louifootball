@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Plus, Minus, X } from '@phosphor-icons/react';
+import { optimizeCloudinaryUrl } from '@/lib/utils';
 
 export default function ImageZoomModal({ isOpen, imgSrc, title, onClose }) {
   const [scale, setScale] = useState(1);
@@ -229,7 +230,7 @@ export default function ImageZoomModal({ isOpen, imgSrc, title, onClose }) {
         }`}
       >
         <img
-          src={imgSrc}
+          src={optimizeCloudinaryUrl(imgSrc)}
           alt="Zoom Preview"
           style={{
             transform: `translate(${pan.x}px, ${pan.y}px) scale(${scale})`,

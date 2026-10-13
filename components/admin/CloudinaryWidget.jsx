@@ -12,6 +12,7 @@ import {
   Camera,
   ArrowsClockwise,
 } from '@phosphor-icons/react';
+import { optimizeCloudinaryUrl } from '@/lib/utils';
 
 const DEFAULT_CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || 'og1jrvy3';
 const DEFAULT_UPLOAD_PRESET = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || 'ml_default';
@@ -115,9 +116,10 @@ export default function CloudinaryWidget({
       }
 
       if (data.secure_url) {
-        // Automatically set the Cloudinary URL and public_id into form
+        // Automatically set the Cloudinary URL and public_id into form with f_auto,q_auto
+        const optimizedUrl = optimizeCloudinaryUrl(data.secure_url);
         setCurrentPublicId(data.public_id || '');
-        onChange(data.secure_url, data.public_id);
+        onChange(optimizedUrl, data.public_id);
         setLocalPreview('');
       } else {
         throw new Error('Gambar tidak tersimpan di storage (URL tidak ditemukan). Silakan upload ulang.');
@@ -167,7 +169,7 @@ export default function CloudinaryWidget({
     }
   };
 
-  const displayImage = localPreview || value;
+  const displayImage = localPreview || (value ? optimizeCloudinaryUrl(value) : '');
 
   return (
     <div className="space-y-2.5">

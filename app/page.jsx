@@ -13,7 +13,7 @@ import Footer from '@/components/Footer';
 import Pagination from '@/components/Pagination';
 import { supabase } from '@/lib/supabase';
 import fallbackProducts from '@/products.json';
-import { normalizeCategory, sortCatalogProducts } from '@/lib/utils';
+import { normalizeCategory, sortCatalogProducts, optimizeCloudinaryUrl } from '@/lib/utils';
 
 const ITEMS_PER_PAGE = 20;
 
@@ -100,6 +100,8 @@ export default function Home() {
             title: productTitle,
             sold_out: soldOutVal,
             is_sold_out: soldOutVal.toUpperCase() === 'Y',
+            img: optimizeCloudinaryUrl(item.img),
+            img_add: item.img_add ? optimizeCloudinaryUrl(item.img_add) : item.img_add,
             category: normalizeCategory(catObj.category || item.category || 'lainnya'),
             team: cleanTeam,
             year: cleanYear,
@@ -122,6 +124,8 @@ export default function Home() {
             title: playerName,
             sold_out: soldOutVal,
             is_sold_out: soldOutVal.toUpperCase() === 'Y',
+            img: optimizeCloudinaryUrl(item.img),
+            img_add: item.img_add ? optimizeCloudinaryUrl(item.img_add) : item.img_add,
             category: normalizeCategory(item.category || 'lainnya'),
             team: item.team ? String(item.team).trim() : '',
             year: item.year ? String(item.year).trim() : '',

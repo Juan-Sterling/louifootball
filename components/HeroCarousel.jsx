@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { CaretLeft, CaretRight, ArrowDown, SoccerBall } from '@phosphor-icons/react';
 import { supabase } from '@/lib/supabase';
-import { WA_NUMBER } from '@/lib/utils';
+import { WA_NUMBER, optimizeCloudinaryUrl } from '@/lib/utils';
 
 const FALLBACK_PROMOTIONS = [
   {
@@ -113,7 +113,11 @@ export default function HeroCarousel({ onSelectCategory, onSelectEdition, onScro
           .order('created_at', { ascending: false });
 
         if (!error && data && data.length > 0) {
-          setPromotions(data);
+          const optimizedPromos = data.map((promo) => ({
+            ...promo,
+            img: optimizeCloudinaryUrl(promo.img),
+          }));
+          setPromotions(optimizedPromos);
         } else {
           setPromotions(FALLBACK_PROMOTIONS);
         }
@@ -295,7 +299,7 @@ export default function HeroCarousel({ onSelectCategory, onSelectEdition, onScro
           <div className="w-full sm:w-2/5 flex justify-center items-center">
             <div className="relative w-full max-w-[135px] sm:max-w-[180px] md:max-w-[210px] aspect-square bg-emerald-950/70 border border-emerald-500/40 rounded-2xl p-2 flex items-center justify-center shadow-md">
               <img
-                src={currentPromo.img}
+                src={optimizeCloudinaryUrl(currentPromo.img)}
                 alt={`${currentPromo.title} - LOUI Football`}
                 className="w-full h-full object-contain rounded-xl drop-shadow pointer-events-none"
                 onError={(e) => {

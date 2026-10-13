@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { formatRupiah, getCategoryBadgeStyle, getPriceRangeDisplay } from '@/lib/utils';
+import { formatRupiah, getCategoryBadgeStyle, getPriceRangeDisplay, optimizeCloudinaryUrl } from '@/lib/utils';
 
 export default function ProductCard({ product, onOpenModal }) {
   const badgeColor = getCategoryBadgeStyle(product.category);
@@ -52,7 +52,7 @@ export default function ProductCard({ product, onOpenModal }) {
           )}
 
           <img
-            src={product.img}
+            src={optimizeCloudinaryUrl(product.img)}
             alt={productName}
             className={`w-full h-full object-cover group-hover:scale-105 transition duration-300 ${
               isSoldOut ? 'grayscale-[30%]' : ''

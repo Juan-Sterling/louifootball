@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { WarningCircle, Trash, X, Spinner } from '@phosphor-icons/react';
 import { supabase } from '@/lib/supabase';
-import { getPromoTheme } from '@/lib/utils';
+import { getPromoTheme, optimizeCloudinaryUrl } from '@/lib/utils';
 import { useToast } from './Toast';
 
 export default function PromotionDeleteModal({
@@ -104,7 +104,7 @@ export default function PromotionDeleteModal({
             <div className="w-16 h-16 rounded-xl bg-emerald-900/80 border border-emerald-700/50 overflow-hidden shrink-0">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={promotion.img}
+                src={optimizeCloudinaryUrl(promotion.img)}
                 alt={promotion.title}
                 className="w-full h-full object-cover"
               />
