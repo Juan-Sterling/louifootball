@@ -60,8 +60,30 @@ export default function CloudinaryWidget({
   const uploadFile = async (file) => {
     if (!file) return;
 
-    if (!file.type.startsWith('image/')) {
+    const MAX_SIZE = 10 * 1024 * 1024; // 10 MB
+    const fileName = (file.name || '').toLowerCase();
+    const fileType = (file.type || '').toLowerCase();
+
+    // 1. Validasi: Jangan GIF
+    if (fileType === 'image/gif' || fileName.endsWith('.gif')) {
+      setUploadError('Format GIF tidak diperbolehkan. Harap gunakan gambar berformat JPG, PNG, atau WEBP.');
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+
+    // 2. Validasi: Harus file gambar
+    if (!fileType.startsWith('image/')) {
       setUploadError('File yang dipilih bukan gambar. Harap pilih file JPG, PNG, atau WEBP.');
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+
+    // 3. Validasi: Maksimal 10 MB
+    if (file.size > MAX_SIZE) {
+      setUploadError(
+        `Ukuran file melebihi batas maksimal 10 MB (${(file.size / (1024 * 1024)).toFixed(1)} MB). Harap pilih gambar lain.`
+      );
+      if (fileInputRef.current) fileInputRef.current.value = '';
       return;
     }
 
@@ -89,7 +111,7 @@ export default function CloudinaryWidget({
       const data = await res.json();
 
       if (!res.ok || data.error) {
-        throw new Error(data.error || 'Gagal mengunggah foto.');
+        throw new Error(data.error || 'Gambar gagal masuk ke storage. Silakan upload ulang gambar Anda.');
       }
 
       if (data.secure_url) {
@@ -98,12 +120,18 @@ export default function CloudinaryWidget({
         onChange(data.secure_url, data.public_id);
         setLocalPreview('');
       } else {
-        throw new Error('Tidak menerima URL gambar dari server.');
+        throw new Error('Gambar tidak tersimpan di storage (URL tidak ditemukan). Silakan upload ulang.');
       }
     } catch (err) {
       console.error('Upload error:', err);
-      setUploadError(err.message || 'Terjadi kesalahan saat mengunggah foto.');
+      const errMsg = err.message || 'Terjadi kesalahan sistem saat mengunggah foto.';
+      setUploadError(
+        errMsg.toLowerCase().includes('upload ulang')
+          ? errMsg
+          : `Gambar gagal masuk ke storage (${errMsg}). Silakan upload ulang gambar Anda.`
+      );
       setLocalPreview('');
+      onChange('', '');
     } finally {
       setIsUploading(false);
       if (fileInputRef.current) {
@@ -155,11 +183,11 @@ export default function CloudinaryWidget({
         <p className="text-[11px] text-emerald-300/80 -mt-1">{description}</p>
       )}
 
-      {/* Hidden File Input with Unique ID */}
+      {/* Hidden File Input with Unique ID (Strictly JPG, PNG, WEBP, AVIF - NO GIF) */}
       <input
         ref={fileInputRef}
         type="file"
-        accept="image/*"
+        accept="image/jpeg,image/png,image/webp,image/avif"
         onChange={handleFileChange}
         className="hidden"
         id={`device-photo-input-${uniqueId}`}
@@ -187,10 +215,10 @@ export default function CloudinaryWidget({
                 </div>
               </div>
               <p className="text-xs font-bold text-white tracking-wide">
-                Mengunggah foto dari perangkat...
+                Mengunggah foto ke storage...
               </p>
               <p className="text-[11px] text-emerald-300/80">
-                Harap tunggu beberapa detik hingga proses upload selesai.
+                Memastikan file tersimpan dengan aman di server storage.
               </p>
             </div>
           ) : (
@@ -203,7 +231,7 @@ export default function CloudinaryWidget({
                   Klik untuk pilih foto dari perangkat atau seret foto ke sini
                 </p>
                 <p className="text-[11px] text-emerald-300/70 mt-0.5">
-                  Format didukung: JPG, PNG, WEBP, atau AVIF
+                  Maks. 10 MB • Format: JPG, PNG, WEBP (GIF tidak diperbolehkan)
                 </p>
               </div>
               <button
@@ -292,21 +320,37 @@ export default function CloudinaryWidget({
         </div>
       )}
 
-      {/* Error Feedback */}
+      {/* Error Feedback with explicit retry upload button */}
       {uploadError && (
-        <div className="p-3 rounded-xl bg-rose-950/90 border border-rose-500/50 text-rose-200 text-xs flex items-start gap-2 animate-in fade-in duration-200">
-          <WarningCircle size={18} weight="fill" className="text-rose-400 shrink-0 mt-0.5" />
-          <div className="flex-1 leading-relaxed">
-            <strong className="block text-white mb-0.5">Gagal Mengunggah Foto:</strong>
-            {uploadError}
+        <div className="p-3.5 rounded-xl bg-rose-950/90 border border-rose-500/50 text-rose-200 text-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-in fade-in duration-200">
+          <div className="flex items-start gap-2.5 flex-1 leading-relaxed">
+            <WarningCircle size={18} weight="fill" className="text-rose-400 shrink-0 mt-0.5" />
+            <div>
+              <strong className="block text-white mb-0.5">Gagal Menyimpan Foto ke Storage:</strong>
+              {uploadError}
+            </div>
           </div>
-          <button
-            type="button"
-            onClick={() => setUploadError('')}
-            className="text-rose-400 hover:text-white p-0.5"
-          >
-            <X size={14} />
-          </button>
+          <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
+            <button
+              type="button"
+              onClick={() => {
+                setUploadError('');
+                fileInputRef.current?.click();
+              }}
+              className="px-3 py-1.5 rounded-lg bg-lime-400 text-emerald-950 font-bold text-xs hover:bg-lime-300 transition cursor-pointer flex items-center gap-1 shadow"
+            >
+              <ArrowsClockwise size={13} weight="bold" />
+              <span>Upload Ulang Foto</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setUploadError('')}
+              className="text-rose-400 hover:text-white p-1"
+              title="Tutup notifikasi"
+            >
+              <X size={15} />
+            </button>
+          </div>
         </div>
       )}
     </div>

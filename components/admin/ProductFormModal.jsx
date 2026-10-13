@@ -40,6 +40,7 @@ export default function ProductFormModal({
     img: '',
     img_add: '',
     sold_out: false, // boolean in form, converted to 'Y' or null
+    is_active: true, // boolean in form: aktif vs non-aktif
   });
 
   // Variants State (Visual Form Only)
@@ -218,6 +219,7 @@ export default function ProductFormModal({
         img: productToEdit.img || '',
         img_add: productToEdit.img_add || '',
         sold_out: String(productToEdit.sold_out || '').toUpperCase() === 'Y',
+        is_active: productToEdit.is_active !== false,
       });
 
       // Parse variants
@@ -242,6 +244,7 @@ export default function ProductFormModal({
         img: '',
         img_add: '',
         sold_out: false,
+        is_active: true,
       });
       setVariantsList([]);
     }
@@ -336,7 +339,7 @@ export default function ProductFormModal({
     }
 
     if (!formData.img.trim()) {
-      newErrors.img = 'Unggah atau masukkan URL gambar produk.';
+      newErrors.img = 'Foto utama produk wajib tersimpan di storage. Silakan upload foto Anda.';
     }
 
     setErrors(newErrors);
@@ -386,6 +389,7 @@ export default function ProductFormModal({
         img: formData.img.trim(),
         img_add: isKeychain && formData.img_add ? formData.img_add.trim() : null,
         sold_out: formData.sold_out ? 'Y' : null,
+        is_active: formData.is_active !== false,
         variants: finalVariants,
       };
 
@@ -646,40 +650,75 @@ export default function ProductFormModal({
               </div>
             </div>
 
-            {/* Toggle Sold Out Switch */}
-            <div className="p-3 rounded-xl bg-emerald-900/40 border border-emerald-700/60 flex items-center justify-between mt-2">
-              <div>
-                <span className="text-xs sm:text-sm font-bold text-white block">Status Keterangan Produk</span>
-                <span className="text-[11px] text-emerald-300">
-                  {formData.sold_out
-                    ? 'Produk saat ini berstatus SOLD OUT (Habis).'
-                    : 'Produk saat ini berstatus TERSEDIA (Tersedia untuk dipesan).'}
-                </span>
-              </div>
-              <button
-                type="button"
-                role="switch"
-                aria-checked={formData.sold_out}
-                onClick={() => setFormData((prev) => ({ ...prev, sold_out: !prev.sold_out }))}
-                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-lime-400/50 ${formData.sold_out ? 'bg-rose-600' : 'bg-emerald-700'
+            {/* Toggle Status Aktif & Sold Out */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+              {/* Toggle Aktif / Non-Aktif (is_active) */}
+              <div className="p-3 rounded-xl bg-emerald-900/40 border border-emerald-700/60 flex items-center justify-between">
+                <div>
+                  <span className="text-xs sm:text-sm font-bold text-white block">Status Publikasi</span>
+                  <span className="text-[11px] text-emerald-300">
+                    {formData.is_active
+                      ? 'AKTIF (Muncul di katalog & admin)'
+                      : 'NON-AKTIF (Disembunyikan)'}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={formData.is_active}
+                  onClick={() => setFormData((prev) => ({ ...prev, is_active: !prev.is_active }))}
+                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-lime-400/50 ${
+                    formData.is_active ? 'bg-lime-500' : 'bg-slate-700'
                   }`}
-                title={
-                  formData.sold_out
-                    ? 'Status: SOLD OUT (Habis). Klik untuk beralih ke TERSEDIA'
-                    : 'Status: TERSEDIA. Klik untuk beralih ke SOLD OUT'
-                }
-              >
-                <span
-                  className={`pointer-events-none inline-flex h-5 w-5 transform items-center justify-center rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${formData.sold_out ? 'translate-x-5 text-rose-600' : 'translate-x-0 text-emerald-700'
-                    }`}
+                  title={formData.is_active ? 'Status: AKTIF. Klik untuk menonaktifkan' : 'Status: NON-AKTIF. Klik untuk mengaktifkan'}
                 >
-                  {formData.sold_out ? (
-                    <X size={10} weight="bold" />
-                  ) : (
-                    <Check size={10} weight="bold" />
-                  )}
-                </span>
-              </button>
+                  <span
+                    className={`pointer-events-none inline-flex h-5 w-5 transform items-center justify-center rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                      formData.is_active ? 'translate-x-5 text-emerald-900' : 'translate-x-0 text-slate-700'
+                    }`}
+                  >
+                    {formData.is_active ? <Check size={10} weight="bold" /> : <X size={10} weight="bold" />}
+                  </span>
+                </button>
+              </div>
+
+              {/* Toggle Sold Out Switch */}
+              <div className="p-3 rounded-xl bg-emerald-900/40 border border-emerald-700/60 flex items-center justify-between">
+                <div>
+                  <span className="text-xs sm:text-sm font-bold text-white block">Ketersediaan Stok</span>
+                  <span className="text-[11px] text-emerald-300">
+                    {formData.sold_out
+                      ? 'SOLD OUT (Habis dipesan)'
+                      : 'TERSEDIA (Dapat dipesan)'}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={formData.sold_out}
+                  onClick={() => setFormData((prev) => ({ ...prev, sold_out: !prev.sold_out }))}
+                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-lime-400/50 ${
+                    formData.sold_out ? 'bg-rose-600' : 'bg-emerald-700'
+                  }`}
+                  title={
+                    formData.sold_out
+                      ? 'Status: SOLD OUT (Habis). Klik untuk beralih ke TERSEDIA'
+                      : 'Status: TERSEDIA. Klik untuk beralih ke SOLD OUT'
+                  }
+                >
+                  <span
+                    className={`pointer-events-none inline-flex h-5 w-5 transform items-center justify-center rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                      formData.sold_out ? 'translate-x-5 text-rose-600' : 'translate-x-0 text-emerald-700'
+                    }`}
+                  >
+                    {formData.sold_out ? (
+                      <X size={10} weight="bold" />
+                    ) : (
+                      <Check size={10} weight="bold" />
+                    )}
+                  </span>
+                </button>
+              </div>
             </div>
           </div>
 

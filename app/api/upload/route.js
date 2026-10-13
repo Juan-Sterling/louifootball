@@ -25,9 +25,41 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Tidak ada file gambar yang dikirim.' }, { status: 400 });
     }
 
+    // Validasi ukuran file: maksimal 10 MB
+    const MAX_FILE_SIZE = 10 * 1024 * 1024;
+    if (file.size > MAX_FILE_SIZE) {
+      return NextResponse.json(
+        {
+          error: `Ukuran file gambar melebihi batas maksimal 10 MB (${(file.size / (1024 * 1024)).toFixed(1)} MB). Harap pilih gambar yang berukuran maksimal 10 MB.`,
+        },
+        { status: 400 }
+      );
+    }
+
+    // Validasi format: Hanya gambar (JPG, PNG, WEBP, AVIF) dan TIDAK boleh GIF
+    const fileName = (file.name || '').toLowerCase();
+    const mimeType = (file.type || 'image/jpeg').toLowerCase();
+
+    if (mimeType === 'image/gif' || fileName.endsWith('.gif')) {
+      return NextResponse.json(
+        {
+          error: 'Format GIF tidak diperbolehkan. Harap gunakan format gambar JPG, PNG, atau WEBP.',
+        },
+        { status: 400 }
+      );
+    }
+
+    if (!mimeType.startsWith('image/')) {
+      return NextResponse.json(
+        {
+          error: 'File yang diunggah bukan file gambar yang valid.',
+        },
+        { status: 400 }
+      );
+    }
+
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
-    const mimeType = file.type || 'image/jpeg';
     const base64Data = `data:${mimeType};base64,${buffer.toString('base64')}`;
 
     // 1. If API Key and Secret are configured, try Cloudinary SDK signed upload
@@ -53,6 +85,10 @@ export async function POST(request) {
             }
           );
         });
+
+        if (!result || !result.secure_url) {
+          throw new Error('Gambar gagal masuk ke storage. Silakan upload ulang gambar Anda.');
+        }
 
         return NextResponse.json({
           success: true,
@@ -92,6 +128,13 @@ export async function POST(request) {
       }
 
       return NextResponse.json({ error: userFriendlyMsg, rawError: errMsg }, { status: 400 });
+    }
+
+    if (!data.secure_url) {
+      return NextResponse.json(
+        { error: 'Gambar gagal masuk ke storage Cloudinary. Silakan coba upload ulang gambar Anda.' },
+        { status: 502 }
+      );
     }
 
     return NextResponse.json({

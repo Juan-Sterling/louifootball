@@ -110,9 +110,23 @@ export default function CategoryFormModal({
         );
       }
 
+      // Jika kategori dinonaktifkan saat edit, otomatis nonaktifkan semua produk di kategori ini
+      if (isEditing && payload.is_active === false) {
+        const { error: prodErr } = await supabase
+          .from('products')
+          .update({ is_active: false })
+          .eq('category_id', categoryToEdit.id);
+
+        if (prodErr) {
+          console.warn('Gagal menonaktifkan produk terkait kategori:', prodErr);
+        }
+      }
+
       showToast(
         isEditing
-          ? `Kategori "${payload.category}" berhasil diperbarui!`
+          ? (payload.is_active === false
+              ? `Kategori "${payload.category}" dinonaktifkan beserta seluruh produk terkait!`
+              : `Kategori "${payload.category}" berhasil diperbarui!`)
           : `Kategori "${payload.category}" berhasil ditambahkan!`,
         'success'
       );

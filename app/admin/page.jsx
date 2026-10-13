@@ -19,6 +19,8 @@ import {
   ArrowsClockwise,
   WarningCircle,
   Eye,
+  EyeSlash,
+  Sliders,
   Faders,
   CaretDown,
   Tag,
@@ -30,6 +32,7 @@ import ProductFormModal from '@/components/admin/ProductFormModal';
 import DeleteConfirmModal from '@/components/admin/DeleteConfirmModal';
 import CategoryManager from '@/components/admin/CategoryManager';
 import PromotionManager from '@/components/admin/PromotionManager';
+import BulkEditModal from '@/components/admin/BulkEditModal';
 import { useToast } from '@/components/admin/Toast';
 
 export default function AdminDashboardPage() {
@@ -67,11 +70,17 @@ export default function AdminDashboardPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState('all');
   const [selectedStatusFilter, setSelectedStatusFilter] = useState('all'); // 'all', 'normal', 'sold_out'
+  const [selectedActiveFilter, setSelectedActiveFilter] = useState('active'); // 'active' (default: sembunyikan yang non-aktif), 'inactive', 'all'
   const [sortBy, setSortBy] = useState('catalog_default'); // 'catalog_default', 'id_desc', 'id_asc', 'name_asc', 'name_desc', 'price_desc', 'price_asc'
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
+
+  // Bulk selection states
+  const [selectedProductIds, setSelectedProductIds] = useState([]);
+  const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
+  const [isBulkDeactivating, setIsBulkDeactivating] = useState(false);
 
   // Modal states
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
@@ -79,8 +88,9 @@ export default function AdminDashboardPage() {
   const [productToDelete, setProductToDelete] = useState(null);
   const [zoomImage, setZoomImage] = useState(null);
 
-  // Quick Sold Out Toggle in-flight tracker
+  // Quick Sold Out & Active Toggle in-flight tracker
   const [togglingId, setTogglingId] = useState(null);
+  const [togglingActiveId, setTogglingActiveId] = useState(null);
   const [expandedVariantId, setExpandedVariantId] = useState(null);
 
   // Load products and categories from Supabase
@@ -209,6 +219,11 @@ export default function AdminDashboardPage() {
       if (selectedStatusFilter === 'sold_out' && !isSoldOut) return false;
       if (selectedStatusFilter === 'normal' && isSoldOut) return false;
 
+      // Filter Status Publikasi (Aktif vs Non-Aktif)
+      const isProductActive = item.is_active !== false;
+      if (selectedActiveFilter === 'active' && !isProductActive) return false;
+      if (selectedActiveFilter === 'inactive' && isProductActive) return false;
+
       return true;
     });
 
@@ -245,7 +260,7 @@ export default function AdminDashboardPage() {
       }
     }
     return sortCatalogProducts(filtered, activeCatName);
-  }, [products, searchQuery, selectedCategoryFilter, selectedStatusFilter, sortBy, categories]);
+  }, [products, searchQuery, selectedCategoryFilter, selectedStatusFilter, selectedActiveFilter, sortBy, categories]);
 
   // Pagination calculation
   const totalItems = filteredProducts.length;
@@ -255,10 +270,36 @@ export default function AdminDashboardPage() {
     return filteredProducts.slice(startIndex, startIndex + pageSize);
   }, [filteredProducts, currentPage, pageSize]);
 
+  // Selection helpers for bulk edit
+  const paginatedProductIds = useMemo(
+    () => paginatedProducts.map((p) => p.id),
+    [paginatedProducts]
+  );
+  const isAllPaginatedSelected =
+    paginatedProductIds.length > 0 &&
+    paginatedProductIds.every((id) => selectedProductIds.includes(id));
+
+  const handleToggleSelectAll = () => {
+    if (isAllPaginatedSelected) {
+      setSelectedProductIds((prev) => prev.filter((id) => !paginatedProductIds.includes(id)));
+    } else {
+      setSelectedProductIds((prev) => {
+        const next = new Set([...prev, ...paginatedProductIds]);
+        return Array.from(next);
+      });
+    }
+  };
+
+  const handleToggleSelectOne = (id) => {
+    setSelectedProductIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
+
   // Reset to first page when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, selectedCategoryFilter, selectedStatusFilter, sortBy, pageSize]);
+  }, [searchQuery, selectedCategoryFilter, selectedStatusFilter, selectedActiveFilter, sortBy, pageSize]);
 
   // Quick Action: Toggle Sold Out Status
   const handleToggleSoldOut = async (product) => {
@@ -266,7 +307,6 @@ export default function AdminDashboardPage() {
     setTogglingId(product.id);
 
     const isCurrentlySoldOut = String(product.sold_out || '').trim().toUpperCase() === 'Y';
-    // If currently SOLD OUT ('Y'), toggle to NULL (Normal). Otherwise, toggle to 'Y' (SOLD OUT).
     const newSoldOutVal = isCurrentlySoldOut ? null : 'Y';
     const statusText = newSoldOutVal === 'Y' ? 'SOLD OUT' : 'TERSEDIA';
 
@@ -290,7 +330,6 @@ export default function AdminDashboardPage() {
         .eq('id', product.id);
 
       if (error) {
-        // Rollback optimistic update
         setProducts((prev) =>
           prev.map((p) =>
             p.id === product.id
@@ -314,13 +353,84 @@ export default function AdminDashboardPage() {
     }
   };
 
+  // Quick Action: Toggle Active / Inactive Status (agar product bisa dinonaktifkan dari admin)
+  const handleToggleActiveProduct = async (product) => {
+    if (togglingActiveId === product.id) return;
+    setTogglingActiveId(product.id);
+
+    const currentlyActive = product.is_active !== false;
+    const newActiveVal = !currentlyActive;
+
+    // Optimistic UI update
+    setProducts((prev) =>
+      prev.map((p) => (p.id === product.id ? { ...p, is_active: newActiveVal } : p))
+    );
+
+    try {
+      const { error } = await supabase
+        .from('products')
+        .update({ is_active: newActiveVal })
+        .eq('id', product.id);
+
+      if (error) {
+        setProducts((prev) =>
+          prev.map((p) => (p.id === product.id ? { ...p, is_active: currentlyActive } : p))
+        );
+        throw error;
+      }
+
+      showToast(
+        newActiveVal
+          ? `Produk "${product.title || product.player_name}" berhasil diaktifkan kembali.`
+          : `Produk "${product.title || product.player_name}" dinonaktifkan dan disembunyikan dari daftar admin.`,
+        'success',
+        3000
+      );
+    } catch (err) {
+      console.error('Failed to toggle active product:', err);
+      showToast(`Gagal mengubah status aktif produk: ${err.message || 'Error'}`, 'error');
+    } finally {
+      setTogglingActiveId(null);
+    }
+  };
+
+  // Quick Action: Bulk Deactivate Selected Products
+  const handleBulkDeactivate = async () => {
+    if (selectedProductIds.length === 0 || isBulkDeactivating) return;
+    setIsBulkDeactivating(true);
+
+    try {
+      const { error } = await supabase
+        .from('products')
+        .update({ is_active: false })
+        .in('id', selectedProductIds);
+
+      if (error) throw error;
+
+      showToast(
+        `${selectedProductIds.length} produk berhasil dinonaktifkan dan disembunyikan dari daftar.`,
+        'success',
+        3500
+      );
+      setSelectedProductIds([]);
+      loadData(true);
+    } catch (err) {
+      console.error('Bulk deactivate error:', err);
+      showToast(`Gagal menonaktifkan produk terpilih: ${err.message || 'Error'}`, 'error');
+    } finally {
+      setIsBulkDeactivating(false);
+    }
+  };
+
   // KPI Calculations
   const stats = useMemo(() => {
     const total = products.length;
+    const activeCount = products.filter((p) => p.is_active !== false).length;
+    const inactiveCount = total - activeCount;
     const soldOutCount = products.filter((p) => String(p.sold_out || '').trim().toUpperCase() === 'Y').length;
     const normalCount = total - soldOutCount;
     const totalCats = categories.length;
-    return { total, soldOutCount, normalCount, totalCats };
+    return { total, activeCount, inactiveCount, soldOutCount, normalCount, totalCats };
   }, [products, categories]);
 
   // Open Add Product Modal
@@ -458,195 +568,271 @@ export default function AdminDashboardPage() {
       {activeTab === 'produk' && (
         <div className="space-y-6">
           {/* KPI Stats Cards */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-        {/* Total Produk */}
-        <div className="p-4 rounded-2xl bg-emerald-950/80 border border-emerald-700/40 backdrop-blur-sm">
-          <div className="flex items-center justify-between text-emerald-400 text-xs font-semibold mb-1">
-            <span>Total Produk</span>
-            <Package size={18} className="text-lime-400" />
-          </div>
-          <div className="text-xl sm:text-2xl font-bold font-mono text-white">
-            {stats.total}
-          </div>
-          <span className="text-[10px] text-emerald-400/80">Seluruh item katalog</span>
-        </div>
-
-        {/* Produk Tersedia */}
-        <div className="p-4 rounded-2xl bg-emerald-950/80 border border-emerald-700/40 backdrop-blur-sm">
-          <div className="flex items-center justify-between text-emerald-400 text-xs font-semibold mb-1">
-            <span>Tersedia</span>
-            <CheckCircle size={18} className="text-lime-400" weight="fill" />
-          </div>
-          <div className="text-xl sm:text-2xl font-bold font-mono text-lime-400">
-            {stats.normalCount}
-          </div>
-          <span className="text-[10px] text-emerald-400/80">Siap dipesan pembeli</span>
-        </div>
-
-        {/* Produk SOLD OUT */}
-        <div className="p-4 rounded-2xl bg-emerald-950/80 border border-emerald-700/40 backdrop-blur-sm">
-          <div className="flex items-center justify-between text-rose-400 text-xs font-semibold mb-1">
-            <span>SOLD OUT</span>
-            <XCircle size={18} className="text-rose-400" weight="fill" />
-          </div>
-          <div className="text-xl sm:text-2xl font-bold font-mono text-rose-400">
-            {stats.soldOutCount}
-          </div>
-          <span className="text-[10px] text-rose-300/80">Stok habis di toko</span>
-        </div>
-
-        {/* Total Kategori */}
-        <div className="p-4 rounded-2xl bg-emerald-950/80 border border-emerald-700/40 backdrop-blur-sm">
-          <div className="flex items-center justify-between text-emerald-400 text-xs font-semibold mb-1">
-            <span>Kategori</span>
-            <Funnel size={18} className="text-cyan-400" />
-          </div>
-          <div className="text-xl sm:text-2xl font-bold font-mono text-cyan-300">
-            {stats.totalCats}
-          </div>
-          <span className="text-[10px] text-emerald-400/80">Stickers, Posters, dll</span>
-        </div>
-      </div>
-
-      {/* Filter and Search Bar */}
-      <div className="p-4 rounded-2xl bg-emerald-950/80 border border-emerald-700/40 space-y-3">
-        <div className="flex flex-col md:flex-row gap-3">
-          {/* Search Box */}
-          <div className="relative flex-1">
-            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-emerald-400">
-              <MagnifyingGlass size={18} />
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 sm:gap-4">
+            {/* Produk Aktif */}
+            <div
+              onClick={() => setSelectedActiveFilter((prev) => (prev === 'active' ? 'all' : 'active'))}
+              className={`p-3.5 sm:p-4 rounded-2xl border backdrop-blur-sm transition-all duration-200 cursor-pointer select-none hover:scale-[1.02] active:scale-[0.99] ${
+                selectedActiveFilter === 'active'
+                  ? 'bg-emerald-900/90 border-lime-400 shadow-md shadow-lime-950/30 ring-1 ring-lime-400/50'
+                  : 'bg-emerald-950/80 border-emerald-700/40 hover:border-emerald-500'
+              }`}
+              title="Klik untuk filter hanya produk aktif (klik lagi untuk menampilkan semua)"
+            >
+              <div className="flex items-center justify-between text-emerald-400 text-xs font-semibold mb-1">
+                <span>Produk Aktif</span>
+                <CheckCircle size={18} className="text-lime-400" weight="fill" />
+              </div>
+              <div className="text-xl sm:text-2xl font-bold font-mono text-lime-400">
+                {stats.activeCount}
+              </div>
+              <span className="text-[10px] text-emerald-300/80">Tampil di katalog</span>
             </div>
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Cari pemain, edisi (cth: #12), tim, tahun, ID..."
-              className="w-full pl-10 pr-10 py-2.5 text-xs sm:text-sm rounded-xl bg-emerald-900/60 border border-emerald-700/60 text-white placeholder-emerald-500/60 focus:outline-none focus:border-lime-400 focus:ring-1 focus:ring-lime-400 transition"
-            />
-            {searchQuery && (
-              <button
-                type="button"
-                onClick={() => setSearchQuery('')}
-                className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-emerald-400 hover:text-white"
-              >
-                <X size={16} />
-              </button>
-            )}
-          </div>
 
-          {/* Filter Kategori */}
-          <div className="w-full md:w-52 shrink-0">
-            <select
-              value={selectedCategoryFilter}
-              onChange={(e) => setSelectedCategoryFilter(e.target.value)}
-              className="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-xl bg-emerald-900/60 border border-emerald-700/60 text-white focus:outline-none focus:border-lime-400 cursor-pointer"
+            {/* Produk Non-Aktif */}
+            <div
+              onClick={() => setSelectedActiveFilter((prev) => (prev === 'inactive' ? 'all' : 'inactive'))}
+              className={`p-3.5 sm:p-4 rounded-2xl border backdrop-blur-sm transition-all duration-200 cursor-pointer select-none hover:scale-[1.02] active:scale-[0.99] ${
+                selectedActiveFilter === 'inactive'
+                  ? 'bg-amber-950/90 border-amber-400 shadow-md ring-1 ring-amber-400/50'
+                  : 'bg-emerald-950/80 border-emerald-700/40 hover:border-amber-600/50'
+              }`}
+              title="Klik untuk melihat produk yang dinonaktifkan (klik lagi untuk kembali)"
             >
-              <option value="all">Semua Kategori ({stats.totalCats})</option>
-              {categories.map((cat) => (
-                <option key={cat.id} value={cat.id}>
-                  {cat.category?.toUpperCase()}{cat.is_active === false ? ' (Non-Aktif)' : ''}
-                </option>
-              ))}
-            </select>
-          </div>
+              <div className="flex items-center justify-between text-amber-400 text-xs font-semibold mb-1">
+                <span>Non-Aktif</span>
+                <EyeSlash size={18} className="text-amber-400" />
+              </div>
+              <div className="text-xl sm:text-2xl font-bold font-mono text-amber-300">
+                {stats.inactiveCount}
+              </div>
+              <span className="text-[10px] text-amber-400/80">Disembunyikan</span>
+            </div>
 
-          {/* Filter Status (Tersedia vs SOLD OUT) */}
-          <div className="w-full md:w-44 shrink-0">
-            <select
-              value={selectedStatusFilter}
-              onChange={(e) => setSelectedStatusFilter(e.target.value)}
-              className="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-xl bg-emerald-900/60 border border-emerald-700/60 text-white focus:outline-none focus:border-lime-400 cursor-pointer"
+            {/* Produk Tersedia */}
+            <div
+              onClick={() => setSelectedStatusFilter((prev) => (prev === 'normal' ? 'all' : 'normal'))}
+              className={`p-3.5 sm:p-4 rounded-2xl border backdrop-blur-sm transition-all duration-200 cursor-pointer select-none hover:scale-[1.02] active:scale-[0.99] ${
+                selectedStatusFilter === 'normal'
+                  ? 'bg-emerald-900/90 border-lime-400 shadow-md shadow-lime-950/30 ring-1 ring-lime-400/50'
+                  : 'bg-emerald-950/80 border-emerald-700/40 hover:border-emerald-500 hover:bg-emerald-900/40'
+              }`}
+              title="Klik untuk memfilter produk yang TERSEDIA (klik lagi untuk reset)"
             >
-              <option value="all">Semua Status</option>
-              <option value="normal">Tersedia ({stats.normalCount})</option>
-              <option value="sold_out">SOLD OUT ({stats.soldOutCount})</option>
-            </select>
-          </div>
+              <div className="flex items-center justify-between text-emerald-400 text-xs font-semibold mb-1">
+                <span>Tersedia</span>
+                <Package size={18} className={selectedStatusFilter === 'normal' ? 'text-lime-300' : 'text-emerald-300'} />
+              </div>
+              <div className="text-xl sm:text-2xl font-bold font-mono text-white">
+                {stats.normalCount}
+              </div>
+              <span className="text-[10px] text-emerald-400/80">
+                {selectedStatusFilter === 'normal' ? '✓ Filter aktif' : 'Siap dipesan'}
+              </span>
+            </div>
 
-          {/* Pengurutan (Sorting) */}
-          <div className="w-full md:w-56 shrink-0">
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              className="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-xl bg-emerald-900/60 border border-emerald-700/60 text-white focus:outline-none focus:border-lime-400 cursor-pointer"
-              title="Pilihan Pengurutan Produk"
+            {/* Produk SOLD OUT */}
+            <div
+              onClick={() => setSelectedStatusFilter((prev) => (prev === 'sold_out' ? 'all' : 'sold_out'))}
+              className={`p-3.5 sm:p-4 rounded-2xl border backdrop-blur-sm transition-all duration-200 cursor-pointer select-none hover:scale-[1.02] active:scale-[0.99] ${
+                selectedStatusFilter === 'sold_out'
+                  ? 'bg-rose-950/90 border-rose-500 shadow-md shadow-rose-950/40 ring-1 ring-rose-500/50'
+                  : 'bg-emerald-950/80 border-emerald-700/40 hover:border-rose-500/60 hover:bg-rose-950/30'
+              }`}
+              title="Klik untuk memfilter produk yang SOLD OUT (klik lagi untuk reset)"
             >
-              <option value="catalog_default">Default (Sesuai Halaman Utama)</option>
-              <option value="id_desc">ID Terbaru</option>
-              <option value="id_asc">ID Terlama</option>
-              <option value="name_asc">Nama Pemain/Produk (A - Z)</option>
-              <option value="name_desc">Nama Pemain/Produk (Z - A)</option>
-              <option value="price_desc">Harga Tertinggi</option>
-              <option value="price_asc">Harga Terendah</option>
-            </select>
-          </div>
-        </div>
+              <div className="flex items-center justify-between text-rose-400 text-xs font-semibold mb-1">
+                <span>SOLD OUT</span>
+                <XCircle size={18} className="text-rose-400" weight="fill" />
+              </div>
+              <div className="text-xl sm:text-2xl font-bold font-mono text-rose-400">
+                {stats.soldOutCount}
+              </div>
+              <span className="text-[10px] text-rose-300/80">
+                {selectedStatusFilter === 'sold_out' ? '✓ Filter aktif' : 'Stok habis'}
+              </span>
+            </div>
 
-        {/* Active Filter Indicators */}
-        {(searchQuery || selectedCategoryFilter !== 'all' || selectedStatusFilter !== 'all' || sortBy !== 'catalog_default') && (
-          <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-emerald-800/40 text-xs text-emerald-300">
-            <span>Filter Aktif:</span>
-            {searchQuery && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-900 border border-emerald-700 text-[11px]">
-                Pencarian: &quot;{searchQuery}&quot;
-                <button onClick={() => setSearchQuery('')} className="hover:text-white cursor-pointer">
-                  <X size={12} />
-                </button>
-              </span>
-            )}
-            {selectedCategoryFilter !== 'all' && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-900 border border-emerald-700 text-[11px]">
-                Kategori: {categories.find((c) => String(c.id) === String(selectedCategoryFilter))?.category?.toUpperCase()}
-                <button onClick={() => setSelectedCategoryFilter('all')} className="hover:text-white cursor-pointer">
-                  <X size={12} />
-                </button>
-              </span>
-            )}
-            {selectedStatusFilter !== 'all' && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-900 border border-emerald-700 text-[11px]">
-                Status: {selectedStatusFilter === 'sold_out' ? 'SOLD OUT' : 'Tersedia'}
-                <button onClick={() => setSelectedStatusFilter('all')} className="hover:text-white cursor-pointer">
-                  <X size={12} />
-                </button>
-              </span>
-            )}
-            {sortBy !== 'catalog_default' && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-900 border border-emerald-700 text-[11px]">
-                Urutan:{' '}
-                {sortBy === 'id_desc'
-                  ? 'ID Terbaru'
-                  : sortBy === 'id_asc'
-                  ? 'ID Terlama'
-                  : sortBy === 'name_asc'
-                  ? 'Nama (A-Z)'
-                  : sortBy === 'name_desc'
-                  ? 'Nama (Z-A)'
-                  : sortBy === 'price_desc'
-                  ? 'Harga Tertinggi'
-                  : sortBy === 'price_asc'
-                  ? 'Harga Terendah'
-                  : sortBy}
-                <button onClick={() => setSortBy('catalog_default')} className="hover:text-white cursor-pointer">
-                  <X size={12} />
-                </button>
-              </span>
-            )}
-            <button
-              onClick={() => {
-                setSearchQuery('');
-                setSelectedCategoryFilter('all');
-                setSelectedStatusFilter('all');
-                setSortBy('catalog_default');
-              }}
-              className="text-lime-400 hover:underline text-[11px] ml-auto cursor-pointer"
+            {/* Total Kategori */}
+            <div
+              onClick={() => handleTabChange('kategori')}
+              className="p-3.5 sm:p-4 rounded-2xl bg-emerald-950/80 border border-emerald-700/40 hover:border-cyan-400/80 hover:bg-emerald-900/50 backdrop-blur-sm col-span-2 sm:col-span-1 transition-all duration-200 cursor-pointer select-none hover:scale-[1.02] active:scale-[0.99] group"
+              title="Klik untuk berpindah ke Tab Manajemen Kategori"
             >
-              Reset Semua Filter
-            </button>
+              <div className="flex items-center justify-between text-emerald-400 text-xs font-semibold mb-1 group-hover:text-cyan-300 transition">
+                <span>Kategori</span>
+                <Funnel size={18} className="text-cyan-400 group-hover:scale-110 transition-transform" />
+              </div>
+              <div className="text-xl sm:text-2xl font-bold font-mono text-cyan-300">
+                {stats.totalCats}
+              </div>
+              <span className="text-[10px] text-emerald-400/80 group-hover:text-cyan-200/90 transition">
+                Buka manajemen &rarr;
+              </span>
+            </div>
           </div>
-        )}
-      </div>
 
-      {/* Action Toolbar di atas Table Product (Tombol Tambah Produk dipindahkan ke sini) */}
+          {/* Filter and Search Bar */}
+          <div className="p-4 rounded-2xl bg-emerald-950/80 border border-emerald-700/40 space-y-3">
+            <div className="flex flex-col md:flex-row gap-3">
+              {/* Search Box */}
+              <div className="relative flex-1">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-emerald-400">
+                  <MagnifyingGlass size={18} />
+                </div>
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Cari pemain, edisi (cth: #12), tim, tahun, ID..."
+                  className="w-full pl-10 pr-10 py-2.5 text-xs sm:text-sm rounded-xl bg-emerald-900/60 border border-emerald-700/60 text-white placeholder-emerald-500/60 focus:outline-none focus:border-lime-400 focus:ring-1 focus:ring-lime-400 transition"
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery('')}
+                    className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-emerald-400 hover:text-white"
+                  >
+                    <X size={16} />
+                  </button>
+                )}
+              </div>
+
+              {/* Filter Status Publikasi (Aktif vs Non-Aktif) */}
+              <div className="w-full md:w-52 shrink-0">
+                <select
+                  value={selectedActiveFilter}
+                  onChange={(e) => setSelectedActiveFilter(e.target.value)}
+                  className="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-xl bg-emerald-900/60 border border-emerald-700/60 text-white focus:outline-none focus:border-lime-400 cursor-pointer font-medium"
+                >
+                  <option value="active">Produk Aktif ({stats.activeCount})</option>
+                  <option value="inactive">Produk Non-Aktif ({stats.inactiveCount})</option>
+                  <option value="all">Semua Status ({stats.total})</option>
+                </select>
+              </div>
+
+              {/* Filter Kategori */}
+              <div className="w-full md:w-48 shrink-0">
+                <select
+                  value={selectedCategoryFilter}
+                  onChange={(e) => setSelectedCategoryFilter(e.target.value)}
+                  className="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-xl bg-emerald-900/60 border border-emerald-700/60 text-white focus:outline-none focus:border-lime-400 cursor-pointer"
+                >
+                  <option value="all">Semua Kategori ({stats.totalCats})</option>
+                  {categories.map((cat) => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.category?.toUpperCase()}{cat.is_active === false ? ' (Non-Aktif)' : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Filter Status (Tersedia vs SOLD OUT) */}
+              <div className="w-full md:w-40 shrink-0">
+                <select
+                  value={selectedStatusFilter}
+                  onChange={(e) => setSelectedStatusFilter(e.target.value)}
+                  className="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-xl bg-emerald-900/60 border border-emerald-700/60 text-white focus:outline-none focus:border-lime-400 cursor-pointer"
+                >
+                  <option value="all">Semua Stok</option>
+                  <option value="normal">Tersedia ({stats.normalCount})</option>
+                  <option value="sold_out">SOLD OUT ({stats.soldOutCount})</option>
+                </select>
+              </div>
+
+              {/* Pengurutan (Sorting) */}
+              <div className="w-full md:w-48 shrink-0">
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-xl bg-emerald-900/60 border border-emerald-700/60 text-white focus:outline-none focus:border-lime-400 cursor-pointer"
+                  title="Pilihan Pengurutan Produk"
+                >
+                  <option value="catalog_default">Default Urutan Toko</option>
+                  <option value="id_desc">ID Terbaru</option>
+                  <option value="id_asc">ID Terlama</option>
+                  <option value="name_asc">Nama (A - Z)</option>
+                  <option value="name_desc">Nama (Z - A)</option>
+                  <option value="price_desc">Harga Tertinggi</option>
+                  <option value="price_asc">Harga Terendah</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Active Filter Indicators */}
+            {(searchQuery || selectedCategoryFilter !== 'all' || selectedStatusFilter !== 'all' || selectedActiveFilter !== 'active' || sortBy !== 'catalog_default') && (
+              <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-emerald-800/40 text-xs text-emerald-300">
+                <span>Filter Aktif:</span>
+                {searchQuery && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-900 border border-emerald-700 text-[11px]">
+                    Pencarian: &quot;{searchQuery}&quot;
+                    <button onClick={() => setSearchQuery('')} className="hover:text-white cursor-pointer">
+                      <X size={12} />
+                    </button>
+                  </span>
+                )}
+                {selectedActiveFilter !== 'active' && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-950 border border-amber-600/60 text-amber-300 text-[11px]">
+                    Tampilan: {selectedActiveFilter === 'inactive' ? 'Produk Non-Aktif' : 'Semua (Aktif & Non-Aktif)'}
+                    <button onClick={() => setSelectedActiveFilter('active')} className="hover:text-white cursor-pointer" title="Kembali ke Produk Aktif">
+                      <X size={12} />
+                    </button>
+                  </span>
+                )}
+                {selectedCategoryFilter !== 'all' && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-900 border border-emerald-700 text-[11px]">
+                    Kategori: {categories.find((c) => String(c.id) === String(selectedCategoryFilter))?.category?.toUpperCase()}
+                    <button onClick={() => setSelectedCategoryFilter('all')} className="hover:text-white cursor-pointer">
+                      <X size={12} />
+                    </button>
+                  </span>
+                )}
+                {selectedStatusFilter !== 'all' && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-900 border border-emerald-700 text-[11px]">
+                    Stok: {selectedStatusFilter === 'sold_out' ? 'SOLD OUT' : 'Tersedia'}
+                    <button onClick={() => setSelectedStatusFilter('all')} className="hover:text-white cursor-pointer">
+                      <X size={12} />
+                    </button>
+                  </span>
+                )}
+                {sortBy !== 'catalog_default' && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-900 border border-emerald-700 text-[11px]">
+                    Urutan:{' '}
+                    {sortBy === 'id_desc'
+                      ? 'ID Terbaru'
+                      : sortBy === 'id_asc'
+                      ? 'ID Terlama'
+                      : sortBy === 'name_asc'
+                      ? 'Nama (A-Z)'
+                      : sortBy === 'name_desc'
+                      ? 'Nama (Z-A)'
+                      : sortBy === 'price_desc'
+                      ? 'Harga Tertinggi'
+                      : sortBy === 'price_asc'
+                      ? 'Harga Terendah'
+                      : sortBy}
+                    <button onClick={() => setSortBy('catalog_default')} className="hover:text-white cursor-pointer">
+                      <X size={12} />
+                    </button>
+                  </span>
+                )}
+                <button
+                  onClick={() => {
+                    setSearchQuery('');
+                    setSelectedCategoryFilter('all');
+                    setSelectedStatusFilter('all');
+                    setSelectedActiveFilter('active');
+                    setSortBy('catalog_default');
+                  }}
+                  className="text-lime-400 hover:underline text-[11px] ml-auto cursor-pointer"
+                >
+                  Reset Semua Filter
+                </button>
+              </div>
+            )}
+          </div>
+
+      {/* Action Toolbar di atas Table Product */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
@@ -654,21 +840,40 @@ export default function AdminDashboardPage() {
             <span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-900 border border-emerald-700/60 text-emerald-300 font-mono">
               {filteredProducts.length} Item
             </span>
+            {selectedProductIds.length > 0 && (
+              <span className="text-xs px-2.5 py-0.5 rounded-full bg-lime-400 text-emerald-950 font-bold font-mono">
+                {selectedProductIds.length} Terpilih
+              </span>
+            )}
           </h2>
           <p className="text-[11px] text-emerald-400/70">
-            Kelola stok produk, toggle status SOLD OUT instan, dan varian harga.
+            Kelola stok produk, aktifkan/nonaktifkan produk, dan centang produk untuk bulk edit massal.
           </p>
         </div>
 
-        {/* Tombol Tambah Produk */}
-        <button
-          type="button"
-          onClick={handleOpenAddModal}
-          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-lime-400 to-lime-500 text-emerald-950 font-bold text-xs sm:text-sm shadow-lg shadow-lime-950/40 hover:from-lime-300 hover:to-lime-400 transition cursor-pointer active:scale-95 shrink-0"
-        >
-          <Plus size={18} weight="bold" />
-          <span>Tambah Produk</span>
-        </button>
+        <div className="flex items-center gap-2 shrink-0">
+          {/* Tombol Bulk Edit di toolbar jika ada item tercentang */}
+          {selectedProductIds.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setIsBulkModalOpen(true)}
+              className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-lime-400 text-emerald-950 font-bold text-xs sm:text-sm shadow-lg shadow-lime-950/40 hover:bg-lime-300 transition cursor-pointer active:scale-95 animate-in fade-in"
+            >
+              <Sliders size={17} weight="bold" />
+              <span>Bulk Edit ({selectedProductIds.length})</span>
+            </button>
+          )}
+
+          {/* Tombol Tambah Produk */}
+          <button
+            type="button"
+            onClick={handleOpenAddModal}
+            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-lime-400 to-lime-500 text-emerald-950 font-bold text-xs sm:text-sm shadow-lg shadow-lime-950/40 hover:from-lime-300 hover:to-lime-400 transition cursor-pointer active:scale-95 shrink-0"
+          >
+            <Plus size={18} weight="bold" />
+            <span>Tambah Produk</span>
+          </button>
+        </div>
       </div>
 
       {/* Main Products Table */}
@@ -701,18 +906,31 @@ export default function AdminDashboardPage() {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-emerald-800/80 bg-emerald-900/40 text-[11px] font-bold uppercase tracking-wider text-emerald-300">
-                  <th className="py-3 px-4 w-14 text-center">Gambar</th>
+                  {/* Checkbox Select All Column */}
+                  <th className="py-3 px-3 w-10 text-center">
+                    <input
+                      type="checkbox"
+                      checked={isAllPaginatedSelected}
+                      onChange={handleToggleSelectAll}
+                      title="Pilih semua di halaman ini"
+                      className="w-4 h-4 rounded text-lime-400 bg-emerald-950 border-emerald-700 focus:ring-lime-400 focus:ring-offset-0 cursor-pointer accent-lime-400"
+                    />
+                  </th>
+                  <th className="py-3 px-3 w-14 text-center">Gambar</th>
                   <th className="py-3 px-4 min-w-[200px]">Judul Produk</th>
                   <th className="py-3 px-4 min-w-[120px]">Kategori</th>
                   <th className="py-3 px-4 min-w-[130px]">Harga</th>
                   <th className="py-3 px-4 min-w-[190px]">Status Keterangan</th>
-                  <th className="py-3 px-4 min-w-[140px] text-right">Aksi</th>
+                  <th className="py-3 px-4 min-w-[150px] text-right">Aksi</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-emerald-900/60 text-xs">
                 {paginatedProducts.map((product) => {
                   const isSoldOut = String(product.sold_out || '').trim().toUpperCase() === 'Y';
+                  const isProductActive = product.is_active !== false;
                   const isTogglingThis = togglingId === product.id;
+                  const isTogglingActiveThis = togglingActiveId === product.id;
+                  const isSelected = selectedProductIds.includes(product.id);
                   const catName = product.categories?.category || product.category || 'stiker';
                   const catBadgeClass = getCategoryBadgeStyle(catName);
                   const isPoster = String(product.category_id) === '4' || String(catName).toLowerCase().includes('poster');
@@ -723,11 +941,28 @@ export default function AdminDashboardPage() {
                     <tr
                       key={product.id}
                       className={`hover:bg-emerald-900/30 transition-colors ${
-                        isSoldOut ? 'bg-rose-950/10' : ''
+                        isSelected
+                          ? 'bg-emerald-900/50 ring-1 ring-lime-400/40'
+                          : !isProductActive
+                          ? 'bg-slate-950/40 opacity-75'
+                          : isSoldOut
+                          ? 'bg-rose-950/10'
+                          : ''
                       }`}
                     >
+                      {/* 0. Row Checkbox */}
+                      <td className="py-3 px-3 text-center" onClick={(e) => e.stopPropagation()}>
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => handleToggleSelectOne(product.id)}
+                          title="Pilih untuk bulk edit"
+                          className="w-4 h-4 rounded text-lime-400 bg-emerald-950 border-emerald-700 focus:ring-lime-400 focus:ring-offset-0 cursor-pointer accent-lime-400"
+                        />
+                      </td>
+
                       {/* 1. Thumbnail Image */}
-                      <td className="py-3 px-4 text-center">
+                      <td className="py-3 px-3 text-center">
                         <div
                           onClick={() => product.img && setZoomImage(product.img)}
                           className="w-11 h-11 mx-auto rounded-lg bg-emerald-900/60 border border-emerald-700/60 overflow-hidden flex items-center justify-center cursor-pointer group relative shadow-sm"
@@ -753,8 +988,15 @@ export default function AdminDashboardPage() {
 
                       {/* 2. Judul Produk, Player Name, Team */}
                       <td className="py-3 px-4">
-                        <div className="font-bold text-white text-xs sm:text-sm uppercase tracking-wide">
-                          {product.title || product.player_name}
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-bold text-white text-xs sm:text-sm uppercase tracking-wide">
+                            {product.title || product.player_name}
+                          </span>
+                          {!isProductActive && (
+                            <span className="px-1.5 py-0.5 rounded bg-amber-950 text-amber-300 border border-amber-600/50 font-bold text-[9px] uppercase tracking-wider">
+                              Non-Aktif
+                            </span>
+                          )}
                         </div>
                         <div className="flex flex-wrap items-center gap-1.5 mt-0.5 text-[11px] text-emerald-300/80">
                           {product.player_name && product.player_name !== product.title && (
@@ -895,7 +1137,7 @@ export default function AdminDashboardPage() {
                         </div>
                       </td>
 
-                      {/* 6. Kolom Aksi (Edit & Hapus) */}
+                      {/* 6. Kolom Aksi (Edit, Nonaktifkan/Aktifkan, Hapus) */}
                       <td className="py-3 px-4 text-right">
                         <div className="flex items-center justify-end gap-1.5">
                           {/* Tombol Edit */}
@@ -907,6 +1149,37 @@ export default function AdminDashboardPage() {
                           >
                             <PencilSimple size={15} />
                           </button>
+
+                          {/* Tombol Nonaktifkan / Aktifkan Produk */}
+                          {isProductActive ? (
+                            <button
+                              type="button"
+                              onClick={() => handleToggleActiveProduct(product)}
+                              disabled={isTogglingActiveThis}
+                              className="p-2 rounded-lg bg-emerald-900/60 hover:bg-amber-950 text-emerald-300 hover:text-amber-300 border border-emerald-700/50 hover:border-amber-700/50 transition cursor-pointer"
+                              title="Nonaktifkan Produk (Sembunyikan dari katalog toko & daftar admin)"
+                            >
+                              {isTogglingActiveThis ? (
+                                <Spinner size={15} className="animate-spin text-amber-400" />
+                              ) : (
+                                <EyeSlash size={15} />
+                              )}
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => handleToggleActiveProduct(product)}
+                              disabled={isTogglingActiveThis}
+                              className="p-2 rounded-lg bg-lime-950/60 hover:bg-lime-900 text-lime-300 hover:text-white border border-lime-700/50 transition cursor-pointer"
+                              title="Aktifkan Kembali Produk"
+                            >
+                              {isTogglingActiveThis ? (
+                                <Spinner size={15} className="animate-spin text-lime-400" />
+                              ) : (
+                                <Eye size={15} />
+                              )}
+                            </button>
+                          )}
 
                           {/* Tombol Hapus */}
                           <button
@@ -979,6 +1252,54 @@ export default function AdminDashboardPage() {
             </div>
           </div>
         )}
+        {/* Floating Bulk Action Bar */}
+        {selectedProductIds.length > 0 && (
+          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 bg-emerald-950/95 border-2 border-lime-400/80 rounded-2xl shadow-2xl px-4 py-3 sm:px-6 sm:py-3.5 backdrop-blur-md flex flex-wrap items-center justify-between gap-3 animate-in fade-in slide-in-from-bottom-4 duration-200 max-w-2xl w-[92%]">
+            <div className="flex items-center gap-2.5">
+              <span className="w-7 h-7 rounded-full bg-lime-400 text-emerald-950 font-black text-xs flex items-center justify-center">
+                {selectedProductIds.length}
+              </span>
+              <span className="text-sm font-semibold text-white">
+                {selectedProductIds.length} produk terpilih
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setIsBulkModalOpen(true)}
+                className="px-3.5 py-1.5 rounded-xl bg-lime-400 hover:bg-lime-300 text-emerald-950 font-bold text-xs flex items-center gap-1.5 shadow-md hover:shadow-lime-400/20 transition cursor-pointer"
+              >
+                <Sliders size={16} weight="bold" />
+                <span>Bulk Edit (Kategori, Harga, Sold Out, Edisi)</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleBulkDeactivate}
+                disabled={isBulkDeactivating}
+                className="px-3 py-1.5 rounded-xl bg-amber-950/80 hover:bg-amber-900 text-amber-200 border border-amber-600/40 font-medium text-xs flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50"
+                title="Nonaktifkan semua produk yang dipilih sekaligus"
+              >
+                {isBulkDeactivating ? (
+                  <Spinner size={15} className="animate-spin text-amber-400" />
+                ) : (
+                  <EyeSlash size={15} />
+                )}
+                <span className="hidden sm:inline">Nonaktifkan</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setSelectedProductIds([])}
+                className="p-1.5 rounded-xl text-emerald-300 hover:text-white hover:bg-emerald-900/60 transition cursor-pointer"
+                title="Batalkan pilihan"
+              >
+                <X size={16} />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
         </div>
       )}
@@ -1005,6 +1326,18 @@ export default function AdminDashboardPage() {
           onZoomImage={setZoomImage}
         />
       )}
+
+      {/* Modal Bulk Edit Produk */}
+      <BulkEditModal
+        isOpen={isBulkModalOpen}
+        onClose={() => setIsBulkModalOpen(false)}
+        selectedProductIds={selectedProductIds}
+        categories={categories}
+        onSuccess={() => {
+          setSelectedProductIds([]);
+          loadData(true);
+        }}
+      />
 
       {/* Modal Tambah / Edit Produk */}
       <ProductFormModal

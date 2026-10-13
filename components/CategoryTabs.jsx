@@ -26,10 +26,12 @@ export default function CategoryTabs({
         const { data, error } = await supabase
           .from('categories')
           .select('*')
+          .or('is_active.is.null,is_active.eq.true')
           .order('id', { ascending: true });
 
         if (!error && data && data.length > 0) {
-          setCategories(data);
+          const activeOnly = data.filter((c) => c.is_active !== false);
+          setCategories(activeOnly.length > 0 ? activeOnly : FALLBACK_CATEGORIES);
         } else {
           setCategories(FALLBACK_CATEGORIES);
         }

@@ -32,6 +32,33 @@ export default function Home() {
   const [zoomState, setZoomState] = useState({ isOpen: false, imgSrc: '', title: '' });
   const [isContactOpen, setIsContactOpen] = useState(false);
 
+  // Deteksi jika user datang dari link reset password yang mendarat di halaman utama (/#access_token=...&type=recovery)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const hash = window.location.hash || '';
+      const search = window.location.search || '';
+      if (
+        hash.includes('type=recovery') ||
+        (hash.includes('access_token=') && !hash.includes('type=signup')) ||
+        search.includes('type=recovery') ||
+        search.includes('code=')
+      ) {
+        window.location.replace(`/admin/reset-password${search}${hash}`);
+        return;
+      }
+    }
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        window.location.replace('/admin/reset-password');
+      }
+    });
+
+    return () => {
+      authListener?.subscription?.unsubscribe();
+    };
+  }, []);
+
   // Load products from Supabase
   useEffect(() => {
     async function loadProducts() {
@@ -39,13 +66,21 @@ export default function Home() {
       try {
         const { data, error } = await supabase
           .from('products')
-          .select('*, categories(*)');
+          .select('*, categories(*)')
+          .or('is_active.is.null,is_active.eq.true');
 
         if (error || !data || data.length === 0) {
           throw error || new Error('Data empty');
         }
 
-        const mapped = data.map((item) => {
+        // Pastikan hanya produk yang is_active null atau true, dan kategori tidak non-aktif
+        const activeOnlyData = data.filter((item) => {
+          if (item.is_active === false) return false;
+          if (item.categories && item.categories.is_active === false) return false;
+          return true;
+        });
+
+        const mapped = activeOnlyData.map((item) => {
           const catObj = item.categories || {};
           const playerName = item.player_name ? String(item.player_name).trim() : '';
           const productTitle = item.title ? String(item.title).trim() : '';

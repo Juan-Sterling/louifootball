@@ -112,7 +112,30 @@ export default function CategoryManager({
         );
       }
 
-      showToast(`Status kategori "${cat.category}" diubah ke ${statusText}`, 'success', 2500);
+      // Jika kategori dinonaktifkan, otomatis nonaktifkan semua produk yang memakai kategori ini
+      if (newStatus === false) {
+        const { error: prodErr } = await supabase
+          .from('products')
+          .update({ is_active: false })
+          .eq('category_id', cat.id);
+
+        if (prodErr) {
+          console.warn('Gagal menonaktifkan produk terkait kategori:', prodErr);
+        }
+      }
+
+      showToast(
+        newStatus
+          ? `Status kategori "${cat.category}" diubah ke AKTIF`
+          : `Status kategori "${cat.category}" diubah ke NON-AKTIF. Semua produk di kategori ini otomatis dinonaktifkan.`,
+        'success',
+        3500
+      );
+
+      // Refresh seluruh data katalog produk & kategori agar sinkron
+      if (onRefresh) {
+        onRefresh(true);
+      }
     } catch (err) {
       // Rollback optimistic update
       if (setCategories) {

@@ -10,9 +10,11 @@ import {
   SoccerBall,
   User,
   Spinner,
+  LockKey,
 } from '@phosphor-icons/react';
 import { supabase } from '@/lib/supabase';
 import { ToastProvider } from '@/components/admin/Toast';
+import ChangePasswordModal from '@/components/admin/ChangePasswordModal';
 
 export default function AdminLayout({ children }) {
   const router = useRouter();
@@ -21,6 +23,7 @@ export default function AdminLayout({ children }) {
   const [session, setSession] = useState(null);
   const [user, setUser] = useState(null);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -37,11 +40,11 @@ export default function AdminLayout({ children }) {
           setUser(currentSession?.user || null);
           setIsAuthLoading(false);
 
-          const isLoginPage = pathname === '/admin/login';
+          const isPublicAuthPage = pathname === '/admin/login' || pathname === '/admin/reset-password';
 
-          if (!currentSession && !isLoginPage) {
+          if (!currentSession && !isPublicAuthPage) {
             router.replace('/admin/login');
-          } else if (currentSession && isLoginPage) {
+          } else if (currentSession && pathname === '/admin/login') {
             router.replace('/admin');
           }
         }
@@ -49,7 +52,8 @@ export default function AdminLayout({ children }) {
         console.error('Auth verification error:', err);
         if (isMounted) {
           setIsAuthLoading(false);
-          if (pathname !== '/admin/login') {
+          const isPublicAuthPage = pathname === '/admin/login' || pathname === '/admin/reset-password';
+          if (!isPublicAuthPage) {
             router.replace('/admin/login');
           }
         }
@@ -68,10 +72,10 @@ export default function AdminLayout({ children }) {
       setUser(newSession?.user || null);
       setIsAuthLoading(false);
 
-      const isLoginPage = pathname === '/admin/login';
-      if (!newSession && !isLoginPage) {
+      const isPublicAuthPage = pathname === '/admin/login' || pathname === '/admin/reset-password';
+      if (!newSession && !isPublicAuthPage) {
         router.replace('/admin/login');
-      } else if (newSession && isLoginPage) {
+      } else if (newSession && pathname === '/admin/login') {
         router.replace('/admin');
       }
     });
@@ -93,8 +97,10 @@ export default function AdminLayout({ children }) {
     }
   };
 
+  const isPublicAuthPage = pathname === '/admin/login' || pathname === '/admin/reset-password';
+
   // If loading and accessing protected admin page, show secure loading screen
-  if (isAuthLoading && pathname !== '/admin/login') {
+  if (isAuthLoading && !isPublicAuthPage) {
     return (
       <div className="min-h-screen loui-pitch-bg flex flex-col items-center justify-center text-center p-4 relative">
         <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
@@ -126,13 +132,13 @@ export default function AdminLayout({ children }) {
     );
   }
 
-  // If not authenticated and NOT on login page, render nothing while redirecting
-  if (!session && pathname !== '/admin/login') {
+  // If not authenticated and NOT on public auth page, render nothing while redirecting
+  if (!session && !isPublicAuthPage) {
     return null;
   }
 
-  // If on login page, render clean layout without admin navbar
-  if (pathname === '/admin/login') {
+  // If on login or reset password page, render clean layout without admin navbar
+  if (isPublicAuthPage) {
     return <ToastProvider>{children}</ToastProvider>;
   }
 
@@ -189,6 +195,17 @@ export default function AdminLayout({ children }) {
                 <span className="hidden md:inline">Lihat Toko</span>
               </Link>
 
+              {/* Change Password Button */}
+              <button
+                type="button"
+                onClick={() => setIsPasswordModalOpen(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-900/60 border border-emerald-700/60 text-emerald-200 text-xs font-semibold hover:bg-emerald-800 hover:text-white transition shadow-sm cursor-pointer"
+                title="Ubah kata sandi akun admin"
+              >
+                <LockKey size={15} className="text-lime-400" />
+                <span className="hidden sm:inline">Ubah Password</span>
+              </button>
+
               {/* Admin User Info Pill */}
               <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-900/40 border border-emerald-800/60 text-xs text-emerald-200">
                 <div className="w-5 h-5 rounded-full bg-emerald-800 flex items-center justify-center text-lime-400">
@@ -218,6 +235,12 @@ export default function AdminLayout({ children }) {
         <main className="relative z-10 flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
           {children}
         </main>
+
+        {/* Change Password Modal */}
+        <ChangePasswordModal
+          isOpen={isPasswordModalOpen}
+          onClose={() => setIsPasswordModalOpen(false)}
+        />
 
         {/* Admin Footer */}
         <footer className="relative z-10 border-t border-emerald-900/60 bg-emerald-950/60 backdrop-blur-sm py-4 text-center text-xs text-emerald-400/70">
