@@ -25,6 +25,7 @@ import {
   CaretDown,
   Tag,
   Megaphone,
+  VideoCamera,
 } from '@phosphor-icons/react';
 import { supabase } from '@/lib/supabase';
 import { formatRupiah, parseVariants, getCategoryBadgeStyle, normalizeCategory, sortCatalogProducts, optimizeCloudinaryUrl } from '@/lib/utils';
@@ -33,6 +34,7 @@ import DeleteConfirmModal from '@/components/admin/DeleteConfirmModal';
 import CategoryManager from '@/components/admin/CategoryManager';
 import PromotionManager from '@/components/admin/PromotionManager';
 import BulkEditModal from '@/components/admin/BulkEditModal';
+import VideoPreviewModal from '@/components/admin/VideoPreviewModal';
 import { useToast } from '@/components/admin/Toast';
 
 export default function AdminDashboardPage() {
@@ -87,6 +89,7 @@ export default function AdminDashboardPage() {
   const [productToEdit, setProductToEdit] = useState(null);
   const [productToDelete, setProductToDelete] = useState(null);
   const [zoomImage, setZoomImage] = useState(null);
+  const [previewVideoProduct, setPreviewVideoProduct] = useState(null);
 
   // Quick Sold Out & Active Toggle in-flight tracker
   const [togglingId, setTogglingId] = useState(null);
@@ -153,6 +156,7 @@ export default function AdminDashboardPage() {
           year: cleanYear,
           spec: catObj.spec || item.spec || 'Koleksi Resmi',
           desc: catObj.desc || item.desc || '',
+          qr_video: item.qr_video || '',
         };
       });
 
@@ -396,29 +400,30 @@ export default function AdminDashboardPage() {
     }
   };
 
-  // Quick Action: Bulk Deactivate Selected Products
-  const handleBulkDeactivate = async () => {
+  // Quick Action: Bulk Activate / Deactivate Selected Products (Show / Hide)
+  const handleBulkToggleActive = async (targetActive) => {
     if (selectedProductIds.length === 0 || isBulkDeactivating) return;
     setIsBulkDeactivating(true);
 
     try {
       const { error } = await supabase
         .from('products')
-        .update({ is_active: false })
+        .update({ is_active: targetActive })
         .in('id', selectedProductIds);
 
       if (error) throw error;
 
+      const actionText = targetActive ? 'diaktifkan & ditampilkan' : 'dinonaktifkan & disembunyikan';
       showToast(
-        `${selectedProductIds.length} produk berhasil dinonaktifkan dan disembunyikan dari daftar.`,
+        `${selectedProductIds.length} produk berhasil ${actionText}.`,
         'success',
         3500
       );
       setSelectedProductIds([]);
       loadData(true);
     } catch (err) {
-      console.error('Bulk deactivate error:', err);
-      showToast(`Gagal menonaktifkan produk terpilih: ${err.message || 'Error'}`, 'error');
+      console.error('Bulk toggle active error:', err);
+      showToast(`Gagal mengubah status produk terpilih: ${err.message || 'Error'}`, 'error');
     } finally {
       setIsBulkDeactivating(false);
     }
@@ -854,16 +859,44 @@ export default function AdminDashboardPage() {
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
-          {/* Tombol Bulk Edit di toolbar jika ada item tercentang */}
+          {/* Tombol Bulk Actions jika ada item tercentang */}
           {selectedProductIds.length > 0 && (
-            <button
-              type="button"
-              onClick={() => setIsBulkModalOpen(true)}
-              className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-lime-400 text-emerald-950 font-bold text-xs sm:text-sm shadow-lg shadow-lime-950/40 hover:bg-lime-300 transition cursor-pointer active:scale-95 animate-in fade-in"
-            >
-              <Sliders size={17} weight="bold" />
-              <span>Bulk Edit ({selectedProductIds.length})</span>
-            </button>
+            <div className="flex items-center gap-1.5 animate-in fade-in">
+              {/* Tombol Cepat: Tampilkan Terpilih */}
+              <button
+                type="button"
+                onClick={() => handleBulkToggleActive(true)}
+                disabled={isBulkDeactivating}
+                className="inline-flex items-center justify-center gap-1 px-3 py-2 rounded-xl bg-emerald-800 hover:bg-emerald-700 text-lime-300 font-bold text-xs shadow border border-emerald-600/60 transition cursor-pointer active:scale-95 disabled:opacity-50"
+                title="Tampilkan semua produk terpilih di katalog toko"
+              >
+                {isBulkDeactivating ? <Spinner size={13} className="animate-spin" /> : <Eye size={14} weight="bold" />}
+                <span>Tampilkan ({selectedProductIds.length})</span>
+              </button>
+
+              {/* Tombol Cepat: Sembunyikan Terpilih */}
+              <button
+                type="button"
+                onClick={() => handleBulkToggleActive(false)}
+                disabled={isBulkDeactivating}
+                className="inline-flex items-center justify-center gap-1 px-3 py-2 rounded-xl bg-amber-950/80 hover:bg-amber-900 text-amber-300 font-bold text-xs shadow border border-amber-600/50 transition cursor-pointer active:scale-95 disabled:opacity-50"
+                title="Sembunyikan semua produk terpilih dari katalog toko"
+              >
+                {isBulkDeactivating ? <Spinner size={13} className="animate-spin" /> : <EyeSlash size={14} weight="bold" />}
+                <span>Sembunyikan ({selectedProductIds.length})</span>
+              </button>
+
+              {/* Tombol Modal Bulk Edit Lengkap */}
+              <button
+                type="button"
+                onClick={() => setIsBulkModalOpen(true)}
+                className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-lime-400 text-emerald-950 font-bold text-xs sm:text-sm shadow-lg shadow-lime-950/40 hover:bg-lime-300 transition cursor-pointer active:scale-95"
+                title="Buka form bulk edit lengkap"
+              >
+                <Sliders size={16} weight="bold" />
+                <span className="hidden sm:inline">Bulk Edit</span>
+              </button>
+            </div>
           )}
 
           {/* Tombol Tambah Produk */}
@@ -922,6 +955,7 @@ export default function AdminDashboardPage() {
                   <th className="py-3 px-4 min-w-[200px]">Judul Produk</th>
                   <th className="py-3 px-4 min-w-[120px]">Kategori</th>
                   <th className="py-3 px-4 min-w-[130px]">Harga</th>
+                  <th className="py-3 px-4 min-w-[120px] text-center">QR Video</th>
                   <th className="py-3 px-4 min-w-[190px]">Status Keterangan</th>
                   <th className="py-3 px-4 min-w-[150px] text-right">Aksi</th>
                 </tr>
@@ -1087,7 +1121,24 @@ export default function AdminDashboardPage() {
                         )}
                       </td>
 
-                      {/* 5. Status Keterangan (Tersedia vs SOLD OUT) - Menggunakan Switch Toggle */}
+                      {/* 5. QR Video */}
+                      <td className="py-3 px-4 text-center">
+                        {product.qr_video ? (
+                          <button
+                            type="button"
+                            onClick={() => setPreviewVideoProduct(product)}
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-lime-400/20 hover:bg-lime-400/30 text-lime-300 border border-lime-400/50 text-[11px] font-bold shadow-sm transition hover:scale-105 cursor-pointer"
+                            title="Tonton Preview & Salin Link QR Video"
+                          >
+                            <VideoCamera size={14} weight="fill" className="text-lime-400" />
+                            <span>Lihat QR</span>
+                          </button>
+                        ) : (
+                          <span className="text-[11px] text-emerald-600/70 italic font-mono">-</span>
+                        )}
+                      </td>
+
+                      {/* 6. Status Keterangan (Tersedia vs SOLD OUT) - Menggunakan Switch Toggle */}
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-2.5">
                           {/* Switch Component */}
@@ -1358,6 +1409,13 @@ export default function AdminDashboardPage() {
         onSuccess={(deletedId) => {
           setProducts((prev) => prev.filter((p) => p.id !== deletedId));
         }}
+      />
+
+      {/* Modal Preview Video QR & Salin Link */}
+      <VideoPreviewModal
+        isOpen={Boolean(previewVideoProduct)}
+        onClose={() => setPreviewVideoProduct(null)}
+        product={previewVideoProduct}
       />
 
       {/* Quick Image Zoom Modal */}

@@ -11,6 +11,8 @@ import {
   CurrencyDollar,
   Sparkle,
   CheckCircle,
+  Eye,
+  EyeSlash,
 } from '@phosphor-icons/react';
 import { supabase } from '@/lib/supabase';
 import { formatRupiah } from '@/lib/utils';
@@ -40,6 +42,9 @@ export default function BulkEditModal({
   const [editionAction, setEditionAction] = useState('set'); // 'set' | 'clear'
   const [newEdition, setNewEdition] = useState('');
 
+  const [changeActive, setChangeActive] = useState(false);
+  const [activeAction, setActiveAction] = useState('active'); // 'active' | 'inactive'
+
   if (!isOpen || selectedProductIds.length === 0) return null;
 
   const totalCount = selectedProductIds.length;
@@ -47,7 +52,7 @@ export default function BulkEditModal({
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!changeCategory && !changePrice && !changeSoldOut && !changeEdition) {
+    if (!changeCategory && !changePrice && !changeSoldOut && !changeEdition && !changeActive) {
       showToast('Pilih minimal satu kolom yang ingin Anda ubah.', 'warning');
       return;
     }
@@ -85,6 +90,10 @@ export default function BulkEditModal({
         }
         payload.edition = newEdition.trim();
       }
+    }
+
+    if (changeActive) {
+      payload.is_active = activeAction === 'active';
     }
 
     setIsSubmitting(true);
@@ -307,6 +316,55 @@ export default function BulkEditModal({
                     className="w-full px-3 py-2 text-xs rounded-xl bg-emerald-950 border border-emerald-700 text-white focus:outline-none focus:border-lime-400"
                   />
                 )}
+              </div>
+            )}
+          </div>
+
+          {/* 5. Status Publikasi (Tampilkan / Sembunyikan) */}
+          <div className="p-3.5 rounded-xl bg-emerald-900/40 border border-emerald-700/50 space-y-2.5">
+            <label className="flex items-center gap-2 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={changeActive}
+                onChange={(e) => setChangeActive(e.target.checked)}
+                className="w-4 h-4 rounded text-lime-400 bg-emerald-950 border-emerald-700 focus:ring-lime-400 focus:ring-offset-0 cursor-pointer accent-lime-400"
+              />
+              <span className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
+                <Eye size={15} className="text-lime-400" />
+                Ubah Status Publikasi (Tampilkan / Sembunyikan)
+              </span>
+            </label>
+
+            {changeActive && (
+              <div className="pt-1 animate-in fade-in duration-150 pl-6 flex flex-wrap gap-4 text-xs">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="activeOption"
+                    value="active"
+                    checked={activeAction === 'active'}
+                    onChange={() => setActiveAction('active')}
+                    className="text-lime-400 accent-lime-400 cursor-pointer"
+                  />
+                  <span className="text-lime-300 font-semibold flex items-center gap-1">
+                    <Eye size={14} weight="bold" />
+                    TAMPILKAN (Aktif di katalog toko)
+                  </span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="activeOption"
+                    value="inactive"
+                    checked={activeAction === 'inactive'}
+                    onChange={() => setActiveAction('inactive')}
+                    className="text-amber-400 accent-amber-500 cursor-pointer"
+                  />
+                  <span className="text-amber-300 font-semibold flex items-center gap-1">
+                    <EyeSlash size={14} weight="bold" />
+                    SEMBUNYIKAN (Non-aktif / Sembunyi dari katalog)
+                  </span>
+                </label>
               </div>
             )}
           </div>

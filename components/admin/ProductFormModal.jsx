@@ -12,10 +12,12 @@ import {
   ListPlus,
   Sparkle,
   Camera,
+  VideoCamera,
 } from '@phosphor-icons/react';
 import { supabase } from '@/lib/supabase';
 import { formatRupiah, parseVariants, getCloudinaryFolderByCategory, optimizeCloudinaryUrl } from '@/lib/utils';
 import CloudinaryWidget from './CloudinaryWidget';
+import R2VideoUploader from './R2VideoUploader';
 import { useToast } from './Toast';
 
 export default function ProductFormModal({
@@ -41,6 +43,7 @@ export default function ProductFormModal({
     img_add: '',
     sold_out: false, // boolean in form, converted to 'Y' or null
     is_active: true, // boolean in form: aktif vs non-aktif
+    qr_video: '', // video URL from Cloudflare R2
   });
 
   // Variants State (Visual Form Only)
@@ -75,6 +78,55 @@ export default function ProductFormModal({
 
   // Track images newly uploaded in this modal session (for auto-delete if replaced or cancelled)
   const sessionUploadedImages = useRef(new Map());
+
+  // Track videos newly uploaded in this modal session (for auto-delete if cancelled)
+  const sessionUploadedVideos = useRef(new Set());
+  const initialVideoUrlRef = useRef('');
+
+  // Function to delete video from storage
+  const deleteStorageVideo = async (url) => {
+    if (!url) return;
+    try {
+      await fetch('/api/r2/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url }),
+      });
+    } catch (err) {
+      console.warn('Gagal menghapus video dari storage:', err);
+    }
+  };
+
+  // Video Change Handler (ketika video baru berhasil diupload)
+  const handleVideoChange = (newUrl) => {
+    const prevVideo = formData.qr_video;
+    // Jika sebelumnya di sesi ini sudah ada video baru yang diunggah dan sekarang ditimpa lagi,
+    // hapus video yang ditimpa tersebut dari storage
+    if (prevVideo && prevVideo !== newUrl && sessionUploadedVideos.current.has(prevVideo)) {
+      deleteStorageVideo(prevVideo);
+      sessionUploadedVideos.current.delete(prevVideo);
+    }
+    // Catatan: Jika prevVideo === initialVideoUrlRef.current, JANGAN DIHAPUS DULU.
+    // Video lama produk hanya dihapus saat tombol simpan perubahan berhasil ditekan.
+
+    if (newUrl) {
+      sessionUploadedVideos.current.add(newUrl);
+    }
+    setFormData((prev) => ({ ...prev, qr_video: newUrl }));
+  };
+
+  // Video Delete Handler (ketika tombol "Hapus Video" diklik di form)
+  const handleVideoDelete = () => {
+    const currentVideo = formData.qr_video;
+    // Jika video yang tampil diunggah di sesi ini, hapus dari storage
+    if (currentVideo && sessionUploadedVideos.current.has(currentVideo)) {
+      deleteStorageVideo(currentVideo);
+      sessionUploadedVideos.current.delete(currentVideo);
+    }
+    // Jika video adalah video lama bawaan produk, JANGAN dihapus dari storage dulu!
+    // Hanya kosongkan form, agar jika user membatalkan/tutup modal, video lama tetap aman di DB.
+    setFormData((prev) => ({ ...prev, qr_video: '' }));
+  };
 
   // Function to delete an image from Cloudinary
   const deleteCloudinaryImage = async (url, public_id = null) => {
@@ -174,8 +226,16 @@ export default function ProductFormModal({
     setFormData((prev) => ({ ...prev, img_add: '' }));
   };
 
-  // Cancel and Cleanup all images newly uploaded in this modal session
+  // Cancel and Cleanup all images and videos newly uploaded in this modal session
   const handleCancelAndClose = () => {
+    // Hapus semua video yang sempat diunggah di sesi modal ini
+    if (sessionUploadedVideos.current.size > 0) {
+      sessionUploadedVideos.current.forEach((url) => {
+        deleteStorageVideo(url);
+      });
+      sessionUploadedVideos.current.clear();
+    }
+
     if (sessionUploadedImages.current.size > 0) {
       sessionUploadedImages.current.forEach((item) => {
         deleteCloudinaryImage(item.url, item.public_id);
@@ -207,6 +267,8 @@ export default function ProductFormModal({
     if (!isOpen) return;
 
     sessionUploadedImages.current.clear();
+    sessionUploadedVideos.current.clear();
+    initialVideoUrlRef.current = productToEdit?.qr_video || '';
 
     if (productToEdit) {
       const isProdLimited = String(productToEdit.edition || '').trim().toUpperCase() === 'LIMITED';
@@ -222,6 +284,7 @@ export default function ProductFormModal({
         img_add: productToEdit.img_add || '',
         sold_out: String(productToEdit.sold_out || '').toUpperCase() === 'Y',
         is_active: productToEdit.is_active !== false,
+        qr_video: productToEdit.qr_video || '',
       });
 
       // Parse variants
@@ -247,12 +310,47 @@ export default function ProductFormModal({
         img_add: '',
         sold_out: false,
         is_active: true,
+        qr_video: '',
       });
       setVariantsList([]);
     }
 
     setErrors({});
   }, [isOpen, productToEdit, categories]);
+
+  // Handle escape key & window unload (back button, tab close, reload) to clean uncommitted uploads
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        handleCancelAndClose();
+      }
+    };
+
+    const handleBeforeUnload = () => {
+      if (sessionUploadedVideos.current.size > 0) {
+        sessionUploadedVideos.current.forEach((url) => {
+          try {
+            navigator.sendBeacon(
+              '/api/r2/delete',
+              new Blob([JSON.stringify({ url })], { type: 'application/json' })
+            );
+          } catch {
+            // ignore
+          }
+        });
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [isOpen]);
 
   // Sync category change for posters default variants
   const handleCategoryChange = (e) => {
@@ -393,6 +491,7 @@ export default function ProductFormModal({
         sold_out: formData.sold_out ? 'Y' : null,
         is_active: formData.is_active !== false,
         variants: finalVariants,
+        qr_video: formData.qr_video ? String(formData.qr_video).trim() : null,
       };
 
       if (isEditing) {
@@ -422,6 +521,13 @@ export default function ProductFormModal({
       });
       sessionUploadedImages.current.clear();
 
+      // Jika update dan video lama diganti atau dihapus, sekarang baru hapus video lama dari storage
+      const oldInitialVideo = initialVideoUrlRef.current;
+      if (oldInitialVideo && oldInitialVideo !== formData.qr_video) {
+        deleteStorageVideo(oldInitialVideo);
+      }
+      sessionUploadedVideos.current.clear();
+
       if (onSuccess) onSuccess();
       onClose();
     } catch (err) {
@@ -435,7 +541,12 @@ export default function ProductFormModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-200">
+    <div
+      onClick={(e) => {
+        if (e.target === e.currentTarget) handleCancelAndClose();
+      }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-200"
+    >
       <div className="relative w-full max-w-2xl bg-emerald-950/95 border border-emerald-600/50 rounded-2xl shadow-2xl overflow-hidden my-auto max-h-[92vh] flex flex-col">
         {/* Modal Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-emerald-800/80 bg-emerald-900/60 shrink-0">
@@ -505,33 +616,30 @@ export default function ProductFormModal({
                     <button
                       type="button"
                       onClick={() => handleEditionChange('LIMITED')}
-                      className={`px-2.5 py-0.5 text-[11px] font-bold rounded-lg transition cursor-pointer ${
-                        isLimited
+                      className={`px-2.5 py-0.5 text-[11px] font-bold rounded-lg transition cursor-pointer ${isLimited
                           ? 'bg-amber-400 text-emerald-950 shadow-sm font-black'
                           : 'bg-emerald-900/80 text-amber-300 hover:bg-emerald-800 border border-amber-500/40'
-                      }`}
+                        }`}
                     >
                       ★ LIMITED
                     </button>
                     <button
                       type="button"
                       onClick={() => handleEditionChange('SPECIAL')}
-                      className={`px-2.5 py-0.5 text-[11px] font-semibold rounded-lg transition cursor-pointer ${
-                        formData.edition?.toUpperCase() === 'SPECIAL'
+                      className={`px-2.5 py-0.5 text-[11px] font-semibold rounded-lg transition cursor-pointer ${formData.edition?.toUpperCase() === 'SPECIAL'
                           ? 'bg-lime-400 text-emerald-950 font-bold'
                           : 'bg-emerald-900/80 text-emerald-200 hover:bg-emerald-800 border border-emerald-700'
-                      }`}
+                        }`}
                     >
                       SPECIAL
                     </button>
                     <button
                       type="button"
                       onClick={() => handleEditionChange('1')}
-                      className={`px-2.5 py-0.5 text-[11px] font-semibold rounded-lg transition cursor-pointer ${
-                        formData.edition === '1'
+                      className={`px-2.5 py-0.5 text-[11px] font-semibold rounded-lg transition cursor-pointer ${formData.edition === '1'
                           ? 'bg-lime-400 text-emerald-950 font-bold'
                           : 'bg-emerald-900/80 text-emerald-200 hover:bg-emerald-800 border border-emerald-700'
-                      }`}
+                        }`}
                     >
                       Edisi 1
                     </button>
@@ -615,13 +723,12 @@ export default function ProductFormModal({
                         setFormData((prev) => ({ ...prev, price: num }));
                       }}
                       placeholder={isLimited ? '0 (LIMITED)' : '10000'}
-                      className={`w-full pl-9 pr-3.5 py-2.5 text-xs sm:text-sm rounded-lg border font-mono font-bold focus:outline-none ${
-                        isLimited
+                      className={`w-full pl-9 pr-3.5 py-2.5 text-xs sm:text-sm rounded-lg border font-mono font-bold focus:outline-none ${isLimited
                           ? 'bg-emerald-950/70 border-amber-500/40 text-amber-300 cursor-not-allowed opacity-90'
                           : errors.price
-                          ? 'bg-emerald-900/60 border-rose-500 text-white focus:border-lime-400'
-                          : 'bg-emerald-900/60 border-emerald-700/60 text-white focus:border-lime-400'
-                      }`}
+                            ? 'bg-emerald-900/60 border-rose-500 text-white focus:border-lime-400'
+                            : 'bg-emerald-900/60 border-emerald-700/60 text-white focus:border-lime-400'
+                        }`}
                     />
                   </div>
                   {isLimited ? (
@@ -669,15 +776,13 @@ export default function ProductFormModal({
                   role="switch"
                   aria-checked={formData.is_active}
                   onClick={() => setFormData((prev) => ({ ...prev, is_active: !prev.is_active }))}
-                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-lime-400/50 ${
-                    formData.is_active ? 'bg-lime-500' : 'bg-slate-700'
-                  }`}
+                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-lime-400/50 ${formData.is_active ? 'bg-lime-500' : 'bg-slate-700'
+                    }`}
                   title={formData.is_active ? 'Status: AKTIF. Klik untuk menonaktifkan' : 'Status: NON-AKTIF. Klik untuk mengaktifkan'}
                 >
                   <span
-                    className={`pointer-events-none inline-flex h-5 w-5 transform items-center justify-center rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                      formData.is_active ? 'translate-x-5 text-emerald-900' : 'translate-x-0 text-slate-700'
-                    }`}
+                    className={`pointer-events-none inline-flex h-5 w-5 transform items-center justify-center rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${formData.is_active ? 'translate-x-5 text-emerald-900' : 'translate-x-0 text-slate-700'
+                      }`}
                   >
                     {formData.is_active ? <Check size={10} weight="bold" /> : <X size={10} weight="bold" />}
                   </span>
@@ -699,9 +804,8 @@ export default function ProductFormModal({
                   role="switch"
                   aria-checked={formData.sold_out}
                   onClick={() => setFormData((prev) => ({ ...prev, sold_out: !prev.sold_out }))}
-                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-lime-400/50 ${
-                    formData.sold_out ? 'bg-rose-600' : 'bg-emerald-700'
-                  }`}
+                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-lime-400/50 ${formData.sold_out ? 'bg-rose-600' : 'bg-emerald-700'
+                    }`}
                   title={
                     formData.sold_out
                       ? 'Status: SOLD OUT (Habis). Klik untuk beralih ke TERSEDIA'
@@ -709,9 +813,8 @@ export default function ProductFormModal({
                   }
                 >
                   <span
-                    className={`pointer-events-none inline-flex h-5 w-5 transform items-center justify-center rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                      formData.sold_out ? 'translate-x-5 text-rose-600' : 'translate-x-0 text-emerald-700'
-                    }`}
+                    className={`pointer-events-none inline-flex h-5 w-5 transform items-center justify-center rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${formData.sold_out ? 'translate-x-5 text-rose-600' : 'translate-x-0 text-emerald-700'
+                      }`}
                   >
                     {formData.sold_out ? (
                       <X size={10} weight="bold" />
@@ -764,12 +867,36 @@ export default function ProductFormModal({
             )}
           </div>
 
-          {/* Section 3: Varian Ukuran & Harga (HANYA MUNCUL JIKA KATEGORI POSTER) */}
+          {/* Section 3: QR Video Eksklusif (Cloudflare R2) */}
+          <div className="space-y-3 pt-2">
+            <div className="border-b border-emerald-800/60 pb-1.5 flex items-center justify-between">
+              <h3 className="text-xs font-bold text-lime-400 tracking-wider uppercase flex items-center gap-1.5">
+                <VideoCamera size={14} weight="bold" /> 3. QR Video
+              </h3>
+              <span className="text-[10px] text-emerald-400/80 bg-emerald-900/60 px-2 py-0.5 rounded-full border border-emerald-700/50">
+                Opsional • Maks. 100 MB
+              </span>
+            </div>
+
+            <p className="text-[11px] text-emerald-300/80">
+              Video ini khusus untuk pemindaian QR code produk dan <strong className="text-lime-300">tidak akan ditampilkan di katalog utama</strong>.
+            </p>
+
+            <R2VideoUploader
+              videoUrl={formData.qr_video}
+              onChange={handleVideoChange}
+              onDelete={handleVideoDelete}
+              productId={productToEdit?.id}
+              disabled={isSubmitting}
+            />
+          </div>
+
+          {/* Section 4: Varian Ukuran & Harga (HANYA MUNCUL JIKA KATEGORI POSTER) */}
           {isPoster && (
             <div className="space-y-3 pt-2 animate-in fade-in duration-200">
               <div className="flex flex-wrap items-center justify-between gap-2 border-b border-emerald-800/60 pb-1.5">
                 <h3 className="text-xs font-bold text-lime-400 tracking-wider uppercase flex items-center gap-1.5">
-                  <ListPlus size={14} /> 3. Varian Ukuran & Harga Poster <span className="text-rose-400">*</span>
+                  <ListPlus size={14} /> 4. Varian Ukuran & Harga Poster <span className="text-rose-400">*</span>
                 </h3>
                 <div className="flex items-center gap-2">
                   <button
