@@ -971,7 +971,7 @@ export default function AdminDashboardPage() {
                   const catBadgeClass = getCategoryBadgeStyle(catName);
                   const isPoster = String(product.category_id) === '4' || String(catName).toLowerCase().includes('poster');
                   const variants = parseVariants(product.variants);
-                  const isLimited = String(product.edition || '').trim().toUpperCase() === 'LIMITED' || (product.price === 0 && !isPoster && !variants);
+                  const isLimited = String(product.edition || '').trim().toUpperCase() === 'LIMITED';
 
                   return (
                     <tr
@@ -1064,9 +1064,14 @@ export default function AdminDashboardPage() {
                       {/* 4. Harga & Varian */}
                       <td className="py-3 px-4">
                         {isLimited ? (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-amber-400 text-emerald-950 font-black text-xs uppercase tracking-wider shadow-sm">
-                            LIMITED
-                          </span>
+                          <div className="flex flex-col gap-1 items-start">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-amber-400 text-emerald-950 font-black text-xs uppercase tracking-wider shadow-sm">
+                              LIMITED
+                            </span>
+                            <span className="text-amber-300 font-mono font-bold text-xs">
+                              {formatRupiah(product.price && product.price > 0 ? product.price : 20000)}
+                            </span>
+                          </div>
                         ) : isPoster || (variants && variants.length > 0) ? (
                           <div className="relative">
                             <button

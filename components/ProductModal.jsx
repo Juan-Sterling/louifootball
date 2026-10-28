@@ -55,13 +55,14 @@ export default function ProductModal({ product, isOpen, onClose, onOpenZoom }) {
   const currentImgIndex = currentImg === optimizedImgAdd ? 1 : 0;
 
   const isLimited = String(product.edition || '').trim().toUpperCase() === 'LIMITED';
+  const limitedPrice = product.price && product.price > 0 ? product.price : 20000;
 
-  // Hitung display harga: jika edisi LIMITED, tulis 'LIMITED'.
+  // Hitung display harga: jika edisi LIMITED, gunakan harga limited (default Rp 20.000).
   // Jika ada varian terpilih, gunakan harga varian.
   // Jika default (belum ada yang dipilih), tampilkan harga terendah - tertinggi.
   let displayPrice = '';
   if (isLimited) {
-    displayPrice = 'LIMITED';
+    displayPrice = formatRupiah(limitedPrice);
   } else if (selectedVariant) {
     displayPrice = formatRupiah(selectedVariant.price);
   } else if (variants && variants.length > 0) {
@@ -106,10 +107,13 @@ export default function ProductModal({ product, isOpen, onClose, onOpenZoom }) {
   const isSoldOut = String(product.sold_out || '').trim().toUpperCase() === 'Y';
 
   const msg = isLimited
-    ? encodeURIComponent(`Halo LOUIFOOTBALL, saya ingin bertanya tentang edisi koleksi terbatas:
+    ? encodeURIComponent(`Halo LOUIFOOTBALL, saya ingin memesan produk edisi terbatas:
 
 *${productName}* ${editionText}${variantWaText}${titleWaText}${teamYearWaText}
-Status: Edisi Limited (Koleksi / Tidak Dijual)`)
+Harga: ${displayPrice}
+Status: Edisi Limited
+
+Apakah stok masih ada?`)
     : isSoldOut
       ? encodeURIComponent(`Halo LOUIFOOTBALL, saya ingin bertanya tentang stok produk:
 
@@ -336,7 +340,7 @@ Apakah stok masih ada?`);
             </p>
             {isLimited && (
               <span className="px-2.5 py-0.5 bg-amber-100 border border-amber-300 text-amber-800 text-xs font-black rounded-md uppercase tracking-wider">
-                Edisi Koleksi (Tidak Dijual)
+                Edisi Limited
               </span>
             )}
             {isSoldOut && !isLimited && (
@@ -414,9 +418,9 @@ Apakah stok masih ada?`);
             <div className="bg-amber-50 border border-amber-200/90 text-amber-900 text-xs rounded-xl p-3 flex items-start gap-2.5 mt-3">
               <span className="text-base leading-none">⭐</span>
               <div>
-                <p className="font-bold">Edisi Koleksi Terbatas (Not For Sale)</p>
+                <p className="font-bold">Edisi Koleksi Terbatas (Limited Edition)</p>
                 <p className="text-[11px] text-amber-800/90 mt-0.5">
-                  Produk ini merupakan rilisan edisi LIMITED khusus koleksi dan tidak dijual di online shop / marketplace.
+                  Produk ini merupakan rilisan edisi LIMITED khusus dengan stok terbatas seharga {displayPrice}.
                 </p>
               </div>
             </div>
@@ -428,37 +432,26 @@ Apakah stok masih ada?`);
               href={waLink}
               target="_blank"
               rel="noopener noreferrer"
-              className={`w-full font-bold py-3 rounded-2xl flex items-center justify-center gap-2 text-sm shadow-md transition cursor-pointer ${isLimited
-                  ? 'bg-zinc-800 hover:bg-zinc-900 text-amber-300'
-                  : isSoldOut
-                    ? 'bg-zinc-800 hover:bg-zinc-900 text-lime-300'
-                    : 'bg-emerald-800 hover:bg-emerald-900 text-lime-300'
+              className={`w-full font-bold py-3 rounded-2xl flex items-center justify-center gap-2 text-sm shadow-md transition cursor-pointer ${isSoldOut
+                  ? 'bg-zinc-800 hover:bg-zinc-900 text-lime-300'
+                  : 'bg-emerald-800 hover:bg-emerald-900 text-lime-300'
                 }`}
             >
               <WhatsappLogo size={20} weight="bold" className="text-green-400" />
               <span>
-                {isLimited
-                  ? 'Tanya Info via WhatsApp'
-                  : isSoldOut
-                    ? 'Tanya Restock via WhatsApp'
+                {isSoldOut
+                  ? 'Tanya Restock via WhatsApp'
+                  : isLimited
+                    ? 'Order Edisi Limited via WhatsApp'
                     : selectedVariant
                       ? `Order Ukuran ${selectedVariant.size} via WhatsApp`
                       : 'Order via WhatsApp'}
               </span>
             </a>
 
-            {/* Shopee (Non-aktif jika Limited atau Sold Out) */}
+            {/* Shopee (Non-aktif jika Sold Out) */}
             <div className="pt-1">
-              {isLimited ? (
-                <div
-                  aria-disabled="true"
-                  title="Produk edisi Limited tidak dijual di Shopee"
-                  className="w-full bg-gray-100 border border-gray-200 text-gray-400 font-bold py-2.5 rounded-xl flex items-center justify-center gap-1.5 text-xs cursor-not-allowed opacity-60 select-none"
-                >
-                  <ShoppingBagOpen size={16} weight="bold" className="text-gray-400" />
-                  <span>Shopee (Tidak Dijual)</span>
-                </div>
-              ) : isSoldOut ? (
+              {isSoldOut ? (
                 <div
                   aria-disabled="true"
                   title="Produk telah habis terjual (Sold Out)"
@@ -467,6 +460,16 @@ Apakah stok masih ada?`);
                   <ShoppingBagOpen size={16} weight="bold" className="text-gray-400" />
                   <span>Shopee (Habis)</span>
                 </div>
+              ) : isLimited ? (
+                <a
+                  href="https://id.shp.ee/a5f6X4Wq"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-800 font-bold py-2.5 rounded-xl flex items-center justify-center gap-1.5 text-xs transition cursor-pointer"
+                >
+                  <ShoppingBagOpen size={16} weight="bold" />
+                  <span>Shopee Store</span>
+                </a>
               ) : (
                 <a
                   href="https://id.shp.ee/a5f6X4Wq"

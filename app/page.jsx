@@ -94,8 +94,12 @@ export default function Home() {
           const isTeamValid = rawTeam && rawTeam.toLowerCase() !== 'null' && rawTeam.toLowerCase() !== 'undefined' && rawTeam !== '-';
           const cleanTeam = isTeamValid ? rawTeam : '';
 
+          const isLimited = String(item.edition || '').trim().toUpperCase() === 'LIMITED';
+          const resolvedPrice = isLimited && (!item.price || item.price === 0) ? 20000 : item.price;
+
           return {
             ...item,
+            price: resolvedPrice,
             player_name: resolvedPlayerName,
             title: productTitle,
             sold_out: soldOutVal,
@@ -118,8 +122,11 @@ export default function Home() {
         const mappedFallback = (fallbackProducts || []).map((item) => {
           const playerName = item.player_name || item.title || 'Produk Loui';
           const soldOutVal = item.sold_out ? String(item.sold_out).trim() : '';
+          const isLimited = String(item.edition || '').trim().toUpperCase() === 'LIMITED';
+          const resolvedPrice = isLimited && (!item.price || item.price === 0) ? 20000 : item.price;
           return {
             ...item,
+            price: resolvedPrice,
             player_name: playerName,
             title: playerName,
             sold_out: soldOutVal,

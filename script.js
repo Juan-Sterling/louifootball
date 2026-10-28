@@ -237,8 +237,11 @@ async function loadProducts() {
         allProducts = data.map(item => {
             const catObj = item.categories || allCategories.find(c => c.id === item.category_id) || {};
             const playerName = item.player_name || item.title || 'Produk Loui';
+            const isLimited = String(item.edition || '').trim().toUpperCase() === 'LIMITED';
+            const resolvedPrice = isLimited && (!item.price || item.price === 0) ? 20000 : item.price;
             return {
                 ...item,
+                price: resolvedPrice,
                 player_name: playerName,
                 title: playerName,
                 img: optimizeCloudinaryUrl(item.img),
@@ -257,8 +260,11 @@ async function loadProducts() {
             const fallbackData = await res.json();
             allProducts = fallbackData.map(item => {
                 const playerName = item.player_name || item.title || 'Produk Loui';
+                const isLimited = String(item.edition || '').trim().toUpperCase() === 'LIMITED';
+                const resolvedPrice = isLimited && (!item.price || item.price === 0) ? 20000 : item.price;
                 return {
                     ...item,
+                    price: resolvedPrice,
                     player_name: playerName,
                     title: playerName,
                     img: optimizeCloudinaryUrl(item.img),
@@ -661,7 +667,8 @@ function renderProducts() {
         card.className = `bg-white rounded-2xl p-3 flex flex-col justify-between hover:shadow-2xl transition duration-150 border-2 ${
             isSoldOut ? 'border-zinc-200/80' : 'border-transparent hover:border-lime-400'
         }`;
-        const formattedPrice = isLimited ? 'LIMITED' : getPriceRangeDisplay(item.variants, item.price);
+        const limitedPrice = item.price && item.price > 0 ? item.price : 20000;
+        const formattedPrice = isLimited ? formatRupiah(limitedPrice) : getPriceRangeDisplay(item.variants, item.price);
         card.innerHTML = `
           <div>
             <div class="relative aspect-square rounded-xl bg-emerald-50 overflow-hidden mb-2.5 cursor-pointer group" onclick="openModalById('${item.id}')">
@@ -831,7 +838,8 @@ function openModalById(id) {
 
     const isLimited = String(item.edition || '').trim().toUpperCase() === 'LIMITED';
     const isSoldOut = isItemSoldOut(item);
-    const displayPrice = isLimited ? 'LIMITED' : formatRupiah(item.price);
+    const limitedPrice = item.price && item.price > 0 ? item.price : 20000;
+    const displayPrice = isLimited ? formatRupiah(limitedPrice) : formatRupiah(item.price);
     const productName = item.player_name || item.title || 'Produk Loui';
 
     modalTitle.innerText = productName;
@@ -893,10 +901,13 @@ function openModalById(id) {
     const teamYearWaText = teamYearParts.length > 0 ? `\n${teamYearParts.join('\n')}` : '';
 
     const msg = isLimited
-        ? encodeURIComponent(`Halo LOUIFOOTBALL, saya ingin bertanya tentang edisi koleksi terbatas:
+        ? encodeURIComponent(`Halo LOUIFOOTBALL, saya ingin memesan produk edisi terbatas:
 
 *${productName}* ${editionText}${teamYearWaText}
-Status: Edisi Limited (Koleksi / Tidak Dijual)`)
+Harga: ${displayPrice}
+Status: Edisi Limited
+
+Apakah stok masih ada?`)
         : isSoldOut
         ? encodeURIComponent(`Halo LOUIFOOTBALL, saya ingin bertanya tentang stok produk:
 
@@ -912,12 +923,12 @@ Harga: ${displayPrice}
 Apakah stok masih ada?`);
 
     modalWaBtn.href = `https://wa.me/${WA_NUMBER}?text=${msg}`;
-    if (isLimited) {
-        modalWaBtn.className = "w-full bg-zinc-800 hover:bg-zinc-900 text-amber-300 font-bold py-3 rounded-2xl flex items-center justify-center gap-2 text-sm shadow-md transition";
-        modalWaBtn.innerHTML = '<i class="ph-bold ph-whatsapp-logo text-lg text-green-400"></i> Tanya Info via WhatsApp';
-    } else if (isSoldOut) {
+    if (isSoldOut) {
         modalWaBtn.className = "w-full bg-zinc-800 hover:bg-zinc-900 text-lime-300 font-bold py-3 rounded-2xl flex items-center justify-center gap-2 text-sm shadow-md transition";
         modalWaBtn.innerHTML = '<i class="ph-bold ph-whatsapp-logo text-lg text-green-400"></i> Tanya Restock via WhatsApp';
+    } else if (isLimited) {
+        modalWaBtn.className = "w-full bg-emerald-800 hover:bg-emerald-900 text-lime-300 font-bold py-3 rounded-2xl flex items-center justify-center gap-2 text-sm shadow-md transition";
+        modalWaBtn.innerHTML = '<i class="ph-bold ph-whatsapp-logo text-lg text-green-400"></i> Order Edisi Limited via WhatsApp';
     } else {
         modalWaBtn.className = "w-full bg-emerald-800 hover:bg-emerald-900 text-lime-300 font-bold py-3 rounded-2xl flex items-center justify-center gap-2 text-sm shadow-md transition";
         modalWaBtn.innerHTML = '<i class="ph-bold ph-whatsapp-logo text-lg text-green-400"></i> Order via WhatsApp';
@@ -926,16 +937,16 @@ Apakah stok masih ada?`);
     // Shopee button
     const shopeeBtn = document.getElementById('modalShopeeBtn');
     if (shopeeBtn) {
-        if (isLimited) {
-            shopeeBtn.className = "w-full bg-gray-100 border border-gray-200 text-gray-400 font-bold py-2.5 rounded-xl flex items-center justify-center gap-1.5 text-xs cursor-not-allowed opacity-60 select-none";
-            shopeeBtn.removeAttribute('href');
-            shopeeBtn.title = "Produk edisi Limited tidak dijual di Shopee";
-            shopeeBtn.innerHTML = '<i class="ph-bold ph-shopping-bag-open text-base text-gray-400"></i> Shopee (Tidak Dijual)';
-        } else if (isSoldOut) {
+        if (isSoldOut) {
             shopeeBtn.className = "w-full bg-gray-100 border border-gray-200 text-gray-400 font-bold py-2.5 rounded-xl flex items-center justify-center gap-1.5 text-xs cursor-not-allowed opacity-60 select-none";
             shopeeBtn.removeAttribute('href');
             shopeeBtn.title = "Produk telah habis terjual (Sold Out)";
             shopeeBtn.innerHTML = '<i class="ph-bold ph-shopping-bag-open text-base text-gray-400"></i> Shopee (Habis)';
+        } else if (isLimited) {
+            shopeeBtn.className = "w-full bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-800 font-bold py-2.5 rounded-xl flex items-center justify-center gap-1.5 text-xs transition cursor-pointer";
+            shopeeBtn.href = "https://id.shp.ee/a5f6X4Wq";
+            shopeeBtn.title = "";
+            shopeeBtn.innerHTML = '<i class="ph-bold ph-shopping-bag-open text-base"></i> Shopee Store';
         } else {
             shopeeBtn.className = "w-full bg-orange-50 hover:bg-orange-100 border border-orange-200 text-orange-700 font-bold py-2.5 rounded-xl flex items-center justify-center gap-1.5 text-xs transition cursor-pointer";
             shopeeBtn.href = "https://id.shp.ee/a5f6X4Wq";

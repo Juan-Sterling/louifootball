@@ -245,13 +245,13 @@ export default function ProductFormModal({
     onClose();
   };
 
-  // Edition Change Handler (locks price to 0 if LIMITED)
+  // Edition Change Handler (sets price to 20000 if LIMITED)
   const handleEditionChange = (val) => {
     const isNowLimited = String(val || '').trim().toUpperCase() === 'LIMITED';
     setFormData((prev) => ({
       ...prev,
       edition: val,
-      ...(isNowLimited ? { price: '0' } : {}),
+      ...(isNowLimited ? { price: '20000' } : {}),
     }));
     if (isNowLimited) {
       setErrors((prev) => {
@@ -277,7 +277,9 @@ export default function ProductFormModal({
         player_name: productToEdit.player_name || productToEdit.title || '',
         team: productToEdit.team || '',
         category_id: productToEdit.category_id ? String(productToEdit.category_id) : (categories[0]?.id ? String(categories[0].id) : '1'),
-        price: isProdLimited ? '0' : productToEdit.price !== undefined && productToEdit.price !== null ? String(productToEdit.price) : '',
+        price: isProdLimited
+          ? (productToEdit.price && productToEdit.price > 0 ? String(productToEdit.price) : '20000')
+          : productToEdit.price !== undefined && productToEdit.price !== null ? String(productToEdit.price) : '',
         edition: productToEdit.edition !== undefined && productToEdit.edition !== null ? String(productToEdit.edition) : '',
         year: productToEdit.year || '',
         img: productToEdit.img || '',
@@ -468,10 +470,12 @@ export default function ProductFormModal({
         }
       }
 
-      // If poster or LIMITED, price is 0 (for poster price is on the variants)
-      const numericPrice = (isLimited || isPoster)
+      // If poster price is 0 (for poster price is on the variants). If LIMITED, default to 20000 if empty or 0
+      const numericPrice = isPoster
         ? 0
-        : parseInt(String(formData.price || 0).replace(/[^0-9]/g, ''), 10) || 0;
+        : isLimited
+          ? parseInt(String(formData.price || 20000).replace(/[^0-9]/g, ''), 10) || 20000
+          : parseInt(String(formData.price || 0).replace(/[^0-9]/g, ''), 10) || 0;
 
       const cleanTitle = formData.title.trim().toUpperCase();
       const cleanPlayer = formData.player_name.trim() ? formData.player_name.trim().toUpperCase() : cleanTitle;
@@ -655,7 +659,7 @@ export default function ProductFormModal({
                 {isLimited && (
                   <p className="text-[11px] text-amber-300 font-semibold mt-1.5 flex items-center gap-1.5">
                     <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-                    <span>Edisi LIMITED aktif: Harga produk dikunci ke Rp 0 (tidak bisa diisi).</span>
+                    <span>Edisi LIMITED aktif: Harga produk diatur ke Rp 20.000.</span>
                   </p>
                 )}
               </div>
@@ -715,16 +719,14 @@ export default function ProductFormModal({
                     <span className="absolute left-3.5 top-2.5 text-xs text-lime-400 font-bold">Rp</span>
                     <input
                       type="text"
-                      value={isLimited ? '0' : formData.price}
-                      disabled={isLimited}
+                      value={isLimited && (!formData.price || formData.price === '0') ? '20000' : formData.price}
                       onChange={(e) => {
-                        if (isLimited) return;
                         const num = e.target.value.replace(/[^0-9]/g, '');
                         setFormData((prev) => ({ ...prev, price: num }));
                       }}
-                      placeholder={isLimited ? '0 (LIMITED)' : '10000'}
+                      placeholder={isLimited ? '20000 (LIMITED)' : '10000'}
                       className={`w-full pl-9 pr-3.5 py-2.5 text-xs sm:text-sm rounded-lg border font-mono font-bold focus:outline-none ${isLimited
-                          ? 'bg-emerald-950/70 border-amber-500/40 text-amber-300 cursor-not-allowed opacity-90'
+                          ? 'bg-emerald-950/70 border-amber-500/60 text-amber-300 focus:border-amber-400'
                           : errors.price
                             ? 'bg-emerald-900/60 border-rose-500 text-white focus:border-lime-400'
                             : 'bg-emerald-900/60 border-emerald-700/60 text-white focus:border-lime-400'
@@ -733,7 +735,7 @@ export default function ProductFormModal({
                   </div>
                   {isLimited ? (
                     <span className="text-[10px] text-amber-300 font-bold mt-1 block">
-                      ★ Edisi LIMITED: Harga diatur otomatis ke Rp 0
+                      ★ Edisi LIMITED: Harga diatur default ke Rp 20.000 ({formatRupiah(formData.price || 20000)})
                     </span>
                   ) : (
                     <span className="text-[10px] text-emerald-400/80 mt-1 block">

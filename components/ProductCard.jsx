@@ -26,7 +26,10 @@ export default function ProductCard({ product, onOpenModal }) {
 
   const isLimited = String(product.edition || '').trim().toUpperCase() === 'LIMITED';
   const isSoldOut = String(product.sold_out || '').trim().toUpperCase() === 'Y';
-  const formattedPrice = isLimited ? 'LIMITED' : getPriceRangeDisplay(product.variants, product.price);
+  const limitedPrice = product.price && product.price > 0 ? product.price : 20000;
+  const formattedPrice = isLimited
+    ? formatRupiah(limitedPrice)
+    : getPriceRangeDisplay(product.variants, product.price);
 
   return (
     <div className={`bg-white rounded-2xl p-3 flex flex-col justify-between hover:shadow-2xl transition duration-150 border-2 ${
