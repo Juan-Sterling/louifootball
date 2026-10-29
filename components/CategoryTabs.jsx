@@ -31,12 +31,12 @@ export default function CategoryTabs({
 
         if (!error && data && data.length > 0) {
           const activeOnly = data.filter((c) => c.is_active !== false);
-          setCategories(activeOnly.length > 0 ? activeOnly : FALLBACK_CATEGORIES);
+          setCategories(activeOnly);
         } else {
-          setCategories(FALLBACK_CATEGORIES);
+          setCategories([]);
         }
       } catch {
-        setCategories(FALLBACK_CATEGORIES);
+        setCategories([]);
       }
     }
 

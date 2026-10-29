@@ -2,9 +2,16 @@
 
 import React from 'react';
 import ProductCard from './ProductCard';
-import { SoccerBall } from '@phosphor-icons/react';
+import { SoccerBall, WarningCircle, ArrowClockwise } from '@phosphor-icons/react';
 
-export default function ProductGrid({ products, isLoading, isAvailableOnly, onOpenModal }) {
+export default function ProductGrid({
+  products,
+  isLoading,
+  hasError = false,
+  onRetry = null,
+  isAvailableOnly,
+  onOpenModal,
+}) {
   if (isLoading) {
     return (
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3.5 sm:gap-4">
@@ -45,6 +52,30 @@ export default function ProductGrid({ products, isLoading, isAvailableOnly, onOp
             </div>
           </div>
         ))}
+      </div>
+    );
+  }
+
+  if (hasError && products.length === 0) {
+    return (
+      <div className="py-16 text-center max-w-md mx-auto">
+        <div className="w-16 h-16 bg-rose-950/60 border border-rose-500/40 rounded-full flex items-center justify-center mx-auto mb-3 text-rose-400">
+          <WarningCircle size={32} weight="fill" />
+        </div>
+        <p className="text-base font-bold text-white">Gagal Memuat Produk</p>
+        <p className="text-xs text-rose-200/80 mt-1 leading-relaxed">
+          Koneksi internet bermasalah atau database tidak dapat dijangkau. Silakan periksa jaringan Anda.
+        </p>
+        {onRetry && (
+          <button
+            type="button"
+            onClick={onRetry}
+            className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-lime-400 hover:bg-lime-300 text-emerald-950 font-bold text-xs shadow-md transition cursor-pointer"
+          >
+            <ArrowClockwise size={16} weight="bold" />
+            <span>Coba Muat Ulang</span>
+          </button>
+        )}
       </div>
     );
   }

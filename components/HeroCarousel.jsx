@@ -119,10 +119,10 @@ export default function HeroCarousel({ onSelectCategory, onSelectEdition, onScro
           }));
           setPromotions(optimizedPromos);
         } else {
-          setPromotions(FALLBACK_PROMOTIONS);
+          setPromotions([]);
         }
       } catch {
-        setPromotions(FALLBACK_PROMOTIONS);
+        setPromotions([]);
       } finally {
         setIsLoading(false);
       }

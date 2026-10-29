@@ -12,7 +12,6 @@ import ContactModal from '@/components/ContactModal';
 import Footer from '@/components/Footer';
 import Pagination from '@/components/Pagination';
 import { supabase } from '@/lib/supabase';
-import fallbackProducts from '@/products.json';
 import { normalizeCategory, sortCatalogProducts, optimizeCloudinaryUrl } from '@/lib/utils';
 
 const ITEMS_PER_PAGE = 20;
@@ -26,6 +25,7 @@ export default function Home() {
   const [isAvailableOnly, setIsAvailableOnly] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
 
   // Modal states
@@ -61,108 +61,88 @@ export default function Home() {
   }, []);
 
   // Load products and priorities from Supabase
-  useEffect(() => {
-    async function loadProducts() {
-      setIsLoading(true);
-      try {
-        const [{ data: prodData, error: prodError }, { data: prioData, error: prioError }] = await Promise.all([
-          supabase
-            .from('products')
-            .select('*, categories(*)')
-            .or('is_active.is.null,is_active.eq.true'),
-          supabase
-            .from('catalog_priorities')
-            .select('*')
-            .order('sort_order', { ascending: true }),
-        ]);
+  const loadProducts = useCallback(async () => {
+    setIsLoading(true);
+    setLoadError(false);
+    try {
+      const [{ data: prodData, error: prodError }, { data: prioData, error: prioError }] = await Promise.all([
+        supabase
+          .from('products')
+          .select('*, categories(*)')
+          .or('is_active.is.null,is_active.eq.true'),
+        supabase
+          .from('catalog_priorities')
+          .select('*')
+          .order('sort_order', { ascending: true }),
+      ]);
 
-        if (prodError || !prodData || prodData.length === 0) {
-          throw prodError || new Error('Data empty');
-        }
-
-        if (prioError) {
-          console.warn('Priorities query error:', prioError);
-        }
-        if (prioData) {
-          setPriorities(prioData);
-        }
-
-        // Pastikan hanya produk yang is_active null atau true, dan kategori tidak non-aktif
-        const activeOnlyData = prodData.filter((item) => {
-          if (item.is_active === false) return false;
-          if (item.categories && item.categories.is_active === false) return false;
-          return true;
-        });
-
-        const mapped = activeOnlyData.map((item) => {
-          const catObj = item.categories || {};
-          const playerName = item.player_name ? String(item.player_name).trim() : '';
-          const productTitle = item.title ? String(item.title).trim() : '';
-          const resolvedPlayerName = playerName || productTitle || 'Produk Loui';
-          const soldOutVal = item.sold_out ? String(item.sold_out).trim() : '';
-          const rawYear = item.year ? String(item.year).trim() : '';
-          const isYearValid = rawYear && rawYear.toLowerCase() !== 'null' && rawYear.toLowerCase() !== 'undefined' && rawYear !== '-';
-          const cleanYear = isYearValid ? rawYear : '';
-
-          const rawTeam = item.team ? String(item.team).trim() : '';
-          const isTeamValid = rawTeam && rawTeam.toLowerCase() !== 'null' && rawTeam.toLowerCase() !== 'undefined' && rawTeam !== '-';
-          const cleanTeam = isTeamValid ? rawTeam : '';
-
-          const isLimited = String(item.edition || '').trim().toUpperCase() === 'LIMITED';
-          const resolvedPrice = isLimited && (!item.price || item.price === 0) ? 20000 : item.price;
-
-          return {
-            ...item,
-            price: resolvedPrice,
-            player_name: resolvedPlayerName,
-            title: productTitle,
-            sold_out: soldOutVal,
-            is_sold_out: soldOutVal.toUpperCase() === 'Y',
-            img: optimizeCloudinaryUrl(item.img),
-            img_add: item.img_add ? optimizeCloudinaryUrl(item.img_add) : item.img_add,
-            category: normalizeCategory(catObj.category || item.category || 'lainnya'),
-            team: cleanTeam,
-            year: cleanYear,
-            spec: catObj.spec || item.spec || 'Koleksi Resmi',
-            desc: catObj.desc || item.desc || 'Merchandise resmi sepak bola berkualitas dari LOUIFOOTBALL.',
-          };
-        });
-
-        // Urutkan katalog: produk sold out di paling bawah, tampilan default prioritaskan pemain bintang/top
-        const sorted = sortCatalogProducts(mapped, 'all', prioData || []);
-        setProducts(sorted);
-      } catch (err) {
-        console.warn('Gagal memuat produk dari Supabase, beralih ke fallback lokal:', err);
-        const mappedFallback = (fallbackProducts || []).map((item) => {
-          const playerName = item.player_name || item.title || 'Produk Loui';
-          const soldOutVal = item.sold_out ? String(item.sold_out).trim() : '';
-          const isLimited = String(item.edition || '').trim().toUpperCase() === 'LIMITED';
-          const resolvedPrice = isLimited && (!item.price || item.price === 0) ? 20000 : item.price;
-          return {
-            ...item,
-            price: resolvedPrice,
-            player_name: playerName,
-            title: playerName,
-            sold_out: soldOutVal,
-            is_sold_out: soldOutVal.toUpperCase() === 'Y',
-            img: optimizeCloudinaryUrl(item.img),
-            img_add: item.img_add ? optimizeCloudinaryUrl(item.img_add) : item.img_add,
-            category: normalizeCategory(item.category || 'lainnya'),
-            team: item.team ? String(item.team).trim() : '',
-            year: item.year ? String(item.year).trim() : '',
-            spec: item.spec || 'Koleksi Resmi',
-            desc: item.desc || '',
-          };
-        });
-        const sortedFallback = sortCatalogProducts(mappedFallback, 'all');
-        setProducts(sortedFallback);
-      } finally {
-        setIsLoading(false);
+      if (prodError || !prodData || prodData.length === 0) {
+        throw prodError || new Error('Data empty');
       }
-    }
 
-    loadProducts();
+      if (prioError) {
+        console.warn('Priorities query error:', prioError);
+      }
+      if (prioData) {
+        setPriorities(prioData);
+      }
+
+      // Pastikan hanya produk yang is_active null atau true, dan kategori tidak non-aktif
+      const activeOnlyData = prodData.filter((item) => {
+        if (item.is_active === false) return false;
+        if (item.categories && item.categories.is_active === false) return false;
+        return true;
+      });
+
+      const mapped = activeOnlyData.map((item) => {
+        const catObj = item.categories || {};
+        const playerName = item.player_name ? String(item.player_name).trim() : '';
+        const productTitle = item.title ? String(item.title).trim() : '';
+        const resolvedPlayerName = playerName || productTitle || 'Produk Loui';
+        const soldOutVal = item.sold_out ? String(item.sold_out).trim() : '';
+        const rawYear = item.year ? String(item.year).trim() : '';
+        const isYearValid = rawYear && rawYear.toLowerCase() !== 'null' && rawYear.toLowerCase() !== 'undefined' && rawYear !== '-';
+        const cleanYear = isYearValid ? rawYear : '';
+
+        const rawTeam = item.team ? String(item.team).trim() : '';
+        const isTeamValid = rawTeam && rawTeam.toLowerCase() !== 'null' && rawTeam.toLowerCase() !== 'undefined' && rawTeam !== '-';
+        const cleanTeam = isTeamValid ? rawTeam : '';
+
+        const isLimited = String(item.edition || '').trim().toUpperCase() === 'LIMITED';
+        const resolvedPrice = isLimited && (!item.price || item.price === 0) ? 20000 : item.price;
+
+        return {
+          ...item,
+          price: resolvedPrice,
+          player_name: resolvedPlayerName,
+          title: productTitle,
+          sold_out: soldOutVal,
+          is_sold_out: soldOutVal.toUpperCase() === 'Y',
+          img: optimizeCloudinaryUrl(item.img),
+          img_add: item.img_add ? optimizeCloudinaryUrl(item.img_add) : item.img_add,
+          category: normalizeCategory(catObj.category || item.category || 'lainnya'),
+          team: cleanTeam,
+          year: cleanYear,
+          spec: catObj.spec || item.spec || 'Koleksi Resmi',
+          desc: catObj.desc || item.desc || 'Merchandise resmi sepak bola berkualitas dari LOUIFOOTBALL.',
+        };
+      });
+
+      // Urutkan katalog: produk sold out di paling bawah, tampilan default prioritaskan pemain bintang/top
+      const sorted = sortCatalogProducts(mapped, 'all', prioData || []);
+      setProducts(sorted);
+    } catch (err) {
+      console.error('Gagal memuat produk dari Supabase (tidak menggunakan fallback):', err);
+      setProducts([]);
+      setLoadError(true);
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    loadProducts();
+  }, [loadProducts]);
 
   const scrollToCatalog = useCallback(() => {
     const mainEl = document.querySelector('main');
@@ -312,6 +292,8 @@ export default function Home() {
         <ProductGrid
           products={paginatedProducts}
           isLoading={isLoading}
+          hasError={loadError}
+          onRetry={loadProducts}
           isAvailableOnly={isAvailableOnly}
           onOpenModal={(product) => setSelectedProduct(product)}
         />
