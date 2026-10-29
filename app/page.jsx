@@ -20,6 +20,7 @@ const ITEMS_PER_PAGE = 20;
 export default function Home() {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [priorities, setPriorities] = useState([]);
   const [activeCategory, setActiveCategory] = useState('all');
   const [activeStickerEdition, setActiveStickerEdition] = useState('all');
   const [isAvailableOnly, setIsAvailableOnly] = useState(false);
@@ -59,22 +60,35 @@ export default function Home() {
     };
   }, []);
 
-  // Load products from Supabase
+  // Load products and priorities from Supabase
   useEffect(() => {
     async function loadProducts() {
       setIsLoading(true);
       try {
-        const { data, error } = await supabase
-          .from('products')
-          .select('*, categories(*)')
-          .or('is_active.is.null,is_active.eq.true');
+        const [{ data: prodData, error: prodError }, { data: prioData, error: prioError }] = await Promise.all([
+          supabase
+            .from('products')
+            .select('*, categories(*)')
+            .or('is_active.is.null,is_active.eq.true'),
+          supabase
+            .from('catalog_priorities')
+            .select('*')
+            .order('sort_order', { ascending: true }),
+        ]);
 
-        if (error || !data || data.length === 0) {
-          throw error || new Error('Data empty');
+        if (prodError || !prodData || prodData.length === 0) {
+          throw prodError || new Error('Data empty');
+        }
+
+        if (prioError) {
+          console.warn('Priorities query error:', prioError);
+        }
+        if (prioData) {
+          setPriorities(prioData);
         }
 
         // Pastikan hanya produk yang is_active null atau true, dan kategori tidak non-aktif
-        const activeOnlyData = data.filter((item) => {
+        const activeOnlyData = prodData.filter((item) => {
           if (item.is_active === false) return false;
           if (item.categories && item.categories.is_active === false) return false;
           return true;
@@ -114,8 +128,8 @@ export default function Home() {
           };
         });
 
-        // Urutkan katalog: produk sold out di paling bawah, tampilan default prioritaskan pemain bintang
-        const sorted = sortCatalogProducts(mapped, 'all');
+        // Urutkan katalog: produk sold out di paling bawah, tampilan default prioritaskan pemain bintang/top
+        const sorted = sortCatalogProducts(mapped, 'all', prioData || []);
         setProducts(sorted);
       } catch (err) {
         console.warn('Gagal memuat produk dari Supabase, beralih ke fallback lokal:', err);
@@ -233,8 +247,8 @@ export default function Home() {
       return matchCat && matchStickerEd && (titleMatch || editionMatch || teamMatch || yearMatch || descMatch);
     });
 
-    return sortCatalogProducts(filtered, normalizedActiveCat);
-  }, [products, activeCategory, activeStickerEdition, searchQuery, isAvailableOnly]);
+    return sortCatalogProducts(filtered, normalizedActiveCat, priorities);
+  }, [products, activeCategory, activeStickerEdition, searchQuery, isAvailableOnly, priorities]);
 
   // Reset ke halaman 1 setiap kali filter atau pencarian berubah
   useEffect(() => {

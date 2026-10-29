@@ -13,6 +13,7 @@ import {
   ArrowClockwise,
   UploadSimple,
   ShieldCheck,
+  X,
 } from '@phosphor-icons/react';
 import { encodeProductId } from '@/lib/utils';
 
@@ -34,6 +35,7 @@ export default function R2VideoUploader({
   const [uploadError, setUploadError] = useState('');
   const [copiedLink, setCopiedLink] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   // Dapatkan URL landing page untuk produk ini dengan kode terenkripsi aman
   const videoCode = encodeProductId(productId);
@@ -189,15 +191,17 @@ export default function R2VideoUploader({
 
   const handleRemoveVideo = () => {
     if (disabled || isUploading) return;
-    const confirmDelete = window.confirm('Apakah Anda yakin ingin menghapus video ini dari produk?');
-    if (!confirmDelete) return;
+    setIsDeleteModalOpen(true);
+  };
 
+  const handleConfirmDelete = () => {
     if (onDelete) {
       onDelete();
     } else {
       onChange('');
     }
     setUploadError('');
+    setIsDeleteModalOpen(false);
   };
 
   return (
@@ -369,6 +373,64 @@ export default function R2VideoUploader({
           <div className="flex-1">
             <p className="font-semibold text-red-300">Upload Gagal</p>
             <p className="mt-0.5 text-red-200/90 leading-relaxed">{uploadError}</p>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Konfirmasi Hapus Video */}
+      {isDeleteModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="w-full max-w-md bg-emerald-950 border border-rose-500/40 rounded-2xl shadow-2xl overflow-hidden p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3 text-rose-400">
+                <div className="w-10 h-10 rounded-xl bg-rose-500/20 border border-rose-500/30 flex items-center justify-center">
+                  <WarningCircle size={24} weight="fill" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white">Hapus Video Produk?</h3>
+                  <p className="text-xs text-rose-300/80">Video akan dihapus dari produk ini.</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsDeleteModalOpen(false)}
+                className="text-gray-400 hover:text-white transition p-1 cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="p-3 rounded-xl bg-emerald-900/40 border border-emerald-700/40 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-emerald-950 border border-emerald-800/60 flex items-center justify-center text-rose-400 shrink-0">
+                <VideoCamera size={20} />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-semibold text-white truncate">Cloudflare R2 Video</p>
+                <p className="text-[11px] text-emerald-400/80 font-mono truncate">{videoUrl}</p>
+              </div>
+            </div>
+
+            <p className="text-xs text-emerald-300/80 leading-relaxed">
+              Tautan video QR pada produk ini akan dikosongkan. Pengunjung yang memindai QR code tidak akan diarahkan ke video ini lagi.
+            </p>
+
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setIsDeleteModalOpen(false)}
+                className="px-4 py-2.5 rounded-xl border border-emerald-700/60 text-emerald-300 hover:text-white hover:bg-emerald-900/50 text-xs font-semibold transition cursor-pointer"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDelete}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-rose-500 to-red-600 text-white font-bold text-xs shadow-lg shadow-rose-950/50 hover:from-rose-600 hover:to-red-700 transition cursor-pointer"
+              >
+                <Trash size={16} weight="bold" />
+                <span>Ya, Hapus Video</span>
+              </button>
+            </div>
           </div>
         </div>
       )}

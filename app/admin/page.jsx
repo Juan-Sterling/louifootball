@@ -26,6 +26,7 @@ import {
   Tag,
   Megaphone,
   VideoCamera,
+  ArrowsDownUp,
 } from '@phosphor-icons/react';
 import { supabase } from '@/lib/supabase';
 import { formatRupiah, parseVariants, getCategoryBadgeStyle, normalizeCategory, sortCatalogProducts, optimizeCloudinaryUrl } from '@/lib/utils';
@@ -33,6 +34,7 @@ import ProductFormModal from '@/components/admin/ProductFormModal';
 import DeleteConfirmModal from '@/components/admin/DeleteConfirmModal';
 import CategoryManager from '@/components/admin/CategoryManager';
 import PromotionManager from '@/components/admin/PromotionManager';
+import CatalogPriorityManager from '@/components/admin/CatalogPriorityManager';
 import BulkEditModal from '@/components/admin/BulkEditModal';
 import VideoPreviewModal from '@/components/admin/VideoPreviewModal';
 import { useToast } from '@/components/admin/Toast';
@@ -44,7 +46,8 @@ export default function AdminDashboardPage() {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [promotions, setPromotions] = useState([]);
-  const [activeTab, setActiveTab] = useState('produk'); // 'produk', 'kategori', 'iklan'
+  const [priorities, setPriorities] = useState([]);
+  const [activeTab, setActiveTab] = useState('produk'); // 'produk', 'kategori', 'iklan', 'prioritas'
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -53,7 +56,7 @@ export default function AdminDashboardPage() {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       const tabParam = params.get('tab');
-      if (tabParam && ['produk', 'kategori', 'iklan'].includes(tabParam.toLowerCase())) {
+      if (tabParam && ['produk', 'kategori', 'iklan', 'prioritas'].includes(tabParam.toLowerCase())) {
         setActiveTab(tabParam.toLowerCase());
       }
     }
@@ -127,6 +130,16 @@ export default function AdminDashboardPage() {
 
       if (promoError) console.warn('Promotions query error:', promoError);
       if (promoData) setPromotions(promoData.map((p) => ({ ...p, img: optimizeCloudinaryUrl(p.img) })));
+
+      // 4. Fetch catalog priorities (top & bottom rules)
+      const { data: prioData, error: prioError } = await supabase
+        .from('catalog_priorities')
+        .select('*')
+        .order('sort_order', { ascending: true })
+        .order('created_at', { ascending: true });
+
+      if (prioError) console.warn('Priorities query error:', prioError);
+      if (prioData) setPriorities(prioData);
 
       // Map products to clean structure matching main page (app/page.jsx)
       const mapped = (prodData || []).map((item) => {
@@ -265,8 +278,8 @@ export default function AdminDashboardPage() {
         activeCatName = normalizeCategory(chosen.category);
       }
     }
-    return sortCatalogProducts(filtered, activeCatName);
-  }, [products, searchQuery, selectedCategoryFilter, selectedStatusFilter, selectedActiveFilter, sortBy, categories]);
+    return sortCatalogProducts(filtered, activeCatName, priorities);
+  }, [products, searchQuery, selectedCategoryFilter, selectedStatusFilter, selectedActiveFilter, sortBy, categories, priorities]);
 
   // Pagination calculation
   const totalItems = filteredProducts.length;
@@ -482,16 +495,25 @@ export default function AdminDashboardPage() {
                 </span>
               </>
             )}
+            {activeTab === 'prioritas' && (
+              <>
+                <span>Manajemen Prioritas Katalog</span>
+                <span className="text-xs font-sans font-semibold px-2.5 py-0.5 rounded-full bg-lime-400 text-emerald-950">
+                  {priorities.length} Aturan
+                </span>
+              </>
+            )}
           </h1>
           <p className="text-xs sm:text-sm text-emerald-300/80 mt-1">
             {activeTab === 'produk' && 'Kelola data produk, toggle status SOLD OUT, tambah varian poster, dan unggah gambar.'}
             {activeTab === 'kategori' && 'Kelola daftar kategori produk, spesifikasi bahan material, dan deskripsi kategori katalog.'}
             {activeTab === 'iklan' && 'Kelola banner promosi carousel di beranda, urutan tayang, badge warna, dan tautan aksi.'}
+            {activeTab === 'prioritas' && 'Atur urutan pemain/produk TOP dan posisi BOTTOM (tepat di atas Sold Out) secara dinamis.'}
           </p>
         </div>
       </div>
 
-      {/* Navbar di atas KPI Stats Cards (PRODUK, KATEGORI, IKLAN) */}
+      {/* Navbar di atas KPI Stats Cards (PRODUK, KATEGORI, IKLAN, PRIORITAS) */}
       <nav className="p-1.5 sm:p-2 rounded-2xl bg-emerald-950/90 border border-emerald-700/50 shadow-xl backdrop-blur-md flex items-center justify-between gap-2 overflow-x-auto">
         <div className="flex items-center gap-1.5 sm:gap-2">
           {/* Tab PRODUK */}
@@ -554,6 +576,27 @@ export default function AdminDashboardPage() {
               }`}
             >
               {promotions.length}
+            </span>
+          </button>
+
+          {/* Tab PRIORITAS */}
+          <button
+            type="button"
+            onClick={() => handleTabChange('prioritas')}
+            className={`flex items-center gap-2 px-3.5 sm:px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm uppercase tracking-wider transition cursor-pointer ${
+              activeTab === 'prioritas'
+                ? 'bg-gradient-to-r from-lime-400 to-lime-500 text-emerald-950 shadow-lg shadow-lime-950/40 scale-[1.02]'
+                : 'text-emerald-300 hover:text-white hover:bg-emerald-900/60 font-semibold'
+            }`}
+          >
+            <ArrowsDownUp size={18} weight={activeTab === 'prioritas' ? 'bold' : 'regular'} />
+            <span>PRIORITAS</span>
+            <span
+              className={`text-[10px] px-2 py-0.5 rounded-full font-mono font-bold ${
+                activeTab === 'prioritas' ? 'bg-emerald-950 text-lime-400' : 'bg-emerald-900 text-emerald-300'
+              }`}
+            >
+              {priorities.length}
             </span>
           </button>
         </div>
@@ -1382,6 +1425,17 @@ export default function AdminDashboardPage() {
           isLoading={isLoading}
           onRefresh={loadData}
           onZoomImage={setZoomImage}
+        />
+      )}
+
+      {/* ===================== VIEW PRIORITAS KATALOG (TOP & BOTTOM) ===================== */}
+      {activeTab === 'prioritas' && (
+        <CatalogPriorityManager
+          priorities={priorities}
+          setPriorities={setPriorities}
+          products={products}
+          isLoading={isLoading}
+          onRefresh={loadData}
         />
       )}
 
