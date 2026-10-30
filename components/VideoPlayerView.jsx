@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import {
   House,
@@ -8,75 +8,11 @@ import {
   Sparkle,
   ShareNetwork,
   Check,
-  Play,
-  Pause,
 } from '@phosphor-icons/react';
 import Footer from '@/components/Footer';
 
 export default function VideoPlayerView({ product }) {
-  const videoRef = useRef(null);
-  const hideOverlayTimerRef = useRef(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [showOverlay, setShowOverlay] = useState(true);
-  const [isMuted, setIsMuted] = useState(false);
   const [copied, setCopied] = useState(false);
-
-  useEffect(() => {
-    return () => {
-      if (hideOverlayTimerRef.current) {
-        clearTimeout(hideOverlayTimerRef.current);
-      }
-    };
-  }, []);
-
-  const scheduleHideOverlay = () => {
-    if (hideOverlayTimerRef.current) {
-      clearTimeout(hideOverlayTimerRef.current);
-    }
-    hideOverlayTimerRef.current = setTimeout(() => {
-      setShowOverlay(false);
-    }, 2200);
-  };
-
-  const handleTogglePlay = (e) => {
-    e?.stopPropagation?.();
-    if (!videoRef.current) return;
-
-    if (videoRef.current.paused) {
-      videoRef.current.play().catch(() => { });
-      setIsPlaying(true);
-      setShowOverlay(true);
-      scheduleHideOverlay();
-    } else {
-      videoRef.current.pause();
-      setIsPlaying(false);
-      setShowOverlay(true);
-      if (hideOverlayTimerRef.current) {
-        clearTimeout(hideOverlayTimerRef.current);
-      }
-    }
-  };
-
-  const handleVideoAreaClick = (e) => {
-    if (!videoRef.current) return;
-    if (videoRef.current.paused) {
-      handleTogglePlay(e);
-    } else {
-      if (!showOverlay) {
-        setShowOverlay(true);
-        scheduleHideOverlay();
-      } else {
-        handleTogglePlay(e);
-      }
-    }
-  };
-
-  const handleUserActivity = () => {
-    setShowOverlay(true);
-    if (isPlaying) {
-      scheduleHideOverlay();
-    }
-  };
 
   if (!product || !product.qr_video) {
     return (
@@ -206,63 +142,18 @@ export default function VideoPlayerView({ product }) {
             </span>
           </div>
 
-          {/* Video Player Box with Play/Pause Overlay */}
-          <div
-            className="relative bg-black group select-none flex items-center justify-center min-h-[300px] max-h-[70vh] overflow-hidden"
-            onMouseMove={handleUserActivity}
-            onMouseEnter={handleUserActivity}
-            onMouseLeave={() => {
-              if (isPlaying) setShowOverlay(false);
-            }}
-          >
+          {/* Video Player Box (Bawaan Device / Browser) */}
+          <div className="relative bg-black select-none flex items-center justify-center min-h-[300px] max-h-[70vh]">
             <video
-              ref={videoRef}
               src={product.qr_video}
               controls
               controlsList="nodownload noplaybackrate"
               disablePictureInPicture
               playsInline
               onContextMenu={(e) => e.preventDefault()}
-              onPlay={() => {
-                setIsPlaying(true);
-                scheduleHideOverlay();
-              }}
-              onPause={() => {
-                setIsPlaying(false);
-                setShowOverlay(true);
-                if (hideOverlayTimerRef.current) clearTimeout(hideOverlayTimerRef.current);
-              }}
-              onEnded={() => {
-                setIsPlaying(false);
-                setShowOverlay(true);
-              }}
-              onVolumeChange={(e) => setIsMuted(e.target.muted)}
               className="w-full h-auto max-h-[70vh] object-contain select-none"
               style={{ userSelect: 'none', WebkitUserSelect: 'none' }}
             />
-
-            {/* Clickable Area & Center Play/Pause Overlay */}
-            {/* Note: Stops at bottom-14 so native bottom controls (time scrubber, volume, fullscreen) remain fully clickable */}
-            <div
-              onClick={handleVideoAreaClick}
-              className={`absolute inset-x-0 top-0 bottom-14 flex items-center justify-center cursor-pointer transition-opacity duration-300 z-10 ${showOverlay || !isPlaying
-                  ? 'opacity-100 pointer-events-auto'
-                  : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto'
-                }`}
-            >
-              <button
-                type="button"
-                onClick={handleTogglePlay}
-                aria-label={isPlaying ? 'Jeda Video' : 'Putar Video'}
-                className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-emerald-950/85 hover:bg-black/90 border-2 border-lime-400/80 hover:border-lime-300 text-lime-400 flex items-center justify-center shadow-[0_0_35px_rgba(163,230,53,0.45)] backdrop-blur-md transition-all duration-300 transform hover:scale-110 active:scale-90 cursor-pointer"
-              >
-                {isPlaying ? (
-                  <Pause size={34} weight="fill" className="text-white hover:text-lime-300 transition" />
-                ) : (
-                  <Play size={34} weight="fill" className="ml-1 text-lime-400 drop-shadow" />
-                )}
-              </button>
-            </div>
           </div>
 
           {/* Product Details Info */}

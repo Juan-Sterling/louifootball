@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   X,
   Copy,
@@ -9,8 +9,6 @@ import {
   VideoCamera,
   ShieldCheck,
   Tag,
-  Play,
-  Pause,
 } from '@phosphor-icons/react';
 import { useToast } from './Toast';
 import { encodeProductId } from '@/lib/utils';
@@ -18,61 +16,6 @@ import { encodeProductId } from '@/lib/utils';
 export default function VideoPreviewModal({ isOpen, onClose, product }) {
   const { showToast } = useToast();
   const [copied, setCopied] = useState(false);
-  const videoRef = useRef(null);
-  const hideOverlayTimerRef = useRef(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [showOverlay, setShowOverlay] = useState(true);
-
-  useEffect(() => {
-    return () => {
-      if (hideOverlayTimerRef.current) clearTimeout(hideOverlayTimerRef.current);
-    };
-  }, []);
-
-  const scheduleHideOverlay = () => {
-    if (hideOverlayTimerRef.current) clearTimeout(hideOverlayTimerRef.current);
-    hideOverlayTimerRef.current = setTimeout(() => {
-      setShowOverlay(false);
-    }, 2200);
-  };
-
-  const handleTogglePlay = (e) => {
-    e?.stopPropagation?.();
-    if (!videoRef.current) return;
-
-    if (videoRef.current.paused) {
-      videoRef.current.play().catch(() => {});
-      setIsPlaying(true);
-      setShowOverlay(true);
-      scheduleHideOverlay();
-    } else {
-      videoRef.current.pause();
-      setIsPlaying(false);
-      setShowOverlay(true);
-      if (hideOverlayTimerRef.current) clearTimeout(hideOverlayTimerRef.current);
-    }
-  };
-
-  const handleVideoAreaClick = (e) => {
-    if (!videoRef.current) return;
-    if (videoRef.current.paused) {
-      handleTogglePlay(e);
-    } else {
-      if (!showOverlay) {
-        setShowOverlay(true);
-        scheduleHideOverlay();
-      } else {
-        handleTogglePlay(e);
-      }
-    }
-  };
-
-  const handleUserActivity = () => {
-    setShowOverlay(true);
-    if (isPlaying) {
-      scheduleHideOverlay();
-    }
-  };
 
   if (!isOpen || !product || !product.qr_video) return null;
 
@@ -131,61 +74,17 @@ export default function VideoPreviewModal({ isOpen, onClose, product }) {
 
         {/* Modal Body */}
         <div className="p-5 overflow-y-auto space-y-4">
-          {/* Video Player Box with Play/Pause Overlay */}
-          <div
-            className="relative bg-black group rounded-2xl overflow-hidden border border-emerald-800 flex items-center justify-center max-h-[50vh] shadow-inner select-none"
-            onMouseMove={handleUserActivity}
-            onMouseEnter={handleUserActivity}
-            onMouseLeave={() => {
-              if (isPlaying) setShowOverlay(false);
-            }}
-          >
+          {/* Video Player Box (Bawaan Device / Browser) */}
+          <div className="relative bg-black rounded-2xl overflow-hidden border border-emerald-800 flex items-center justify-center max-h-[50vh] shadow-inner select-none">
             <video
-              ref={videoRef}
               src={product.qr_video}
               controls
               controlsList="nodownload noplaybackrate"
               disablePictureInPicture
               playsInline
               onContextMenu={(e) => e.preventDefault()}
-              onPlay={() => {
-                setIsPlaying(true);
-                scheduleHideOverlay();
-              }}
-              onPause={() => {
-                setIsPlaying(false);
-                setShowOverlay(true);
-                if (hideOverlayTimerRef.current) clearTimeout(hideOverlayTimerRef.current);
-              }}
-              onEnded={() => {
-                setIsPlaying(false);
-                setShowOverlay(true);
-              }}
               className="max-h-[50vh] w-auto max-w-full mx-auto"
             />
-
-            {/* Clickable Area & Center Play/Pause Overlay */}
-            <div
-              onClick={handleVideoAreaClick}
-              className={`absolute inset-x-0 top-0 bottom-14 flex items-center justify-center cursor-pointer transition-opacity duration-300 z-10 ${
-                showOverlay || !isPlaying
-                  ? 'opacity-100 pointer-events-auto'
-                  : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto'
-              }`}
-            >
-              <button
-                type="button"
-                onClick={handleTogglePlay}
-                aria-label={isPlaying ? 'Jeda Video' : 'Putar Video'}
-                className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-emerald-950/85 hover:bg-black/90 border-2 border-lime-400/80 hover:border-lime-300 text-lime-400 flex items-center justify-center shadow-[0_0_30px_rgba(163,230,53,0.45)] backdrop-blur-md transition-all duration-300 transform hover:scale-110 active:scale-90 cursor-pointer"
-              >
-                {isPlaying ? (
-                  <Pause size={28} weight="fill" className="text-white hover:text-lime-300 transition" />
-                ) : (
-                  <Play size={28} weight="fill" className="ml-0.5 text-lime-400 drop-shadow" />
-                )}
-              </button>
-            </div>
           </div>
 
           {/* Kotak Link yang akan dijadikan QR */}
