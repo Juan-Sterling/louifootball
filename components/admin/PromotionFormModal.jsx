@@ -198,7 +198,7 @@ export default function PromotionFormModal({
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-5 space-y-4">
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto custom-scrollbar p-5 space-y-4">
           {/* Judul Iklan */}
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-emerald-200 mb-1.5">

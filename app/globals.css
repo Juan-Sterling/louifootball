@@ -2,16 +2,28 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Font utama LOUI FOOTBALL (huruf & angka) */
 @font-face {
   font-family: 'LOUI FOOTBALL';
   src: url('/LOUI_FOOTBALL.otf') format('opentype');
   font-weight: normal;
   font-style: normal;
   font-display: swap;
+  unicode-range: U+0000-0027, U+002A-005A, U+005E-007A, U+007E-FFFF;
+}
+
+/* Font khusus tanda kurung () agar miring (italic) serasi dengan kemiringan LOUI FOOTBALL */
+@font-face {
+  font-family: 'LOUI FOOTBALL';
+  src: local('Arial Bold Italic'), local('Arial-BoldItalicMT'), local('Segoe UI Bold Italic'), local('Segoe UI Italic'), local('Helvetica-BoldOblique'), local('Roboto-BoldItalic'), sans-serif;
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0028-0029;
 }
 
 .font-loui {
-  font-family: var(--font-loui-football), 'LOUI FOOTBALL', sans-serif;
+  font-family: var(--font-loui-football), 'LOUI FOOTBALL', var(--font-kanit-italic), 'Arial Bold Italic', 'Segoe UI Bold Italic', var(--font-dm-sans), 'DM Sans', sans-serif;
   font-weight: normal !important;
 }
 
@@ -33,6 +45,100 @@ body {
   overflow-x: clip;
   width: 100%;
   max-width: 100vw;
+}
+
+/* ========================================================
+   CUSTOM SCROLLBAR HIJAU (COLOR PALETTE LOUIFOOTBALL)
+   Palette LOUIFOOTBALL:
+   - Track: #064e3b (emerald-900) / rgba(6, 78, 59, 0.35)
+   - Thumb: #a3e635 (lime-400) / rgba(163, 230, 53, 0.6)
+   - Hover: #bef264 (lime-300) / rgba(163, 230, 53, 0.95)
+   ======================================================== */
+
+/* Standar CSS & Firefox: Global Scrollbar */
+html,
+body,
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(163, 230, 53, 0.6) rgba(6, 78, 59, 0.35);
+}
+
+/* WebKit (Chrome, Edge, Safari, Opera): Global Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(6, 78, 59, 0.35);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(163, 230, 53, 0.6);
+  border-radius: 9999px;
+  border: 1.5px solid rgba(6, 78, 59, 0.3);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(163, 230, 53, 0.95);
+  border-color: rgba(6, 78, 59, 0.5);
+}
+
+::-webkit-scrollbar-corner {
+  background: rgba(6, 78, 59, 0.35);
+}
+
+/* Utility class untuk kontainer scrollable bernuansa hijau */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(163, 230, 53, 0.6) rgba(6, 78, 59, 0.35);
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(6, 78, 59, 0.35);
+  border-radius: 9999px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(163, 230, 53, 0.6);
+  border-radius: 9999px;
+  border: 1.5px solid rgba(6, 78, 59, 0.3);
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(163, 230, 53, 0.95);
+  border-color: rgba(6, 78, 59, 0.5);
+}
+
+/* Scrollbar khusus untuk modal produk berlatar putih */
+.product-modal-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(4, 120, 87, 0.65) rgba(6, 78, 59, 0.1);
+}
+
+.product-modal-scrollbar::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+.product-modal-scrollbar::-webkit-scrollbar-track {
+  background: rgba(6, 78, 59, 0.08);
+  border-radius: 9999px;
+}
+
+.product-modal-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(4, 120, 87, 0.65);
+  border-radius: 9999px;
+}
+
+.product-modal-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(4, 120, 87, 0.9);
 }
 
 /* Pastikan header sticky selalu menempel di bagian paling atas */

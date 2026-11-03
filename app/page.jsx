@@ -98,7 +98,7 @@ export default function Home() {
         const catObj = item.categories || {};
         const playerName = item.player_name ? String(item.player_name).trim() : '';
         const productTitle = item.title ? String(item.title).trim() : '';
-        const resolvedPlayerName = playerName || productTitle || 'Produk Loui';
+        const resolvedTitle = productTitle || playerName || 'Produk Loui';
         const soldOutVal = item.sold_out ? String(item.sold_out).trim() : '';
         const rawYear = item.year ? String(item.year).trim() : '';
         const isYearValid = rawYear && rawYear.toLowerCase() !== 'null' && rawYear.toLowerCase() !== 'undefined' && rawYear !== '-';
@@ -114,8 +114,8 @@ export default function Home() {
         return {
           ...item,
           price: resolvedPrice,
-          player_name: resolvedPlayerName,
-          title: productTitle,
+          player_name: playerName,
+          title: resolvedTitle,
           sold_out: soldOutVal,
           is_sold_out: soldOutVal.toUpperCase() === 'Y',
           img: optimizeCloudinaryUrl(item.img),
@@ -206,7 +206,7 @@ export default function Home() {
       }
 
       // Pencarian teks
-      const name = (item.player_name || item.title || '').toLowerCase();
+      const name = (item.title || item.player_name || '').toLowerCase();
       const titleMatch = name.includes(query);
       const edRaw = item.edition ? String(item.edition).trim() : '';
       const edLower = edRaw.toLowerCase();

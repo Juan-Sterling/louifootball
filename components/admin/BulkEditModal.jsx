@@ -149,7 +149,7 @@ export default function BulkEditModal({
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit} className="p-5 overflow-y-auto space-y-4 flex-1">
+        <form onSubmit={handleSubmit} className="p-5 overflow-y-auto custom-scrollbar space-y-4 flex-1">
           <p className="text-xs text-emerald-300/90 leading-relaxed bg-emerald-900/30 p-3 rounded-xl border border-emerald-800/60">
             Centang opsi data yang ingin Anda ubah. Kolom yang tidak dicentang akan tetap mempertahankan nilai aslinya pada setiap produk.
           </p>

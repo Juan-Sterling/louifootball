@@ -1,5 +1,5 @@
 import './globals.css';
-import { DM_Sans } from 'next/font/google';
+import { DM_Sans, Kanit } from 'next/font/google';
 import localFont from 'next/font/local';
 
 const dmSans = DM_Sans({
@@ -8,10 +8,21 @@ const dmSans = DM_Sans({
   variable: '--font-dm-sans',
 });
 
+const kanit = Kanit({
+  subsets: ['latin'],
+  weight: ['800'],
+  style: ['italic'],
+  display: 'swap',
+  variable: '--font-kanit-italic',
+});
+
 const louiFootball = localFont({
   src: './LOUI_FOOTBALL.otf',
   variable: '--font-loui-football',
   display: 'swap',
+  declarations: [
+    { prop: 'unicode-range', value: 'U+0000-0027, U+002A-005A, U+005E-007A, U+007E-FFFF' },
+  ],
 });
 
 export const metadata = {
@@ -25,7 +36,7 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="id" className={`${dmSans.variable} ${louiFootball.variable}`}>
+    <html lang="id" className={`${dmSans.variable} ${kanit.variable} ${louiFootball.variable}`}>
       <head>
         <link
           rel="icon"

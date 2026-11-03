@@ -514,7 +514,7 @@ export default function AdminDashboardPage() {
       </div>
 
       {/* Navbar di atas KPI Stats Cards (PRODUK, KATEGORI, IKLAN, PRIORITAS) */}
-      <nav className="p-1.5 sm:p-2 rounded-2xl bg-emerald-950/90 border border-emerald-700/50 shadow-xl backdrop-blur-md flex items-center justify-between gap-2 overflow-x-auto">
+      <nav className="p-1.5 sm:p-2 rounded-2xl bg-emerald-950/90 border border-emerald-700/50 shadow-xl backdrop-blur-md flex items-center justify-between gap-2 overflow-x-auto custom-scrollbar">
         <div className="flex items-center gap-1.5 sm:gap-2">
           {/* Tab PRODUK */}
           <button
@@ -980,7 +980,7 @@ export default function AdminDashboardPage() {
             </button>
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto custom-scrollbar">
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-emerald-800/80 bg-emerald-900/40 text-[11px] font-bold uppercase tracking-wider text-emerald-300">

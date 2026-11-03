@@ -1,13 +1,13 @@
 'use client';
 
 import React from 'react';
-import { formatRupiah, getCategoryBadgeStyle, getPriceRangeDisplay, optimizeCloudinaryUrl } from '@/lib/utils';
+import { formatRupiah, getCategoryBadgeStyle, getPriceRangeDisplay, optimizeCloudinaryUrl, renderLouiText } from '@/lib/utils';
 
 export default function ProductCard({ product, onOpenModal }) {
   const badgeColor = getCategoryBadgeStyle(product.category);
   const playerName = product.player_name ? String(product.player_name).trim() : '';
   const productTitle = product.title ? String(product.title).trim() : '';
-  const productName = playerName || productTitle || 'Produk Loui';
+  const productName = productTitle || playerName || 'Produk Loui';
   const isNumericEdition = product.edition && !isNaN(product.edition);
   const editionText = product.edition
     ? isNumericEdition
@@ -80,7 +80,7 @@ export default function ProductCard({ product, onOpenModal }) {
           onClick={() => onOpenModal(product)}
           className="font-loui text-sm sm:text-base text-gray-900 leading-snug line-clamp-2 mt-0.5 cursor-pointer hover:text-emerald-700 transition tracking-wide"
         >
-          {productName}
+          {renderLouiText(productName)}
         </h3>
 
         {/* Tim */}

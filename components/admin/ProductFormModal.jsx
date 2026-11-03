@@ -578,7 +578,7 @@ export default function ProductFormModal({
         </div>
 
         {/* Modal Body / Scrollable Content */}
-        <form onSubmit={handleSubmit} className="p-5 overflow-y-auto space-y-5 text-emerald-100 flex-1">
+        <form onSubmit={handleSubmit} className="p-5 overflow-y-auto custom-scrollbar space-y-5 text-emerald-100 flex-1">
           {/* Section 1: Informasi Dasar */}
           <div className="space-y-3">
             <h3 className="text-xs font-bold text-lime-400 tracking-wider uppercase flex items-center gap-1.5 border-b border-emerald-800/60 pb-1.5">

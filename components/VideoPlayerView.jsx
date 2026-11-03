@@ -64,7 +64,7 @@ export default function VideoPlayerView({ product }) {
     );
   }
 
-  const productName = product.player_name || product.title || 'Koleksi Loui Football';
+  const productName = product.title || product.player_name || 'Koleksi Loui Football';
   const categoryName = product.categories?.category || product.category || 'Merchandise';
   const teamYearText = [product.team, product.year].filter(Boolean).join(' • ');
 

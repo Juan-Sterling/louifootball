@@ -12,7 +12,7 @@ import {
   CaretLeft,
   CaretRight,
 } from '@phosphor-icons/react';
-import { formatRupiah, parseVariants, WA_NUMBER, optimizeCloudinaryUrl } from '@/lib/utils';
+import { formatRupiah, parseVariants, WA_NUMBER, optimizeCloudinaryUrl, renderLouiText } from '@/lib/utils';
 
 export default function ProductModal({ product, isOpen, onClose, onOpenZoom }) {
   const [selectedVariant, setSelectedVariant] = useState(null);
@@ -38,7 +38,7 @@ export default function ProductModal({ product, isOpen, onClose, onOpenZoom }) {
 
   const playerName = product.player_name ? String(product.player_name).trim() : '';
   const productTitle = product.title ? String(product.title).trim() : '';
-  const productName = playerName || productTitle || 'Produk Loui';
+  const productName = productTitle || playerName || 'Produk Loui';
   const variants = parseVariants(product.variants);
 
   // Status opsi gambar img & img_add
@@ -89,7 +89,7 @@ export default function ProductModal({ product, isOpen, onClose, onOpenZoom }) {
       ? `\nPilihan Ukuran: Tersedia ${variants.map((v) => v.size).join(', ')}`
       : '';
 
-  const titleWaText = productTitle && productTitle !== playerName ? `\nJudul: ${productTitle}` : '';
+  const secondaryNameWaText = playerName && playerName.toLowerCase() !== productName.toLowerCase() ? `\nPemain: ${playerName}` : '';
 
   const rawTeam = product.team ? String(product.team).trim() : '';
   const isTeamValid = rawTeam && rawTeam.toLowerCase() !== 'null' && rawTeam.toLowerCase() !== 'undefined' && rawTeam !== '-';
@@ -109,7 +109,7 @@ export default function ProductModal({ product, isOpen, onClose, onOpenZoom }) {
   const msg = isLimited
     ? encodeURIComponent(`Halo LOUIFOOTBALL, saya ingin memesan produk edisi terbatas:
 
-*${productName}* ${editionText}${variantWaText}${titleWaText}${teamYearWaText}
+*${productName}* ${editionText}${variantWaText}${secondaryNameWaText}${teamYearWaText}
 Harga: ${displayPrice}
 Status: Edisi Limited
 
@@ -117,13 +117,13 @@ Apakah stok masih ada?`)
     : isSoldOut
       ? encodeURIComponent(`Halo LOUIFOOTBALL, saya ingin bertanya tentang stok produk:
 
-*${productName}* ${editionText}${variantWaText}${titleWaText}${teamYearWaText}
+*${productName}* ${editionText}${variantWaText}${secondaryNameWaText}${teamYearWaText}
 Status: Sold Out
 
 Apakah produk ini akan restock kembali?`)
       : encodeURIComponent(`Halo LOUIFOOTBALL, saya ingin memesan:
 
-*${productName}* ${editionText}${variantWaText}${titleWaText}${teamYearWaText}
+*${productName}* ${editionText}${variantWaText}${secondaryNameWaText}${teamYearWaText}
 Harga: ${displayPrice}
 
 Apakah stok masih ada?`);
@@ -288,7 +288,7 @@ Apakah stok masih ada?`);
         )}
 
         {/* Area Detail Informasi Produk */}
-        <div className="p-5 overflow-y-auto">
+        <div className="p-5 overflow-y-auto product-modal-scrollbar">
           {/* Badges Baris Atas */}
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
@@ -305,13 +305,13 @@ Apakah stok masih ada?`);
 
           {/* Judul Produk / Nama Pemain */}
           <h2 className="text-xl sm:text-2xl font-loui text-gray-950 mt-2.5 leading-tight tracking-wide">
-            {productName}
+            {renderLouiText(productName)}
           </h2>
 
-          {/* Kolom Title (Hanya muncul jika ada dan berbeda dengan judul utama agar tidak duplikat) */}
-          {productTitle && productTitle.toLowerCase() !== productName.toLowerCase() && (
+          {/* Kolom Nama Pemain (Hanya muncul jika ada dan berbeda dengan judul utama agar tidak duplikat) */}
+          {playerName && playerName.toLowerCase() !== productName.toLowerCase() && (
             <p className="text-xs sm:text-sm font-semibold text-emerald-800/90 mt-1">
-              {productTitle}
+              {renderLouiText(playerName)}
             </p>
           )}
 

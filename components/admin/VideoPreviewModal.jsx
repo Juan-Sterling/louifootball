@@ -24,7 +24,7 @@ export default function VideoPreviewModal({ isOpen, onClose, product }) {
     ? `${window.location.origin}/v/${videoCode}`
     : '';
 
-  const productName = product.player_name || product.title || 'Produk';
+  const productName = product.title || product.player_name || 'Produk';
   const categoryName = product.categories?.category || product.category || 'Produk';
 
   const handleCopyLink = async () => {
@@ -73,7 +73,7 @@ export default function VideoPreviewModal({ isOpen, onClose, product }) {
         </div>
 
         {/* Modal Body */}
-        <div className="p-5 overflow-y-auto space-y-4">
+        <div className="p-5 overflow-y-auto custom-scrollbar space-y-4">
           {/* Video Player Box (Bawaan Device / Browser) */}
           <div className="relative bg-black rounded-2xl overflow-hidden border border-emerald-800 flex items-center justify-center max-h-[50vh] shadow-inner select-none">
             <video

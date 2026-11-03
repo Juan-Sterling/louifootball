@@ -649,7 +649,7 @@ function renderProducts() {
 
     paginatedItems.forEach(item => {
         const badgeColor = getCategoryBadgeStyle(item.category);
-        const productName = item.player_name || item.title || 'Produk Loui';
+        const productName = item.title || item.player_name || 'Produk Loui';
         const isNumericEdition = item.edition && !isNaN(item.edition);
         const editionText = item.edition
             ? isNumericEdition
@@ -684,7 +684,7 @@ function renderProducts() {
             </div>
             
             <p class="text-[10px] font-black text-amber-700 tracking-wider uppercase">${editionText}</p>
-            <h3 class="font-loui text-sm sm:text-base text-gray-900 leading-snug line-clamp-2 mt-0.5 cursor-pointer hover:text-emerald-700 transition tracking-wide" onclick="openModalById('${item.id}')">${productName}</h3>
+            <h3 class="font-loui text-sm sm:text-base text-gray-900 leading-snug line-clamp-2 mt-0.5 cursor-pointer hover:text-emerald-700 transition tracking-wide" onclick="openModalById('${item.id}')">${formatLouiText(productName)}</h3>
             ${teamText ? `<p class="text-[11px] text-gray-500 mt-1 truncate font-medium" title="${teamText}">${teamText}</p>` : '<p class="text-[11px] text-transparent mt-1 select-none">-</p>'}
             ${yearText ? `<p class="text-[11px] text-gray-400 mt-0.5 truncate font-medium" title="${yearText}">${yearText}</p>` : '<p class="text-[11px] text-transparent mt-0.5 select-none">-</p>'}
           </div>
@@ -832,6 +832,13 @@ function formatRupiah(val) {
     return `Rp ${number.toLocaleString('id-ID')}`;
 }
 
+function formatLouiText(text) {
+    if (!text) return '';
+    const str = String(text);
+    if (!str.includes('(') && !str.includes(')')) return str;
+    return str.replace(/([()])/g, '<span class="inline-block transform -skew-x-[14deg] font-sans font-black italic mx-[1px]">$1</span>');
+}
+
 function openModalById(id) {
     const item = allProducts.find(p => String(p.id) === String(id));
     if (!item) return;
@@ -840,9 +847,9 @@ function openModalById(id) {
     const isSoldOut = isItemSoldOut(item);
     const limitedPrice = item.price && item.price > 0 ? item.price : 20000;
     const displayPrice = isLimited ? formatRupiah(limitedPrice) : formatRupiah(item.price);
-    const productName = item.player_name || item.title || 'Produk Loui';
+    const productName = item.title || item.player_name || 'Produk Loui';
 
-    modalTitle.innerText = productName;
+    modalTitle.innerHTML = formatLouiText(productName);
     modalPrice.innerText = displayPrice;
     if (isLimited) {
         modalPrice.className = "text-xl sm:text-2xl font-black text-amber-600 tracking-wider";

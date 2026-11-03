@@ -222,7 +222,7 @@ export default function PriorityFormModal({
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit} className="overflow-y-auto p-6 space-y-5 text-sm">
+        <form onSubmit={handleSubmit} className="overflow-y-auto custom-scrollbar p-6 space-y-5 text-sm">
           {/* 1. Pilih Tipe Prioritas: Top vs Bottom */}
           <div>
             <label className="block text-xs font-semibold text-emerald-300 uppercase tracking-wider mb-2">
@@ -345,7 +345,7 @@ export default function PriorityFormModal({
               </div>
 
               {/* Search results list */}
-              <div className="max-h-40 overflow-y-auto space-y-1 p-1 bg-emerald-900/30 rounded-2xl border border-emerald-800/60">
+              <div className="max-h-40 overflow-y-auto custom-scrollbar space-y-1 p-1 bg-emerald-900/30 rounded-2xl border border-emerald-800/60">
                 {filteredProducts.length === 0 ? (
                   <div className="p-3 text-center text-xs text-emerald-400/60">Tidak ada produk ditemukan</div>
                 ) : (
@@ -408,7 +408,7 @@ export default function PriorityFormModal({
               {suggestions.length > 0 && (
                 <div>
                   <div className="text-[10px] text-emerald-400/80 mb-1.5">Saran cepat dari produk katalog:</div>
-                  <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto">
+                  <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto custom-scrollbar">
                     {suggestions.slice(0, 12).map((sugg) => (
                       <button
                         key={sugg}

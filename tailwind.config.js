@@ -48,7 +48,7 @@ module.exports = {
     extend: {
       fontFamily: {
         sans: ['var(--font-dm-sans)', 'sans-serif'],
-        loui: ['var(--font-loui-football)', 'sans-serif'],
+        loui: ['var(--font-loui-football)', 'var(--font-kanit-italic)', 'Arial Bold Italic', 'var(--font-dm-sans)', 'sans-serif'],
       },
       colors: {
         lime: {

@@ -37,6 +37,17 @@
             src: url('public/LOUI_FOOTBALL.otf') format('opentype'), url('LOUI_FOOTBALL.otf') format('opentype'), url('app/LOUI_FOOTBALL.otf') format('opentype');
             font-weight: normal;
             font-style: normal;
+            font-display: swap;
+            unicode-range: U+0000-0027, U+002A-005A, U+005E-007A, U+007E-FFFF;
+        }
+
+        @font-face {
+            font-family: 'LOUI FOOTBALL';
+            src: local('Arial Bold Italic'), local('Arial-BoldItalicMT'), local('Segoe UI Bold Italic'), local('Segoe UI Italic'), local('Helvetica-BoldOblique'), local('Roboto-BoldItalic'), sans-serif;
+            font-weight: normal;
+            font-style: normal;
+            font-display: swap;
+            unicode-range: U+0028-0029;
         }
 
         body {
@@ -44,7 +55,7 @@
         }
 
         .font-loui {
-            font-family: 'LOUI FOOTBALL', sans-serif;
+            font-family: 'LOUI FOOTBALL', 'Arial Bold Italic', 'Segoe UI Bold Italic', 'DM Sans', sans-serif;
             font-weight: normal !important;
         }
 
@@ -84,6 +95,39 @@
         .no-scrollbar {
             -ms-overflow-style: none;
             scrollbar-width: none;
+        }
+
+        /* Custom Scrollbar Hijau (Color Palette LOUIFOOTBALL) */
+        html,
+        body,
+        * {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(163, 230, 53, 0.6) rgba(6, 78, 59, 0.35);
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(6, 78, 59, 0.35);
+            border-radius: 9999px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(163, 230, 53, 0.6);
+            border-radius: 9999px;
+            border: 1.5px solid rgba(6, 78, 59, 0.3);
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(163, 230, 53, 0.95);
+            border-color: rgba(6, 78, 59, 0.5);
+        }
+
+        ::-webkit-scrollbar-corner {
+            background: rgba(6, 78, 59, 0.35);
         }
     </style>
     <!-- Supabase JS Client -->
