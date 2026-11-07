@@ -18,13 +18,15 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# Environment files (CRITICAL: Never commit secrets to Git)
+# Environment files (local only, do not commit to GitHub)
 .env
-.env*.local
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+.env*
+*.env
+*.env.*
+
+# Markdown files (local only, do not commit to GitHub)
+*.md
+**/*.md
 
 # Vercel deployment cache
 .vercel
