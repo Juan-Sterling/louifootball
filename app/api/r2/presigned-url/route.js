@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getPresignedUploadUrl } from '@/lib/r2';
+import { verifyAdminAuth } from '@/lib/auth-server';
 
 const MAX_VIDEO_SIZE = 100 * 1024 * 1024; // 100 MB
 
@@ -14,6 +15,12 @@ const ALLOWED_VIDEO_TYPES = [
 
 export async function POST(request) {
   try {
+    // Verifikasi sesi Admin
+    const auth = await verifyAdminAuth(request);
+    if (!auth.authenticated) {
+      return NextResponse.json({ error: auth.error }, { status: 401 });
+    }
+
     const body = await request.json();
     const { fileName, fileType, fileSize } = body;
 
@@ -25,7 +32,9 @@ export async function POST(request) {
     }
 
     // Validasi tipe video
-    const isAllowedType = ALLOWED_VIDEO_TYPES.includes(fileType.toLowerCase()) || fileType.toLowerCase().startsWith('video/');
+    const isAllowedType =
+      ALLOWED_VIDEO_TYPES.includes(fileType.toLowerCase()) ||
+      fileType.toLowerCase().startsWith('video/');
     if (!isAllowedType) {
       return NextResponse.json(
         { error: 'Format file tidak didukung. Harap pilih file video yang valid (MP4, WebM, atau MOV).' },

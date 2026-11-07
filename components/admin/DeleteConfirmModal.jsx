@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { WarningCircle, Trash, X, Spinner } from '@phosphor-icons/react';
 import { supabase } from '@/lib/supabase';
+import { adminFetch } from '@/lib/admin-fetch';
 import { formatRupiah, optimizeCloudinaryUrl } from '@/lib/utils';
 import { useToast } from './Toast';
 
@@ -46,7 +47,7 @@ export default function DeleteConfirmModal({
 
         for (const imgUrl of imagesToDelete) {
           try {
-            await fetch('/api/upload', {
+            await adminFetch('/api/upload', {
               method: 'DELETE',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({

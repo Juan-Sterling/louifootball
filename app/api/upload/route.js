@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { v2 as cloudinary } from 'cloudinary';
 import { optimizeCloudinaryUrl } from '@/lib/utils';
+import { verifyAdminAuth } from '@/lib/auth-server';
 
 // Default configuration fallbacks
 const DEFAULT_CLOUD_NAME =
@@ -14,6 +15,12 @@ const DEFAULT_UPLOAD_PRESET =
 
 export async function POST(request) {
   try {
+    // Verifikasi sesi Admin
+    const auth = await verifyAdminAuth(request);
+    if (!auth.authenticated) {
+      return NextResponse.json({ error: auth.error }, { status: 401 });
+    }
+
     const formData = await request.formData();
     const file = formData.get('file');
     const customPreset = formData.get('upload_preset') || DEFAULT_UPLOAD_PRESET;
@@ -194,6 +201,12 @@ export function extractCloudinaryPublicId(url) {
 
 export async function DELETE(request) {
   try {
+    // Verifikasi sesi Admin
+    const auth = await verifyAdminAuth(request);
+    if (!auth.authenticated) {
+      return NextResponse.json({ error: auth.error }, { status: 401 });
+    }
+
     const body = await request.json();
     const { public_id, url } = body;
 

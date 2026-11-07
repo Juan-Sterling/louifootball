@@ -13,6 +13,7 @@ import {
   LockKey,
 } from '@phosphor-icons/react';
 import { supabase } from '@/lib/supabase';
+import { syncAuthCookie, clearAuthCookie } from '@/lib/auth-cookie';
 import { ToastProvider } from '@/components/admin/Toast';
 import ChangePasswordModal from '@/components/admin/ChangePasswordModal';
 
@@ -34,6 +35,7 @@ export default function AdminLayout({ children }) {
         if (error) throw error;
 
         const currentSession = data?.session || null;
+        syncAuthCookie(currentSession);
 
         if (isMounted) {
           setSession(currentSession);
@@ -70,6 +72,7 @@ export default function AdminLayout({ children }) {
 
       setSession(newSession);
       setUser(newSession?.user || null);
+      syncAuthCookie(newSession);
       setIsAuthLoading(false);
 
       const isPublicAuthPage = pathname === '/admin/login' || pathname === '/admin/reset-password';
@@ -89,10 +92,12 @@ export default function AdminLayout({ children }) {
   // Handle Logout
   const handleLogout = async () => {
     try {
+      clearAuthCookie();
       await supabase.auth.signOut();
       router.replace('/admin/login');
     } catch (err) {
       console.error('Logout error:', err);
+      clearAuthCookie();
       router.replace('/admin/login');
     }
   };

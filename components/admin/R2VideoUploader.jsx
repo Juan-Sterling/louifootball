@@ -16,6 +16,7 @@ import {
   X,
 } from '@phosphor-icons/react';
 import { encodeProductId } from '@/lib/utils';
+import { adminFetch } from '@/lib/admin-fetch';
 
 const MAX_VIDEO_SIZE = 100 * 1024 * 1024; // 100 MB
 
@@ -87,7 +88,7 @@ export default function R2VideoUploader({
 
     try {
       // 1. Minta Presigned URL dari backend
-      const presignedRes = await fetch('/api/r2/presigned-url', {
+      const presignedRes = await adminFetch('/api/r2/presigned-url', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -148,7 +149,7 @@ export default function R2VideoUploader({
       // 3. Verifikasi integritas fisik file
       setUploadStatusText('Memverifikasi integritas file video...');
 
-      const verifyRes = await fetch('/api/r2/verify', {
+      const verifyRes = await adminFetch('/api/r2/verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ key }),
@@ -159,7 +160,7 @@ export default function R2VideoUploader({
       if (!verifyRes.ok || !verifyData.success) {
         throw new Error(
           verifyData.error ||
-            'Verifikasi gagal: File video tidak ditemukan atau kosong. Harap upload ulang.'
+          'Verifikasi gagal: File video tidak ditemukan atau kosong. Harap upload ulang.'
         );
       }
 
@@ -314,11 +315,10 @@ export default function R2VideoUploader({
               fileInputRef.current?.click();
             }
           }}
-          className={`border-2 border-dashed rounded-2xl p-6 text-center transition cursor-pointer ${
-            isDragOver
-              ? 'border-lime-400 bg-emerald-900/40'
-              : 'border-emerald-700/60 bg-emerald-950/20 hover:border-emerald-500 hover:bg-emerald-900/20'
-          } ${disabled || isUploading ? 'opacity-60 cursor-not-allowed' : ''}`}
+          className={`border-2 border-dashed rounded-2xl p-6 text-center transition cursor-pointer ${isDragOver
+            ? 'border-lime-400 bg-emerald-900/40'
+            : 'border-emerald-700/60 bg-emerald-950/20 hover:border-emerald-500 hover:bg-emerald-900/20'
+            } ${disabled || isUploading ? 'opacity-60 cursor-not-allowed' : ''}`}
         >
           <div className="w-12 h-12 rounded-2xl bg-emerald-900/80 border border-emerald-600/50 flex items-center justify-center mx-auto mb-2 text-lime-400">
             <VideoCamera size={26} weight="duotone" />

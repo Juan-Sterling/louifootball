@@ -1,8 +1,15 @@
 import { NextResponse } from 'next/server';
 import { verifyR2Object } from '@/lib/r2';
+import { verifyAdminAuth } from '@/lib/auth-server';
 
 export async function POST(request) {
   try {
+    // Verifikasi sesi Admin
+    const auth = await verifyAdminAuth(request);
+    if (!auth.authenticated) {
+      return NextResponse.json({ error: auth.error }, { status: 401 });
+    }
+
     const body = await request.json();
     const { key } = body;
 

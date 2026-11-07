@@ -13,6 +13,7 @@ import {
   ArrowsClockwise,
 } from '@phosphor-icons/react';
 import { optimizeCloudinaryUrl } from '@/lib/utils';
+import { adminFetch } from '@/lib/admin-fetch';
 
 const DEFAULT_CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || 'og1jrvy3';
 const DEFAULT_UPLOAD_PRESET = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || 'ml_default';
@@ -104,7 +105,7 @@ export default function CloudinaryWidget({
       if (apiKey) formData.append('api_key', apiKey);
       if (apiSecret) formData.append('api_secret', apiSecret);
 
-      const res = await fetch('/api/upload', {
+      const res = await adminFetch('/api/upload', {
         method: 'POST',
         body: formData,
       });
@@ -202,11 +203,10 @@ export default function CloudinaryWidget({
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
           onClick={() => !isUploading && fileInputRef.current?.click()}
-          className={`border-2 border-dashed rounded-2xl p-6 text-center transition-all cursor-pointer flex flex-col items-center justify-center min-h-[160px] ${
-            isDragOver
-              ? 'border-lime-400 bg-emerald-900/50 scale-[1.01]'
-              : 'border-emerald-700/60 hover:border-lime-400/80 bg-emerald-950/60 hover:bg-emerald-900/30'
-          } ${isUploading ? 'pointer-events-none opacity-80' : ''}`}
+          className={`border-2 border-dashed rounded-2xl p-6 text-center transition-all cursor-pointer flex flex-col items-center justify-center min-h-[160px] ${isDragOver
+            ? 'border-lime-400 bg-emerald-900/50 scale-[1.01]'
+            : 'border-emerald-700/60 hover:border-lime-400/80 bg-emerald-950/60 hover:bg-emerald-900/30'
+            } ${isUploading ? 'pointer-events-none opacity-80' : ''}`}
         >
           {isUploading ? (
             <div className="flex flex-col items-center gap-2 py-4">

@@ -16,6 +16,7 @@ import {
   X,
 } from '@phosphor-icons/react';
 import { supabase } from '@/lib/supabase';
+import { syncAuthCookie } from '@/lib/auth-cookie';
 import { useToast } from '@/components/admin/Toast';
 
 export default function AdminLoginPage() {
@@ -90,6 +91,7 @@ export default function AdminLoginPage() {
       }
 
       if (data?.session) {
+        syncAuthCookie(data.session);
         showToast('Login berhasil! Mengalihkan ke dasbor...', 'success');
         router.replace('/admin');
       }

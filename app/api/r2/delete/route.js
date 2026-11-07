@@ -1,8 +1,15 @@
 import { NextResponse } from 'next/server';
 import { deleteR2Object } from '@/lib/r2';
+import { verifyAdminAuth } from '@/lib/auth-server';
 
 async function handleDelete(request) {
   try {
+    // Verifikasi sesi Admin
+    const auth = await verifyAdminAuth(request);
+    if (!auth.authenticated) {
+      return NextResponse.json({ error: auth.error }, { status: 401 });
+    }
+
     let body = {};
     const contentType = request.headers.get('content-type') || '';
 

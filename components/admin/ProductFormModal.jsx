@@ -15,6 +15,7 @@ import {
   VideoCamera,
 } from '@phosphor-icons/react';
 import { supabase } from '@/lib/supabase';
+import { adminFetch } from '@/lib/admin-fetch';
 import { formatRupiah, parseVariants, getCloudinaryFolderByCategory, optimizeCloudinaryUrl } from '@/lib/utils';
 import CloudinaryWidget from './CloudinaryWidget';
 import R2VideoUploader from './R2VideoUploader';
@@ -87,7 +88,7 @@ export default function ProductFormModal({
   const deleteStorageVideo = async (url) => {
     if (!url) return;
     try {
-      await fetch('/api/r2/delete', {
+      await adminFetch('/api/r2/delete', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url }),
@@ -144,7 +145,7 @@ export default function ProductFormModal({
         // ignore
       }
 
-      const res = await fetch('/api/upload', {
+      const res = await adminFetch('/api/upload', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -621,8 +622,8 @@ export default function ProductFormModal({
                       type="button"
                       onClick={() => handleEditionChange('LIMITED')}
                       className={`px-2.5 py-0.5 text-[11px] font-bold rounded-lg transition cursor-pointer ${isLimited
-                          ? 'bg-amber-400 text-emerald-950 shadow-sm font-black'
-                          : 'bg-emerald-900/80 text-amber-300 hover:bg-emerald-800 border border-amber-500/40'
+                        ? 'bg-amber-400 text-emerald-950 shadow-sm font-black'
+                        : 'bg-emerald-900/80 text-amber-300 hover:bg-emerald-800 border border-amber-500/40'
                         }`}
                     >
                       ★ LIMITED
@@ -631,8 +632,8 @@ export default function ProductFormModal({
                       type="button"
                       onClick={() => handleEditionChange('SPECIAL')}
                       className={`px-2.5 py-0.5 text-[11px] font-semibold rounded-lg transition cursor-pointer ${formData.edition?.toUpperCase() === 'SPECIAL'
-                          ? 'bg-lime-400 text-emerald-950 font-bold'
-                          : 'bg-emerald-900/80 text-emerald-200 hover:bg-emerald-800 border border-emerald-700'
+                        ? 'bg-lime-400 text-emerald-950 font-bold'
+                        : 'bg-emerald-900/80 text-emerald-200 hover:bg-emerald-800 border border-emerald-700'
                         }`}
                     >
                       SPECIAL
@@ -641,8 +642,8 @@ export default function ProductFormModal({
                       type="button"
                       onClick={() => handleEditionChange('1')}
                       className={`px-2.5 py-0.5 text-[11px] font-semibold rounded-lg transition cursor-pointer ${formData.edition === '1'
-                          ? 'bg-lime-400 text-emerald-950 font-bold'
-                          : 'bg-emerald-900/80 text-emerald-200 hover:bg-emerald-800 border border-emerald-700'
+                        ? 'bg-lime-400 text-emerald-950 font-bold'
+                        : 'bg-emerald-900/80 text-emerald-200 hover:bg-emerald-800 border border-emerald-700'
                         }`}
                     >
                       Edisi 1
@@ -726,10 +727,10 @@ export default function ProductFormModal({
                       }}
                       placeholder={isLimited ? '20000 (LIMITED)' : '10000'}
                       className={`w-full pl-9 pr-3.5 py-2.5 text-xs sm:text-sm rounded-lg border font-mono font-bold focus:outline-none ${isLimited
-                          ? 'bg-emerald-950/70 border-amber-500/60 text-amber-300 focus:border-amber-400'
-                          : errors.price
-                            ? 'bg-emerald-900/60 border-rose-500 text-white focus:border-lime-400'
-                            : 'bg-emerald-900/60 border-emerald-700/60 text-white focus:border-lime-400'
+                        ? 'bg-emerald-950/70 border-amber-500/60 text-amber-300 focus:border-amber-400'
+                        : errors.price
+                          ? 'bg-emerald-900/60 border-rose-500 text-white focus:border-lime-400'
+                          : 'bg-emerald-900/60 border-emerald-700/60 text-white focus:border-lime-400'
                         }`}
                     />
                   </div>

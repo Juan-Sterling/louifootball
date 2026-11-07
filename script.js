@@ -671,8 +671,8 @@ function renderProducts() {
         const formattedPrice = isLimited ? formatRupiah(limitedPrice) : getPriceRangeDisplay(item.variants, item.price);
         card.innerHTML = `
           <div>
-            <div class="relative aspect-square rounded-xl bg-emerald-50 overflow-hidden mb-2.5 cursor-pointer group" onclick="openModalById('${item.id}')">
-              <span class="absolute top-2 left-2 ${badgeColor} text-[9px] sm:text-[10px] font-black px-2 py-0.5 rounded shadow capitalize z-10">${item.category}</span>
+            <div class="relative aspect-square rounded-xl bg-emerald-50 overflow-hidden mb-2.5 cursor-pointer group" onclick="openModalById('${escapeHtml(item.id)}')">
+              <span class="absolute top-2 left-2 ${badgeColor} text-[9px] sm:text-[10px] font-black px-2 py-0.5 rounded shadow capitalize z-10">${escapeHtml(item.category)}</span>
               ${isSoldOut ? `
                 <div class="absolute inset-0 bg-black/60 z-20 flex flex-col items-center justify-center p-2 backdrop-blur-[1px]">
                   <span class="px-3 py-1 bg-red-600/90 text-white text-[11px] sm:text-xs font-black tracking-widest uppercase rounded-lg shadow-lg border border-red-400/50">
@@ -680,17 +680,17 @@ function renderProducts() {
                   </span>
                 </div>
               ` : ''}
-              <img src="${optimizeCloudinaryUrl(item.img)}" alt="${productName}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
+              <img src="${optimizeCloudinaryUrl(item.img)}" alt="${escapeHtml(productName)}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
             </div>
             
-            <p class="text-[10px] font-black text-amber-700 tracking-wider uppercase">${editionText}</p>
-            <h3 class="font-loui text-sm sm:text-base text-gray-900 leading-snug line-clamp-2 mt-0.5 cursor-pointer hover:text-emerald-700 transition tracking-wide" onclick="openModalById('${item.id}')">${formatLouiText(productName)}</h3>
-            ${teamText ? `<p class="text-[11px] text-gray-500 mt-1 truncate font-medium" title="${teamText}">${teamText}</p>` : '<p class="text-[11px] text-transparent mt-1 select-none">-</p>'}
-            ${yearText ? `<p class="text-[11px] text-gray-400 mt-0.5 truncate font-medium" title="${yearText}">${yearText}</p>` : '<p class="text-[11px] text-transparent mt-0.5 select-none">-</p>'}
+            <p class="text-[10px] font-black text-amber-700 tracking-wider uppercase">${escapeHtml(editionText)}</p>
+            <h3 class="font-loui text-sm sm:text-base text-gray-900 leading-snug line-clamp-2 mt-0.5 cursor-pointer hover:text-emerald-700 transition tracking-wide" onclick="openModalById('${escapeHtml(item.id)}')">${formatLouiText(productName)}</h3>
+            ${teamText ? `<p class="text-[11px] text-gray-500 mt-1 truncate font-medium" title="${escapeHtml(teamText)}">${escapeHtml(teamText)}</p>` : '<p class="text-[11px] text-transparent mt-1 select-none">-</p>'}
+            ${yearText ? `<p class="text-[11px] text-gray-400 mt-0.5 truncate font-medium" title="${escapeHtml(yearText)}">${escapeHtml(yearText)}</p>` : '<p class="text-[11px] text-transparent mt-0.5 select-none">-</p>'}
           </div>
           <div class="mt-3 pt-2 border-t border-gray-100">
             <p class="${isLimited ? 'text-amber-600 font-black tracking-wider' : 'text-emerald-950 font-black'} text-sm sm:text-base">${formattedPrice}</p>
-            <button onclick="openModalById('${item.id}')" class="w-full mt-2 bg-emerald-800 hover:bg-emerald-900 text-lime-300 text-xs font-bold py-1.5 sm:py-2 rounded-xl transition cursor-pointer">
+            <button onclick="openModalById('${escapeHtml(item.id)}')" class="w-full mt-2 bg-emerald-800 hover:bg-emerald-900 text-lime-300 text-xs font-bold py-1.5 sm:py-2 rounded-xl transition cursor-pointer">
               Lihat Detail
             </button>
           </div>
@@ -832,11 +832,21 @@ function formatRupiah(val) {
     return `Rp ${number.toLocaleString('id-ID')}`;
 }
 
+function escapeHtml(text) {
+    if (!text) return '';
+    return String(text)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
 function formatLouiText(text) {
     if (!text) return '';
-    const str = String(text);
-    if (!str.includes('(') && !str.includes(')')) return str;
-    return str.replace(/([()])/g, '<span class="inline-block transform -skew-x-[14deg] font-sans font-black italic mx-[1px]">$1</span>');
+    const safeStr = escapeHtml(text);
+    if (!safeStr.includes('(') && !safeStr.includes(')')) return safeStr;
+    return safeStr.replace(/([()])/g, '<span class="inline-block transform -skew-x-[14deg] font-sans font-black italic mx-[1px]">$1</span>');
 }
 
 function openModalById(id) {
